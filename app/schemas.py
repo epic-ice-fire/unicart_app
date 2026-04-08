@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, EmailStr, Field
 
 
 # =========================
@@ -147,13 +147,9 @@ class JoinLobbyResponse(BaseModel):
 
 
 class AddItemRequest(BaseModel):
-    item_link: str = Field(min_length=5, max_length=500)
-    item_amount: float = Field(gt=0, description="Item price in NGN. Up to 2 decimal places accepted.")
-
-    @field_validator("item_amount")
-    @classmethod
-    def round_to_two_dp(cls, v: float) -> float:
-        return round(v, 2)
+    # No max_length — Temu links can be very long
+    item_link: str = Field(min_length=5)
+    item_amount: int = Field(gt=0)
 
 
 class AddItemResponse(BaseModel):
@@ -187,7 +183,7 @@ class UpdateTargetRequest(BaseModel):
 class MyLobbyItemResponse(BaseModel):
     item_id: int
     item_link: str
-    item_amount: float
+    item_amount: int
     is_active: bool
     is_paid: bool
     is_locked: bool
@@ -230,7 +226,7 @@ class UserBatchHistoryListResponse(BaseModel):
 class AdminBatchItemResponse(BaseModel):
     item_id: int
     item_link: str
-    item_amount: float
+    item_amount: int
     is_active: bool
     is_paid: bool
     is_locked: bool
@@ -253,12 +249,6 @@ class AdminBatchEntryResponse(BaseModel):
     paid_total_ngn: int
     created_at: str
     items: list[AdminBatchItemResponse]
-    # ── Post-trigger fraud removal flags ──────────────────────────────────────
-    # is_underfunded = True when a paid item was force-removed AFTER this lobby
-    # triggered, dropping current_item_amount below target_item_amount.
-    # The batch is still valid and must be processed — this is just a warning.
-    is_underfunded: bool = False
-    underfunded_gap: int = 0   # ₦ difference between target and current
 
 
 class AdminDashboardResponse(BaseModel):

@@ -173,14 +173,16 @@ class _LobbyScreenState extends State<LobbyScreen> {
       });
 
       if (authorizationUrl != null && authorizationUrl.isNotEmpty) {
+        final uri = Uri.parse(authorizationUrl);
         final launched = await launchUrl(
-          Uri.parse(authorizationUrl),
+          uri,
+          mode: LaunchMode.externalApplication,
           webOnlyWindowName: "_blank",
         );
         if (launched) {
-          _startPolling(); // Start polling after payment page opens
+          _startPolling();
           showMessage(
-            "Payment page opened. Complete your payment — we'll detect it automatically.",
+            "Paystack opened. Complete payment then tap \"I've Paid\" below.",
             isSuccess: true,
           );
         } else {
@@ -230,6 +232,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
     }
     final launched = await launchUrl(
       Uri.parse(pendingPaymentUrl!),
+      mode: LaunchMode.externalApplication,
       webOnlyWindowName: "_blank",
     );
     if (!launched) showMessage("Could not open payment link.");
@@ -270,8 +273,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
   }
 
   Future<void> addItem() async {
-    final amountRaw = double.tryParse(itemAmountController.text.trim());
-    final amount = amountRaw != null ? double.parse(amountRaw.toStringAsFixed(2)) : null;
+    final amount = int.tryParse(itemAmountController.text.trim());
     final itemLink = itemLinkController.text.trim();
     if (itemLink.isEmpty || amount == null || amount <= 0) {
       showMessage("Enter a valid item link and amount.");
@@ -280,7 +282,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
     setState(() => isBusy = true);
     try {
       final response = await LobbyService.addItem(
-        widget.token, itemLink: itemLink, itemAmount: amount.toInt(),
+        widget.token, itemLink: itemLink, itemAmount: amount,
       );
       itemLinkController.clear();
       itemAmountController.clear();
@@ -310,62 +312,6 @@ class _LobbyScreenState extends State<LobbyScreen> {
   }
 
   Future<void> payForItem(int itemId) async {
-    // ── Guest price confirmation before payment ────────────────────────────────
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Row(
-          children: [
-            Icon(Icons.warning_amber_rounded, color: Color(0xFFB54708)),
-            SizedBox(width: 8),
-            Text("Confirm guest price",
-                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
-          ],
-        ),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "Before paying, confirm that the price you entered is the "
-              "guest (logged-out) price from Temu or the relevant platform.",
-              style: TextStyle(fontSize: 14, height: 1.5),
-            ),
-            SizedBox(height: 14),
-            Text("Checklist:", style: TextStyle(fontWeight: FontWeight.w800)),
-            SizedBox(height: 6),
-            Text(
-              "✅  I browsed this product while logged OUT"
-              "✅  I used a private / guest account"
-              "✅  The price I entered matches what a guest sees"
-              "✅  I understand payments are non-refundable",
-              style: TextStyle(fontSize: 13, height: 1.6, color: Color(0xFF344054)),
-            ),
-            SizedBox(height: 14),
-            Text(
-              "Submitting a personalised price is a policy violation "
-              "and may result in removal with no refund.",
-              style: TextStyle(
-                  fontSize: 12,
-                  color: Color(0xFFB42318),
-                  fontWeight: FontWeight.w600),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text("Cancel"),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text("Yes, price is correct — Pay"),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true) return;
-
     setState(() => isBusy = true);
     try {
       final response = await LobbyService.initializeItemPayment(
@@ -375,16 +321,17 @@ class _LobbyScreenState extends State<LobbyScreen> {
       if (authorizationUrl != null && authorizationUrl.isNotEmpty) {
         final launched = await launchUrl(
           Uri.parse(authorizationUrl),
+          mode: LaunchMode.externalApplication,
           webOnlyWindowName: "_blank",
         );
         if (launched) {
-          _startPolling(); // Poll for webhook updates
+          _startPolling();
           showMessage(
-            "Payment page opened. Tap 'Verify' after completing payment.",
+            "Paystack opened. Come back and tap 'Verify payment' once done.",
             isSuccess: true,
           );
         } else {
-          showMessage("Payment link ready but couldn't open automatically.");
+          showMessage("Could not open Paystack. Try again.");
         }
       }
       await loadAll();
@@ -879,78 +826,97 @@ class _LobbyScreenState extends State<LobbyScreen> {
                                             style: TextStyle(
                                                 fontSize: 20, fontWeight: FontWeight.w800,
                                                 color: Color(0xFF101828))),
+                                        const SizedBox(height: 8),
+                                        const Text(
+                                            "Your login, verification, and admin access.",
+                                            style: TextStyle(color: Color(0xFF667085))),
                                         const SizedBox(height: 16),
-                                        // ── User profile card ──────────────────
-                                        Container(
-                                          padding: const EdgeInsets.all(14),
-                                          decoration: BoxDecoration(
-                                            color: const Color(0xFFF9FAFB),
-                                            borderRadius: BorderRadius.circular(16),
-                                            border: Border.all(color: const Color(0xFFE4E7EC)),
-                                          ),
-                                          child: Row(
-                                            children: [
-                                              Container(
-                                                width: 46, height: 46,
-                                                decoration: BoxDecoration(
-                                                  color: const Color(0xFF1F7A4C),
-                                                  borderRadius: BorderRadius.circular(14),
-                                                ),
-                                                child: Center(
-                                                  child: Text(
-                                                    accountEmail.isNotEmpty ? accountEmail[0].toUpperCase() : "?",
-                                                    style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800),
-                                                  ),
-                                                ),
+                                        // Account email row
+                                        Row(
+                                          children: [
+                                            const Icon(Icons.email_outlined,
+                                                size: 16, color: Color(0xFF667085)),
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: Text(
+                                                accountEmail,
+                                                style: const TextStyle(
+                                                    fontSize: 13,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: Color(0xFF344054)),
+                                                overflow: TextOverflow.ellipsis,
                                               ),
-                                              const SizedBox(width: 14),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 10),
+                                        // Verification badge
+                                        Row(
+                                          children: [
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(
+                                                  horizontal: 10, vertical: 5),
+                                              decoration: BoxDecoration(
+                                                color: isVerified
+                                                    ? const Color(0xFFECFDF3)
+                                                    : const Color(0xFFFEF3F2),
+                                                borderRadius: BorderRadius.circular(999),
+                                                border: Border.all(
+                                                    color: isVerified
+                                                        ? const Color(0xFF4BB543)
+                                                        : const Color(0xFFFECACA)),
+                                              ),
+                                              child: Text(
+                                                isVerified
+                                                    ? "✅ PAU Verified"
+                                                    : "❌ Not verified",
+                                                style: TextStyle(
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.w700,
+                                                    color: isVerified
+                                                        ? const Color(0xFF027A48)
+                                                        : const Color(0xFFB42318)),
+                                              ),
+                                            ),
+                                            if (isAdmin) ...[
+                                              const SizedBox(width: 8),
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(
+                                                    horizontal: 10, vertical: 5),
+                                                decoration: BoxDecoration(
+                                                  color: const Color(0xFFF4F3FF),
+                                                  borderRadius: BorderRadius.circular(999),
+                                                  border: Border.all(
+                                                      color: const Color(0xFF9E77ED)),
+                                                ),
+                                                child: const Text("👑 Admin",
+                                                    style: TextStyle(
+                                                        fontSize: 12,
+                                                        fontWeight: FontWeight.w700,
+                                                        color: Color(0xFF5925DC))),
+                                              ),
+                                            ],
+                                          ],
+                                        ),
+                                        if (studentEmail != null) ...[
+                                          const SizedBox(height: 8),
+                                          Row(
+                                            children: [
+                                              const Icon(Icons.school_outlined,
+                                                  size: 14, color: Color(0xFF667085)),
+                                              const SizedBox(width: 6),
                                               Expanded(
-                                                child: Column(
-                                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                                  children: [
-                                                    Text(
-                                                      accountEmail,
-                                                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: Color(0xFF101828)),
-                                                      overflow: TextOverflow.ellipsis,
-                                                    ),
-                                                    const SizedBox(height: 4),
-                                                    Wrap(
-                                                      spacing: 6, runSpacing: 4,
-                                                      children: [
-                                                        Container(
-                                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                                          decoration: BoxDecoration(
-                                                            color: isVerified ? const Color(0xFFECFDF3) : const Color(0xFFFEF3F2),
-                                                            borderRadius: BorderRadius.circular(999),
-                                                            border: Border.all(color: isVerified ? const Color(0xFF4BB543) : const Color(0xFFFECACA)),
-                                                          ),
-                                                          child: Text(
-                                                            isVerified ? "✅ PAU Verified" : "❌ Not verified",
-                                                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: isVerified ? const Color(0xFF027A48) : const Color(0xFFB42318)),
-                                                          ),
-                                                        ),
-                                                        if (isAdmin)
-                                                          Container(
-                                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                                            decoration: BoxDecoration(
-                                                              color: const Color(0xFFF4F3FF),
-                                                              borderRadius: BorderRadius.circular(999),
-                                                              border: Border.all(color: const Color(0xFF9E77ED)),
-                                                            ),
-                                                            child: const Text("👑 Admin", style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF5925DC))),
-                                                          ),
-                                                      ],
-                                                    ),
-                                                    if (studentEmail != null) ...[
-                                                      const SizedBox(height: 4),
-                                                      Text("🎓 $studentEmail", style: const TextStyle(fontSize: 12, color: Color(0xFF667085)), overflow: TextOverflow.ellipsis),
-                                                    ],
-                                                  ],
+                                                child: Text(
+                                                  studentEmail,
+                                                  style: const TextStyle(
+                                                      fontSize: 12,
+                                                      color: Color(0xFF667085)),
+                                                  overflow: TextOverflow.ellipsis,
                                                 ),
                                               ),
                                             ],
                                           ),
-                                        ),
+                                        ],
                                         const SizedBox(height: 16),
                                         SizedBox(
                                           width: double.infinity,
@@ -1076,102 +1042,24 @@ class _LobbyScreenState extends State<LobbyScreen> {
                                           color: Color(0xFF101828))),
                                   const SizedBox(height: 6),
                                   const Text(
-                                      "Paste your product link and the guest price. Pay for it to lock it into the vault.",
+                                      "Paste your product link and amount. Then pay for it to count toward the vault goal.",
                                       style: TextStyle(color: Color(0xFF667085))),
-                                  const SizedBox(height: 14),
-
-                                  // ── Guest price notice ────────────────────────────────
-                                  Container(
-                                    padding: const EdgeInsets.all(14),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFFFF7E6),
-                                      borderRadius: BorderRadius.circular(14),
-                                      border: Border.all(color: const Color(0xFFFAC515)),
-                                    ),
-                                    child: const Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            Icon(Icons.warning_amber_rounded,
-                                                size: 18, color: Color(0xFFB54708)),
-                                            SizedBox(width: 8),
-                                            Text("Use guest account (logged out account) pricing only",
-                                                style: TextStyle(
-                                                    fontWeight: FontWeight.w800,
-                                                    fontSize: 14,
-                                                    color: Color(0xFF7A2E0E))),
-                                          ],
-                                        ),
-                                        SizedBox(height: 8),
-                                        Text(
-                                          "UniCart standardises all prices to non-personalised (guest account) pricing."
-
-                                          "Before submitting your item:"
-                                          "  • LOG OUT of Temu (or any other platform)"
-                                          "  • Enter the price you see on guest account"
-
-                                          "• Submitting a personalised or discounted price that differs from "
-                                          "the standard guest price is considered a pricing violation and "
-                                          "may result in your item being forcefully removed with no refund.",
-                                          style: TextStyle(
-                                              fontSize: 13,
-                                              color: Color(0xFF7A2E0E),
-                                              height: 1.5),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-
-                                  const SizedBox(height: 14),
-
-                                  // ── No-refund notice ──────────────────────────────────
-                                  Container(
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFFEF3F2),
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: const Color(0xFFFECACA)),
-                                    ),
-                                    child: const Row(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Icon(Icons.gavel_outlined,
-                                            size: 16, color: Color(0xFFB42318)),
-                                        SizedBox(width: 8),
-                                        Expanded(
-                                          child: Text(
-                                            "No-Refund Policy: Once your item payment is submitted, "
-                                            "it is non-refundable. Items removed for pricing violations "
-                                            "or fraud will not be refunded under any circumstance.",
-                                            style: TextStyle(
-                                                fontSize: 12,
-                                                color: Color(0xFFB42318),
-                                                fontWeight: FontWeight.w600,
-                                                height: 1.5),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-
                                   const SizedBox(height: 16),
                                   TextField(
                                     controller: itemLinkController,
                                     decoration: const InputDecoration(
-                                      labelText: "Product link",
+                                      labelText: "Item link",
                                       prefixIcon: Icon(Icons.link),
-                                      helperText: "Copy the link from a guest / logged-out browser session",
+                                      hintText: "https://www.temu.com"
                                     ),
                                   ),
                                   const SizedBox(height: 12),
                                   TextField(
                                     controller: itemAmountController,
-                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                    keyboardType: TextInputType.number,
                                     decoration: const InputDecoration(
-                                      labelText: "Guest price (₦)",
+                                      labelText: "Item amount (₦)",
                                       prefixIcon: Icon(Icons.payments_outlined),
-                                      helperText: "Price shown to logged-out visitors only",
                                     ),
                                   ),
                                   const SizedBox(height: 14),

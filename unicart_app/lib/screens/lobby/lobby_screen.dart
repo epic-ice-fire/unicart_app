@@ -183,7 +183,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
         _startPolling();
         if (launched) {
           showMessage(
-            "Paystack opened. Complete payment then tap \"I\'ve Paid\" below.",
+            "Paystack opened. Complete payment then tap \"I've Paid\" below.",
             isSuccess: true,
           );
         } else {
@@ -284,7 +284,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
     setState(() => isBusy = true);
     try {
       final response = await LobbyService.addItem(
-        widget.token, itemLink: itemLink, itemAmount: amount,
+        widget.token, itemLink: itemLink, itemAmount: int.parse(amount.toStringAsFixed(0)),
       );
       itemLinkController.clear();
       itemAmountController.clear();
@@ -339,12 +339,12 @@ class _LobbyScreenState extends State<LobbyScreen> {
             Text("Checklist:", style: TextStyle(fontWeight: FontWeight.w800)),
             SizedBox(height: 6),
             Text(
-              "✅  I browsed this product while logged OUT
-"
-              "✅  I used a private / incognito window
-"
-              "✅  The price I entered matches what a guest sees
-"
+              "✅  I browsed this product while logged OUT"
+
+              "✅  I used a private / incognito window"
+
+              "✅  The price I entered matches what a guest account sees"
+
               "✅  I understand payments are non-refundable",
               style: TextStyle(fontSize: 13, height: 1.6, color: Color(0xFF344054)),
             ),
@@ -1020,7 +1020,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                                                   minimumSize: const Size.fromHeight(52)),
                                               onPressed: isBusy ? null : verifyEntryFeePayment,
                                               icon: const Icon(Icons.verified_outlined, color: Colors.white),
-                                              label: const Text("I\'ve Paid — Confirm Now",
+                                              label: const Text("I've Paid — Confirm Now",
                                                   style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
                                             ),
                                           ),
@@ -1117,18 +1117,17 @@ class _LobbyScreenState extends State<LobbyScreen> {
                                         ),
                                         SizedBox(height: 8),
                                         Text(
-                                          "UniCart standardises all prices to non-personalised (guest) pricing.
+                                          "UniCart standardises all prices to non-personalised (guest) pricing."
 
-"
-                                          "Before submitting your item:
-"
-                                          "  • Log OUT of Temu (or any other platform)
-"
-                                          "  • Open the product page in a private/incognito window
-"
-                                          "  • Enter the price you see as a guest
+                                          "Before submitting your item:"
 
-"
+                                          "  • Log OUT of Temu (or any other platform) "
+
+                                          "  • Open the product page in a private/incognito window"
+
+                                          "  • Enter the price you see as a guest"
+
+
                                           "Submitting a personalised or discounted price that differs from "
                                           "the standard guest price is considered a pricing violation and "
                                           "may result in your item being forcefully removed with no refund.",

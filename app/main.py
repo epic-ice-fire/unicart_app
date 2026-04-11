@@ -1,5 +1,4 @@
 ﻿import logging
-import os
 import time
 import uuid
 
@@ -18,21 +17,20 @@ logger = logging.getLogger("unicart")
 
 app = FastAPI(
     title="UniCart API",
-    description="Campus group-buying platform",
+    description="Campus group-buying platform — PAU edition",
     version="1.0.0",
 )
 
-_raw = os.getenv("BACKEND_CORS_ORIGINS", "https://epic-ice-fire.github.io")
-_origins = [o.strip() for o in _raw.split(",") if o.strip()]
-_origins += ["http://localhost:3000","http://localhost:8000","http://localhost:57318","http://127.0.0.1:8000"]
-
+# Allow all origins so Flutter web (Netlify), mobile apps, and local dev all work.
+# allow_credentials must be False when using allow_origins=["*"].
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=list(set(_origins)),
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 @app.middleware("http")
 async def request_middleware(request: Request, call_next):
@@ -40,22 +38,32 @@ async def request_middleware(request: Request, call_next):
     start = time.perf_counter()
     response = await call_next(request)
     duration_ms = round((time.perf_counter() - start) * 1000, 1)
-    logger.info(f"[{request_id}] {request.method} {request.url.path} -> {response.status_code} ({duration_ms}ms)")
+    logger.info(
+        f"[{request_id}] {request.method} {request.url.path} "
+        f"-> {response.status_code} ({duration_ms}ms)"
+    )
     response.headers["X-Request-ID"] = request_id
     return response
+
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     logger.error(f"Unhandled exception on {request.url.path}: {exc}", exc_info=True)
-    return JSONResponse(status_code=500, content={"detail": "An unexpected error occurred."})
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "An unexpected error occurred. Please try again."},
+    )
+
 
 app.include_router(auth.router)
 app.include_router(lobbies.router)
 app.include_router(payments.router)
 
+
 @app.get("/", tags=["health"])
 def root():
     return {"status": "ok", "service": "UniCart API", "version": "1.0.0"}
+
 
 @app.get("/health", tags=["health"])
 def health():

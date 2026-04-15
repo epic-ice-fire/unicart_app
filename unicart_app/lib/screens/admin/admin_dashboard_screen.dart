@@ -525,7 +525,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   "✅  I am logged OUT of Temu (or in a private window)"
 
                   "✅  I have checked each item link above as a guest"
-
+                  
                   "✅  The submitted prices match what I see as a guest"
 
                   "✅  Any price discrepancies have been resolved (force-removed)"

@@ -1,12 +1,15 @@
 [build]
-  base    = "unicart_app"
-  command = "flutter pub get && flutter build web --release --base-href /"
+  base = "unicart_app"
   publish = "build/web"
-
-[build.environment]
-  FLUTTER_VERSION = "3.29.2"
+  command = """
+  if [ ! -d "flutter" ]; then git clone https://github.com/flutter/flutter.git -b stable; fi
+  export PATH="$PATH:$(pwd)/flutter/bin"
+  flutter doctor
+  flutter pub get
+  flutter build web --release --base-href /
+  """
 
 [[redirects]]
-  from   = "/*"
-  to     = "/index.html"
+  from = "/*"
+  to = "/index.html"
   status = 200

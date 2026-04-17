@@ -78,11 +78,11 @@ class _LobbyScreenState extends State<LobbyScreen> {
         mainDetailsData = details;
         if (details != null) {
           lobby = Lobby(
-            lobbyId: details["lobby_id"] as int? ?? 0,
+            lobbyId: (details["lobby_id"] as num?)?.toInt() ?? 0,
             status: details["status"]?.toString() ?? "open",
             currentItemAmount: (details["current_item_amount"] as num?)?.toInt() ?? 0,
             targetItemAmount: (details["target_item_amount"] as num?)?.toInt() ?? 0,
-            memberCount: details["member_count"] as int? ?? 0,
+            memberCount: (details["member_count"] as num?)?.toInt() ?? 0,
           );
         }
         final backendRef = details?["pending_payment_reference"]?.toString();
@@ -133,16 +133,10 @@ class _LobbyScreenState extends State<LobbyScreen> {
       setState(() { pendingPaymentReference = reference; pendingPaymentUrl = authUrl; });
       if (authUrl != null && authUrl.isNotEmpty) {
         _startPolling();
-        // On Safari, webOnlyWindowName "_blank" is blocked.
-        // We open in same tab on mobile browsers — callback redirects back.
         final uri = Uri.parse(authUrl);
         bool launched = false;
-        try {
-          launched = await launchUrl(uri, webOnlyWindowName: "_blank");
-          if (!launched) launched = await launchUrl(uri);
-        } catch (_) {
-          launched = await launchUrl(uri);
-        }
+        try { launched = await launchUrl(uri, mode: LaunchMode.externalApplication); } catch (_) {}
+        if (!launched) try { launched = await launchUrl(uri); } catch (_) {}
         showMessage(launched
             ? "Paystack opened. Pay then tap \"I've Paid\" when you return."
             : "Could not open Paystack. Tap \"Open Paystack\" below to try again.");
@@ -176,9 +170,9 @@ class _LobbyScreenState extends State<LobbyScreen> {
       showMessage("No payment link. Tap Pay to get a new one."); return;
     }
     final uri2 = Uri.parse(pendingPaymentUrl!);
-    try {
-      if (!await launchUrl(uri2, webOnlyWindowName: "_blank")) await launchUrl(uri2);
-    } catch (_) { await launchUrl(uri2); }
+    bool ok = false;
+    try { ok = await launchUrl(uri2, mode: LaunchMode.externalApplication); } catch (_) {}
+    if (!ok) try { await launchUrl(uri2); } catch (_) {}
   }
 
   Future<void> leaveLobby() async {
@@ -202,15 +196,14 @@ class _LobbyScreenState extends State<LobbyScreen> {
   }
 
   Future<void> addItem() async {
-    final amountRaw = double.tryParse(itemAmountController.text.trim());
-    final amount = amountRaw != null ? double.parse(amountRaw.toStringAsFixed(2)) : null;
+    final amountRaw = int.tryParse(itemAmountController.text.trim());
     final itemLink = itemLinkController.text.trim();
-    if (itemLink.isEmpty || amount == null || amount <= 0) {
+    if (itemLink.isEmpty || amountRaw == null || amountRaw <= 0) {
       showMessage("Enter a valid item link and amount."); return;
     }
     setState(() => isBusy = true);
     try {
-      final response = await LobbyService.addItem(widget.token, itemLink: itemLink, itemAmount: (amount * 100).toInt());
+      final response = await LobbyService.addItem(widget.token, itemLink: itemLink, itemAmount: amountRaw);
       itemLinkController.clear(); itemAmountController.clear();
       await loadAll();
       showMessage(response["message"]?.toString() ?? "Item added. Pay for it to lock it in.", isSuccess: true);
@@ -263,10 +256,8 @@ class _LobbyScreenState extends State<LobbyScreen> {
         _startPolling();
         final itemUri = Uri.parse(authUrl);
         bool itemLaunched = false;
-        try {
-          itemLaunched = await launchUrl(itemUri, webOnlyWindowName: "_blank");
-          if (!itemLaunched) itemLaunched = await launchUrl(itemUri);
-        } catch (_) { itemLaunched = await launchUrl(itemUri); }
+        try { itemLaunched = await launchUrl(itemUri, mode: LaunchMode.externalApplication); } catch (_) {}
+        if (!itemLaunched) try { itemLaunched = await launchUrl(itemUri); } catch (_) {}
         showMessage(itemLaunched
             ? "Paystack opened. Come back and tap \"Verify payment\" once done."
             : "Could not open Paystack. Try again.");
@@ -785,7 +776,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                               icon: Icons.shopping_bag_outlined)
                         else
                           ...activeItems.map((item) {
-                            final itemId   = item["item_id"] as int;
+                            final itemId   = (item["item_id"] as num?)?.toInt() ?? 0;
                             final itemLink = item["item_link"]?.toString() ?? "";
                             final itemAmt  = item["item_amount"] ?? 0;
                             final pStat    = item["item_payment_status"]?.toString() ?? "unpaid";

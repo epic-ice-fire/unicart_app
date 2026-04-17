@@ -77,19 +77,28 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Container(
-                    height: 72,
-                    width: 72,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE8F5EE),
-                      borderRadius: BorderRadius.circular(22),
-                    ),
-                    child: const Icon(
-                      Icons.shopping_bag_outlined,
-                      size: 34,
-                      color: Color(0xFF1F7A4C),
-                    ),
-                  ),
+Container(
+  width: double.infinity,
+  padding: const EdgeInsets.all(12),
+  color: Colors.red,
+  child: const Text(
+    "🔴 NEW BUILD LOADED — v2 SAFARI FIX ACTIVE",
+    textAlign: TextAlign.center,
+    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 14),
+  ),
+),
+const SizedBox(height: 16),
+Container(
+  decoration: BoxDecoration(
+    color: const Color(0xFFE8F5EE),
+    borderRadius: BorderRadius.circular(22),
+  ),
+  child: const Icon(
+    Icons.shopping_bag_outlined,
+    size: 34,
+    color: Color(0xFF1F7A4C),
+  ),
+),
                   const SizedBox(height: 20),
                   const Text(
                     "Welcome back",

@@ -1,7 +1,4 @@
 import "dart:async";
-// ignore: avoid_web_libraries_in_flutter
-import "dart:html" as html;
-import "package:flutter/foundation.dart" show kIsWeb;
 import "package:flutter/material.dart";
 import "package:url_launcher/url_launcher.dart";
 import "../../models/lobby.dart";
@@ -33,6 +30,9 @@ class _LobbyScreenState extends State<LobbyScreen> {
 
   String? pendingPaymentReference;
   String? pendingPaymentUrl;
+  // Tracks the Paystack URL for each item that has a pending payment
+  // so user can reopen it without re-initialising
+  final Map<int, String> _pendingItemUrls = {};
 
   Timer? _pollTimer;
 
@@ -65,29 +65,6 @@ class _LobbyScreenState extends State<LobbyScreen> {
     _pollTimer = null;
   }
 
-  /// Opens a payment URL. On web (including Safari iOS), uses window.open
-  /// which is always allowed when called directly from a user tap.
-  /// Falls back to url_launcher on native.
-  Future<bool> _openPaymentUrl(String url) async {
-    if (kIsWeb) {
-      try {
-        // window.open with "_blank" works on Safari when called from
-        // a direct user interaction (button tap). This is the key fix.
-        html.window.open(url, "_blank");
-        return true;
-      } catch (_) {
-        return false;
-      }
-    } else {
-      try {
-        return await launchUrl(Uri.parse(url),
-            mode: LaunchMode.externalApplication);
-      } catch (_) {
-        try { return await launchUrl(Uri.parse(url)); } catch (_) { return false; }
-      }
-    }
-  }
-
   Future<void> loadAll({bool silent = false}) async {
     if (!silent) setState(() { isLoading = true; error = null; });
     try {
@@ -104,11 +81,11 @@ class _LobbyScreenState extends State<LobbyScreen> {
         mainDetailsData = details;
         if (details != null) {
           lobby = Lobby(
-            lobbyId: (details["lobby_id"] as num?)?.toInt() ?? 0,
+            lobbyId: details["lobby_id"] as int? ?? 0,
             status: details["status"]?.toString() ?? "open",
             currentItemAmount: (details["current_item_amount"] as num?)?.toInt() ?? 0,
             targetItemAmount: (details["target_item_amount"] as num?)?.toInt() ?? 0,
-            memberCount: (details["member_count"] as num?)?.toInt() ?? 0,
+            memberCount: details["member_count"] as int? ?? 0,
           );
         }
         final backendRef = details?["pending_payment_reference"]?.toString();
@@ -159,7 +136,16 @@ class _LobbyScreenState extends State<LobbyScreen> {
       setState(() { pendingPaymentReference = reference; pendingPaymentUrl = authUrl; });
       if (authUrl != null && authUrl.isNotEmpty) {
         _startPolling();
-        final launched = await _openPaymentUrl(authUrl);
+        // On Safari, webOnlyWindowName "_blank" is blocked.
+        // We open in same tab on mobile browsers — callback redirects back.
+        final uri = Uri.parse(authUrl);
+        bool launched = false;
+        try {
+          launched = await launchUrl(uri, webOnlyWindowName: "_blank");
+          if (!launched) launched = await launchUrl(uri);
+        } catch (_) {
+          launched = await launchUrl(uri);
+        }
         showMessage(launched
             ? "Paystack opened. Pay then tap \"I've Paid\" when you return."
             : "Could not open Paystack. Tap \"Open Paystack\" below to try again.");
@@ -188,11 +174,23 @@ class _LobbyScreenState extends State<LobbyScreen> {
     finally { if (mounted) setState(() => isBusy = false); }
   }
 
+  Future<bool> _openPaymentUrl(String authUrl) async {
+    final uri = Uri.parse(authUrl);
+    try {
+      return await launchUrl(uri, webOnlyWindowName: "_blank") || await launchUrl(uri);
+    } catch (_) {
+      return await launchUrl(uri);
+    }
+  }
+
   Future<void> reopenPaymentLink() async {
     if (pendingPaymentUrl == null || pendingPaymentUrl!.isEmpty) {
       showMessage("No payment link. Tap Pay to get a new one."); return;
     }
-    await _openPaymentUrl(pendingPaymentUrl!);
+    final uri2 = Uri.parse(pendingPaymentUrl!);
+    try {
+      if (!await launchUrl(uri2, webOnlyWindowName: "_blank")) await launchUrl(uri2);
+    } catch (_) { await launchUrl(uri2); }
   }
 
   Future<void> leaveLobby() async {
@@ -274,11 +272,13 @@ class _LobbyScreenState extends State<LobbyScreen> {
       final response = await LobbyService.initializeItemPayment(widget.token, itemId: itemId);
       final authUrl = response["authorization_url"]?.toString();
       if (authUrl != null && authUrl.isNotEmpty) {
+        // Store URL per item so user can reopen without re-initialising
+        setState(() => _pendingItemUrls[itemId] = authUrl);
         _startPolling();
         final itemLaunched = await _openPaymentUrl(authUrl);
         showMessage(itemLaunched
             ? "Paystack opened. Come back and tap \"Verify payment\" once done."
-            : "Could not open Paystack. Try again.");
+            : "Could not open Paystack — tap \"Open Paystack\" on the item below.");
       }
       await loadAll();
     } catch (e) { showMessage(e.toString()); }
@@ -829,11 +829,27 @@ class _LobbyScreenState extends State<LobbyScreen> {
                                     icon: const Icon(Icons.payment_outlined, size: 15),
                                     label: const Text("Pay for item", style: TextStyle(fontSize: 13)),
                                   ),
-                                  if (pStat == "pending" && ref != null) ElevatedButton.icon(
-                                    onPressed: isBusy ? null : () => verifyItemPayment(ref),
-                                    icon: const Icon(Icons.verified_outlined, size: 15),
-                                    label: const Text("Verify payment", style: TextStyle(fontSize: 13)),
-                                  ),
+                                  if (pStat == "pending" && ref != null) ...[
+                                    ElevatedButton.icon(
+                                      onPressed: isBusy ? null : () => verifyItemPayment(ref),
+                                      icon: const Icon(Icons.verified_outlined, size: 15),
+                                      label: const Text("Verify payment", style: TextStyle(fontSize: 13)),
+                                    ),
+                                    // Open Paystack button — always visible when pending
+                                    OutlinedButton.icon(
+                                      onPressed: isBusy ? null : () async {
+                                        final url = _pendingItemUrls[itemId];
+                                        if (url != null && url.isNotEmpty) {
+                                          await _openPaymentUrl(url);
+                                        } else {
+                                          // Re-initialise if URL was lost
+                                          await payForItem(itemId);
+                                        }
+                                      },
+                                      icon: const Icon(Icons.open_in_new, size: 15),
+                                      label: const Text("Open Paystack", style: TextStyle(fontSize: 13)),
+                                    ),
+                                  ],
                                   if (!isLocked) OutlinedButton.icon(
                                     onPressed: isBusy ? null : () => removeItem(itemId),
                                     icon: const Icon(Icons.delete_outline, size: 15),

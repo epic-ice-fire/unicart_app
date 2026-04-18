@@ -224,7 +224,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
     }
     setState(() => isBusy = true);
     try {
-      final response = await LobbyService.addItem(widget.token, itemLink: itemLink, itemAmount: amount);
+      final response = await LobbyService.addItem(widget.token, itemLink: itemLink, itemAmount: amount.toInt());
       itemLinkController.clear(); itemAmountController.clear();
       await loadAll();
       showMessage(response["message"]?.toString() ?? "Item added. Pay for it to lock it in.", isSuccess: true);

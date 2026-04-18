@@ -1,4 +1,7 @@
 import "dart:async";
+// ignore: avoid_web_libraries_in_flutter
+import "dart:html" as html;
+import "package:flutter/foundation.dart" show kIsWeb;
 import "package:flutter/material.dart";
 import "package:url_launcher/url_launcher.dart";
 import "../../models/lobby.dart";
@@ -60,6 +63,29 @@ class _LobbyScreenState extends State<LobbyScreen> {
   void _stopPolling() {
     _pollTimer?.cancel();
     _pollTimer = null;
+  }
+
+  /// Opens a payment URL. On web (including Safari iOS), uses window.open
+  /// which is always allowed when called directly from a user tap.
+  /// Falls back to url_launcher on native.
+  Future<bool> _openPaymentUrl(String url) async {
+    if (kIsWeb) {
+      try {
+        // window.open with "_blank" works on Safari when called from
+        // a direct user interaction (button tap). This is the key fix.
+        html.window.open(url, "_blank");
+        return true;
+      } catch (_) {
+        return false;
+      }
+    } else {
+      try {
+        return await launchUrl(Uri.parse(url),
+            mode: LaunchMode.externalApplication);
+      } catch (_) {
+        try { return await launchUrl(Uri.parse(url)); } catch (_) { return false; }
+      }
+    }
   }
 
   Future<void> loadAll({bool silent = false}) async {
@@ -133,12 +159,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
       setState(() { pendingPaymentReference = reference; pendingPaymentUrl = authUrl; });
       if (authUrl != null && authUrl.isNotEmpty) {
         _startPolling();
-        final uri = Uri.parse(authUrl);
-        // Safari iOS blocks externalApplication mode on web.
-        // platformDefault opens in same tab on mobile Safari and works correctly.
-        bool launched = false;
-        try { launched = await launchUrl(uri, mode: LaunchMode.platformDefault); } catch (_) {}
-        if (!launched) try { launched = await launchUrl(uri); } catch (_) {}
+        final launched = await _openPaymentUrl(authUrl);
         showMessage(launched
             ? "Paystack opened. Pay then tap \"I've Paid\" when you return."
             : "Could not open Paystack. Tap \"Open Paystack\" below to try again.");
@@ -171,10 +192,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
     if (pendingPaymentUrl == null || pendingPaymentUrl!.isEmpty) {
       showMessage("No payment link. Tap Pay to get a new one."); return;
     }
-    final uri2 = Uri.parse(pendingPaymentUrl!);
-    bool ok = false;
-    try { ok = await launchUrl(uri2, mode: LaunchMode.platformDefault); } catch (_) {}
-    if (!ok) try { await launchUrl(uri2); } catch (_) {}
+    await _openPaymentUrl(pendingPaymentUrl!);
   }
 
   Future<void> leaveLobby() async {
@@ -198,14 +216,15 @@ class _LobbyScreenState extends State<LobbyScreen> {
   }
 
   Future<void> addItem() async {
-    final amountRaw = int.tryParse(itemAmountController.text.trim());
+    final amountRaw = double.tryParse(itemAmountController.text.trim());
+    final amount = amountRaw != null ? double.parse(amountRaw.toStringAsFixed(2)) : null;
     final itemLink = itemLinkController.text.trim();
-    if (itemLink.isEmpty || amountRaw == null || amountRaw <= 0) {
+    if (itemLink.isEmpty || amount == null || amount <= 0) {
       showMessage("Enter a valid item link and amount."); return;
     }
     setState(() => isBusy = true);
     try {
-      final response = await LobbyService.addItem(widget.token, itemLink: itemLink, itemAmount: amountRaw);
+      final response = await LobbyService.addItem(widget.token, itemLink: itemLink, itemAmount: amount);
       itemLinkController.clear(); itemAmountController.clear();
       await loadAll();
       showMessage(response["message"]?.toString() ?? "Item added. Pay for it to lock it in.", isSuccess: true);
@@ -256,10 +275,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
       final authUrl = response["authorization_url"]?.toString();
       if (authUrl != null && authUrl.isNotEmpty) {
         _startPolling();
-        final itemUri = Uri.parse(authUrl);
-        bool itemLaunched = false;
-        try { itemLaunched = await launchUrl(itemUri, mode: LaunchMode.platformDefault); } catch (_) {}
-        if (!itemLaunched) try { itemLaunched = await launchUrl(itemUri); } catch (_) {}
+        final itemLaunched = await _openPaymentUrl(authUrl);
         showMessage(itemLaunched
             ? "Paystack opened. Come back and tap \"Verify payment\" once done."
             : "Could not open Paystack. Try again.");
@@ -778,7 +794,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                               icon: Icons.shopping_bag_outlined)
                         else
                           ...activeItems.map((item) {
-                            final itemId   = (item["item_id"] as num?)?.toInt() ?? 0;
+                            final itemId   = item["item_id"] as int;
                             final itemLink = item["item_link"]?.toString() ?? "";
                             final itemAmt  = item["item_amount"] ?? 0;
                             final pStat    = item["item_payment_status"]?.toString() ?? "unpaid";

@@ -134,8 +134,10 @@ class _LobbyScreenState extends State<LobbyScreen> {
       if (authUrl != null && authUrl.isNotEmpty) {
         _startPolling();
         final uri = Uri.parse(authUrl);
+        // Safari iOS blocks externalApplication mode on web.
+        // platformDefault opens in same tab on mobile Safari and works correctly.
         bool launched = false;
-        try { launched = await launchUrl(uri, mode: LaunchMode.externalApplication); } catch (_) {}
+        try { launched = await launchUrl(uri, mode: LaunchMode.platformDefault); } catch (_) {}
         if (!launched) try { launched = await launchUrl(uri); } catch (_) {}
         showMessage(launched
             ? "Paystack opened. Pay then tap \"I've Paid\" when you return."
@@ -171,7 +173,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
     }
     final uri2 = Uri.parse(pendingPaymentUrl!);
     bool ok = false;
-    try { ok = await launchUrl(uri2, mode: LaunchMode.externalApplication); } catch (_) {}
+    try { ok = await launchUrl(uri2, mode: LaunchMode.platformDefault); } catch (_) {}
     if (!ok) try { await launchUrl(uri2); } catch (_) {}
   }
 
@@ -256,7 +258,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
         _startPolling();
         final itemUri = Uri.parse(authUrl);
         bool itemLaunched = false;
-        try { itemLaunched = await launchUrl(itemUri, mode: LaunchMode.externalApplication); } catch (_) {}
+        try { itemLaunched = await launchUrl(itemUri, mode: LaunchMode.platformDefault); } catch (_) {}
         if (!itemLaunched) try { itemLaunched = await launchUrl(itemUri); } catch (_) {}
         showMessage(itemLaunched
             ? "Paystack opened. Come back and tap \"Verify payment\" once done."

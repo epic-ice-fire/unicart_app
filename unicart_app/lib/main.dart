@@ -45,7 +45,8 @@ class UniCartApp extends StatelessWidget {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(color: Color(0xFF1F7A4C), width: 1.4),
+            borderSide:
+                const BorderSide(color: Color(0xFF1F7A4C), width: 1.4),
           ),
         ),
         cardTheme: CardThemeData(
@@ -90,18 +91,38 @@ class AuthGate extends StatelessWidget {
     return FutureBuilder<String?>(
       future: loadToken(),
       builder: (context, snapshot) {
+        // Show loading spinner while reading saved token
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(color: Color(0xFF1F7A4C)),
+                  SizedBox(height: 16),
+                  Text("Loading UniCart...",
+                      style: TextStyle(
+                          color: Color(0xFF667085),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500)),
+                ],
+              ),
+            ),
           );
         }
 
         final token = snapshot.data;
 
+        // No token — show login screen
         if (token == null || token.isEmpty) {
           return const LoginScreen();
         }
 
+        // Token exists — go straight to lobby.
+        // The lobby screen handles the "Connecting..." state internally
+        // if the backend is still waking up. No need to verify token here
+        // because: 1) it avoids an extra network call on startup,
+        // 2) the lobby loadAll() will handle auth errors gracefully.
         return LobbyScreen(token: token);
       },
     );

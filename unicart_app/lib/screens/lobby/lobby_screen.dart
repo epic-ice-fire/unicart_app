@@ -1,4 +1,7 @@
 import "dart:async";
+// ignore: avoid_web_libraries_in_flutter
+import "dart:html" as html;
+import "package:flutter/foundation.dart" show kIsWeb;
 import "package:flutter/material.dart";
 import "package:url_launcher/url_launcher.dart";
 import "../../models/lobby.dart";
@@ -63,6 +66,26 @@ class _LobbyScreenState extends State<LobbyScreen> {
   void _stopPolling() {
     _pollTimer?.cancel();
     _pollTimer = null;
+  }
+
+  /// Opens a payment URL cross-browser.
+  /// On web (including Safari iOS): uses window.open directly — Safari allows
+  /// this when called from a synchronous user tap. On native: uses url_launcher.
+  Future<bool> _openPaymentUrl(String url) async {
+    if (kIsWeb) {
+      try {
+        html.window.open(url, "_blank");
+        return true;
+      } catch (_) {
+        try { html.window.location.href = url; return true; } catch (_) { return false; }
+      }
+    } else {
+      try {
+        return await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+      } catch (_) {
+        try { return await launchUrl(Uri.parse(url)); } catch (_) { return false; }
+      }
+    }
   }
 
   Future<void> loadAll({bool silent = false}) async {
@@ -172,15 +195,6 @@ class _LobbyScreenState extends State<LobbyScreen> {
       await loadAll();
     } catch (e) { showMessage(e.toString()); }
     finally { if (mounted) setState(() => isBusy = false); }
-  }
-
-  Future<bool> _openPaymentUrl(String authUrl) async {
-    final uri = Uri.parse(authUrl);
-    try {
-      return await launchUrl(uri, webOnlyWindowName: "_blank") || await launchUrl(uri);
-    } catch (_) {
-      return await launchUrl(uri);
-    }
   }
 
   Future<void> reopenPaymentLink() async {
@@ -455,10 +469,11 @@ class _LobbyScreenState extends State<LobbyScreen> {
     final hasPendingPayment = mainDetailsData?["has_pending_payment"] == true;
     final entryFeeAmount   = mainDetailsData?["entry_fee_amount"] ?? 2000;
 
-    // If meData is null but we're not loading, backend is waking up — retry
-    if (meData == null && !isLoading) {
-      Future.delayed(const Duration(seconds: 3), () {
-        if (mounted && meData == null) loadAll(silent: true);
+    // If meData is null but not loading, backend is still waking up.
+    // Retry every 4 seconds up to 5 times, then show error.
+    if (meData == null && !isLoading && error == null) {
+      Future.delayed(const Duration(seconds: 4), () {
+        if (mounted && meData == null) loadAll(silent: false);
       });
     }
 

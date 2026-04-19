@@ -92,7 +92,18 @@ class _LobbyScreenState extends State<LobbyScreen> {
     if (!silent) setState(() { isLoading = true; error = null; });
     try {
       Map<String, dynamic>? me, myItems, myHistory, details;
-      try { me = await AuthService.me(widget.token); } catch (_) {}
+      // Try to get user info. If 401, token expired — auto relogin.
+      try {
+        me = await AuthService.me(widget.token);
+      } catch (e) {
+        final raw = e.toString();
+        if (raw.contains("401") || raw.contains("Invalid token") || raw.contains("not found")) {
+          if (!silent) setState(() => isLoading = false);
+          await _tryAutoRelogin();
+          return;
+        }
+        // Network/500 error — keep me null, show Connecting state
+      }
       try { details = await LobbyService.mainLobbyDetails(widget.token); } catch (_) {}
       try { myItems = await LobbyService.myMainLobbyItems(widget.token); } catch (_) {}
       try { myHistory = await LobbyService.myBatchHistory(widget.token); } catch (_) {}
@@ -136,6 +147,39 @@ class _LobbyScreenState extends State<LobbyScreen> {
     if (!mounted) return;
     Navigator.pushAndRemoveUntil(context,
         MaterialPageRoute(builder: (_) => const LoginScreen()), (r) => false);
+  }
+
+  /// Auto-relogin when token expires (401).
+  /// Uses saved email+password to get a fresh token silently.
+  /// If no saved credentials, redirects to login screen.
+  Future<void> _tryAutoRelogin() async {
+    if (!mounted) return;
+    try {
+      final savedEmail    = await SessionService.getSavedEmail();
+      final savedPassword = await SessionService.getSavedPassword();
+      if (savedEmail != null && savedEmail.isNotEmpty &&
+          savedPassword != null && savedPassword.isNotEmpty) {
+        final newToken = await AuthService.login(
+            email: savedEmail, password: savedPassword);
+        await SessionService.saveToken(newToken);
+        if (!mounted) return;
+        Navigator.pushAndRemoveUntil(context,
+          MaterialPageRoute(builder: (_) => LobbyScreen(token: newToken)),
+          (route) => false);
+      } else {
+        await SessionService.clearToken();
+        if (!mounted) return;
+        Navigator.pushAndRemoveUntil(context,
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+          (route) => false);
+      }
+    } catch (_) {
+      await SessionService.clearToken();
+      if (!mounted) return;
+      Navigator.pushAndRemoveUntil(context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (route) => false);
+    }
   }
 
   Future<void> openVerifyScreen() async {
@@ -469,13 +513,8 @@ class _LobbyScreenState extends State<LobbyScreen> {
     final hasPendingPayment = mainDetailsData?["has_pending_payment"] == true;
     final entryFeeAmount   = mainDetailsData?["entry_fee_amount"] ?? 2000;
 
-    // If meData is null but not loading, backend is still waking up.
-    // Retry every 4 seconds up to 5 times, then show error.
-    if (meData == null && !isLoading && error == null) {
-      Future.delayed(const Duration(seconds: 4), () {
-        if (mounted && meData == null) loadAll(silent: false);
-      });
-    }
+    // meData will be populated on load or after auto-relogin.
+    // No retry loop needed — _tryAutoRelogin handles expired tokens.
 
     return Scaffold(
       appBar: AppBar(

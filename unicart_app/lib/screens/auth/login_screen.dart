@@ -21,16 +21,21 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    _loadSavedEmail();
+    _loadSavedCredentials();
   }
 
-  Future<void> _loadSavedEmail() async {
-    final saved = await SessionService.getSavedEmail();
-    if (saved != null && saved.isNotEmpty && mounted) {
+  Future<void> _loadSavedCredentials() async {
+    final savedEmail    = await SessionService.getSavedEmail();
+    final savedPassword = await SessionService.getSavedPassword();
+    if (!mounted) return;
+    if (savedEmail != null && savedEmail.isNotEmpty) {
       setState(() {
-        emailController.text = saved;
+        emailController.text    = savedEmail;
         rememberMe = true;
       });
+    }
+    if (savedPassword != null && savedPassword.isNotEmpty) {
+      setState(() => passwordController.text = savedPassword);
     }
   }
 
@@ -63,8 +68,10 @@ class _LoginScreenState extends State<LoginScreen> {
       await SessionService.saveToken(token);
       if (rememberMe) {
         await SessionService.saveEmail(email);
+        await SessionService.savePassword(password);
       } else {
         await SessionService.clearEmail();
+        await SessionService.clearPassword();
       }
 
       if (!mounted) return;

@@ -1,8 +1,9 @@
 import "package:shared_preferences/shared_preferences.dart";
 
 class SessionService {
-  static const String _tokenKey = "unicart_token";
-  static const String _emailKey = "unicart_email";
+  static const String _tokenKey    = "unicart_token";
+  static const String _emailKey    = "unicart_email";
+  static const String _passwordKey = "unicart_password";
 
   // ── Token ──────────────────────────────────────────────────────────────────
 
@@ -36,6 +37,23 @@ class SessionService {
   static Future<void> clearEmail() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_emailKey);
+  }
+
+  // ── Password (for Remember Me) ─────────────────────────────────────────────
+
+  static Future<void> savePassword(String password) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_passwordKey, password);
+  }
+
+  static Future<String?> getSavedPassword() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_passwordKey);
+  }
+
+  static Future<void> clearPassword() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_passwordKey);
   }
 
   // ── Full logout ────────────────────────────────────────────────────────────

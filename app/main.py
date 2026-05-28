@@ -8,9 +8,21 @@ from fastapi.responses import JSONResponse
 
 from app.routers import auth, lobbies, payments
 
-from fastapi.middleware.cors import CORSMiddleware
-app = FastAPI()
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
 
+logger = logging.getLogger("unicart")
+
+app = FastAPI(
+    title="UniCart API",
+    description="Campus group-buying platform — PAU edition",
+    version="1.0.0",
+)
+
+# CORS
 origins = [
     "https://unicartbytekena.onrender.com",
     "http://localhost:3000",
@@ -25,53 +37,40 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
-logger = logging.getLogger("unicart")
-
-app = FastAPI(
-    title="UniCart API",
-    description="Campus group-buying platform — PAU edition",
-    version="1.0.0",
-)
-
-# Allow all origins so Flutter web (Netlify), mobile apps, and local dev all work.
-# allow_credentials must be False when using allow_origins=["*"].
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-
 @app.middleware("http")
 async def request_middleware(request: Request, call_next):
     request_id = str(uuid.uuid4())[:8]
     start = time.perf_counter()
+
     response = await call_next(request)
+
     duration_ms = round((time.perf_counter() - start) * 1000, 1)
+
     logger.info(
         f"[{request_id}] {request.method} {request.url.path} "
         f"-> {response.status_code} ({duration_ms}ms)"
     )
+
     response.headers["X-Request-ID"] = request_id
     return response
 
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    logger.error(f"Unhandled exception on {request.url.path}: {exc}", exc_info=True)
+    logger.error(
+        f"Unhandled exception on {request.url.path}: {exc}",
+        exc_info=True
+    )
+
     return JSONResponse(
         status_code=500,
-        content={"detail": "An unexpected error occurred. Please try again."},
+        content={
+            "detail": "An unexpected error occurred. Please try again."
+        },
     )
 
 
+# Routers
 app.include_router(auth.router)
 app.include_router(lobbies.router)
 app.include_router(payments.router)
@@ -79,23 +78,13 @@ app.include_router(payments.router)
 
 @app.get("/", tags=["health"])
 def root():
-    return {"status": "ok", "service": "UniCart API", "version": "1.0.0"}
+    return {
+        "status": "ok",
+        "service": "UniCart API",
+        "version": "1.0.0",
+    }
 
 
 @app.get("/health", tags=["health"])
 def health():
     return {"status": "healthy"}
-
-from fastapi.middleware.cors import CORSMiddleware
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "https://unicartbytekena.onrender.com",
-        "http://localhost:3000",
-        "http://localhost:5173",
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)

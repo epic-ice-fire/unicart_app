@@ -107,3 +107,7 @@ class AuthGate extends StatelessWidget {
     );
   }
 }
+
+class MyApp {
+  const MyApp();
+}

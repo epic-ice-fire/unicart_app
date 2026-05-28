@@ -1,15 +1,12 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
 
-# Install Flutter
-git clone https://github.com/flutter/flutter.git -b stable --depth 1 /opt/flutter
-export PATH="$PATH:/opt/flutter/bin"
+# Install Flutter in writable directory
+if [ ! -d "$HOME/flutter" ]; then
+  git clone https://github.com/flutter/flutter.git -b stable $HOME/flutter
+fi
 
-# Verify
-flutter --version
+export PATH="$PATH:$HOME/flutter/bin"
 
-# Get dependencies and build
+flutter doctor
 flutter pub get
-flutter build web --release --base-href /
-
-echo "Build complete."
+flutter build web --release

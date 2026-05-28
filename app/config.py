@@ -1,12 +1,10 @@
 import os
 
-# Load .env file automatically — works in development without needing to set
-# environment variables manually every time.
 try:
     from dotenv import load_dotenv
     load_dotenv()
 except ImportError:
-    pass  # python-dotenv not installed — env vars must be set manually
+    pass
 
 
 class Settings:
@@ -27,20 +25,28 @@ class Settings:
         self.TARGET_ITEM_AMOUNT_NGN: int = int(
             os.getenv("TARGET_ITEM_AMOUNT_NGN", "50000")
         )
-        self.PAYSTACK_SECRET_KEY: str = os.getenv(
-            "PAYSTACK_SECRET_KEY",
-            "sk_test_c7725b68e39597625a71453f6c5de0b6449aed25",
+
+        # Flutterwave
+        self.FLW_SECRET_KEY: str = os.getenv(
+            "FLW_SECRET_KEY",
+            "FLWSECK-972240d6fa943f0154ceebc6a48a5429-19e69a097f2vt-X",
         )
-        self.PAYSTACK_PUBLIC_KEY: str = os.getenv(
-            "PAYSTACK_PUBLIC_KEY",
-            "pk_test_058d24db323397dcd4e1b5bf503b4b1748ff39f9",
+        self.FLW_PUBLIC_KEY: str = os.getenv(
+            "FLW_PUBLIC_KEY",
+            "FLWPUBK-2d489e876e5c76613cbf311ca564e033-X",
         )
-        self.PAYSTACK_BASE_URL: str = os.getenv(
-            "PAYSTACK_BASE_URL", "https://api.paystack.co",
+        self.FLW_ENCRYPTION_KEY: str = os.getenv(
+            "FLW_ENCRYPTION_KEY",
+            "972240d6fa942aa577da74bd",
         )
-        self.PAYSTACK_CALLBACK_URL: str = os.getenv(
-            "PAYSTACK_CALLBACK_URL", "http://localhost:8000/payments/callback",
+        self.FLW_BASE_URL: str = os.getenv(
+            "FLW_BASE_URL", "https://api.flutterwave.com/v3",
         )
+        self.FLW_CALLBACK_URL: str = os.getenv(
+            "FLW_CALLBACK_URL",
+            "https://unicart-backend-v6u9.onrender.com/payments/callback",
+        )
+
         self.ALLOWED_EMAIL_DOMAINS: str = os.getenv(
             "ALLOWED_EMAIL_DOMAINS", "pau.edu.ng",
         )
@@ -52,21 +58,18 @@ class Settings:
         )
         self.ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
 
-        # ── Email notifications ────────────────────────────────────────────────
-        # Admin email — receives lobby trigger alerts and force-remove logs
+        # Email
         self.ADMIN_EMAIL: str = os.getenv("ADMIN_EMAIL", "unicartbytekena@gmail.com")
-        # Gmail account used to SEND emails
         self.GMAIL_USER: str = os.getenv("GMAIL_USER", "")
-        # Gmail App Password (16 chars, no spaces)
-        # Get it at: myaccount.google.com/apppasswords (requires 2FA to be enabled)
         self.GMAIL_APP_PASSWORD: str = os.getenv("GMAIL_APP_PASSWORD", "")
 
         self.BACKEND_CORS_ORIGINS: list[str] = self._parse_origins(
             os.getenv(
                 "BACKEND_CORS_ORIGINS",
-                "http://localhost:3000,http://127.0.0.1:3000,"
-                "http://localhost:5173,http://127.0.0.1:5173,"
-                "http://localhost:8000,http://127.0.0.1:8000",
+                "https://unicartbytekena.onrender.com,"
+                "https://epic-ice-fire.github.io,"
+                "http://localhost:3000,http://localhost:8000,"
+                "http://localhost:57318,http://127.0.0.1:8000",
             )
         )
 

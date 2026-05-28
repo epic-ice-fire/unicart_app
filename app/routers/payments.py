@@ -34,21 +34,23 @@ logger = logging.getLogger("unicart.payments")
 router = APIRouter(prefix="/payments", tags=["payments"])
 
 MAIN_LOBBY_TITLE = "MAIN"
-PAYSTACK_INIT_PATH = "/transaction/initialize"
-PAYSTACK_VERIFY_PATH = "/transaction/verify"
+
+# Flutterwave API paths
+FLW_INIT_PATH    = "/payments"          # POST — create payment link
+FLW_VERIFY_PATH  = "/transactions/{id}/verify"  # GET — verify by transaction id
+FLW_VERIFY_REF   = "/transactions/verify_by_reference"  # GET?tx_ref=
 
 
 def _utcnow() -> datetime:
     return datetime.utcnow()
 
 
-def _paystack_headers() -> dict[str, str]:
-    if not settings.PAYSTACK_SECRET_KEY:
-        raise HTTPException(500, "PAYSTACK_SECRET_KEY is not configured.")
+def _flw_headers() -> dict[str, str]:
+    if not settings.FLW_SECRET_KEY:
+        raise HTTPException(500, "FLW_SECRET_KEY is not configured.")
     return {
-        "Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY}",
+        "Authorization": f"Bearer {settings.FLW_SECRET_KEY}",
         "Content-Type": "application/json",
-        "Accept": "application/json",
     }
 
 
@@ -126,8 +128,22 @@ async def _create_pass_if_needed(
     return True
 
 
+async def _flw_verify_by_ref(reference: str) -> dict:
+    """Verify a Flutterwave transaction by tx_ref. Returns the data dict."""
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        resp = await client.get(
+            f"{settings.FLW_BASE_URL}{FLW_VERIFY_REF}",
+            headers=_flw_headers(),
+            params={"tx_ref": reference},
+        )
+    data = resp.json()
+    if not resp.is_success or data.get("status") != "success":
+        raise HTTPException(400, data.get("message", "Could not verify payment with Flutterwave."))
+    return data.get("data") or {}
+
+
 async def _mark_entry_payment_success(
-    db: AsyncSession, *, payment: PaymentTransaction, paystack_data: dict,
+    db: AsyncSession, *, payment: PaymentTransaction, flw_data: dict,
 ) -> bool:
     lobby = (
         await db.execute(select(Lobby).where(Lobby.id == payment.lobby_id))
@@ -137,10 +153,8 @@ async def _mark_entry_payment_success(
         raise HTTPException(404, "Related lobby not found.")
 
     payment.status = PaymentStatus.success
-    payment.paystack_transaction_id = (
-        str(paystack_data.get("id")) if paystack_data.get("id") else None
-    )
-    payment.gateway_response = paystack_data.get("gateway_response")
+    payment.paystack_transaction_id = str(flw_data.get("id") or "")
+    payment.gateway_response = flw_data.get("processor_response") or flw_data.get("status")
     payment.paid_at = _utcnow()
     payment.verified_at = _utcnow()
 
@@ -148,14 +162,12 @@ async def _mark_entry_payment_success(
 
 
 async def _mark_item_payment_success_and_check_trigger(
-    db: AsyncSession, *, item: LobbyItem, paystack_data: dict,
+    db: AsyncSession, *, item: LobbyItem, flw_data: dict,
 ) -> None:
-    """
-    Mark item paid, recalculate vault. If vault hits target:
-    auto-remove unpaid items, open next lobby, send emails.
-    """
     item.item_payment_status = ItemPaymentStatus.paid
-    item.item_payment_gateway_response = paystack_data.get("gateway_response")
+    item.item_payment_gateway_response = (
+        flw_data.get("processor_response") or flw_data.get("status")
+    )
     item.item_paid_at = _utcnow()
     item.item_payment_verified_at = _utcnow()
 
@@ -165,14 +177,12 @@ async def _mark_item_payment_success_and_check_trigger(
 
     if lobby and lobby.status == LobbyStatus.open:
         await recalculate_lobby_totals(db, lobby)
-
         if lobby.status == LobbyStatus.triggered:
             await auto_remove_unpaid_items_on_trigger(db, lobby)
             await maybe_open_next_main_lobby(db, lobby)
-            # Emails are sent after commit in the endpoint
 
 
-# ─── Entry fee endpoints ────────────────────────────────────────────────────────
+# ─── Entry fee ─────────────────────────────────────────────────────────────────
 
 @router.post("/entry-fee/initialize", response_model=EntryFeeInitializeResponse)
 async def initialize_entry_fee_payment(
@@ -191,10 +201,10 @@ async def initialize_entry_fee_payment(
             )
         )
     ).scalar_one_or_none()
-
     if existing_pass:
         raise HTTPException(409, "You already joined this lobby.")
 
+    # Return existing pending payment if user already has one
     existing_pending = (
         await db.execute(
             select(PaymentTransaction)
@@ -213,41 +223,52 @@ async def initialize_entry_fee_payment(
             reference=existing_pending.reference,
             amount_ngn=existing_pending.amount_ngn,
             authorization_url=existing_pending.paystack_authorization_url,
-            access_code=existing_pending.paystack_access_code,
             lobby_id=lobby.id,
         )
 
     reference = f"unicart_entry_{user.id}_{lobby.id}_{uuid4().hex[:12]}"
     amount_ngn = settings.ENTRY_FEE_NGN
 
+    # Flutterwave payment link payload
     payload: dict = {
-        "email": user.email,
-        "amount": amount_ngn * 100,
-        "reference": reference,
-        "metadata": {
-            "type": "entry_fee", "user_id": user.id,
-            "lobby_id": lobby.id, "amount_ngn": amount_ngn,
+        "tx_ref": reference,
+        "amount": amount_ngn,           # Flutterwave uses NGN directly, NOT kobo
+        "currency": "NGN",
+        "redirect_url": settings.FLW_CALLBACK_URL,
+        "customer": {
+            "email": user.email,
+            "name": user.email.split("@")[0],
+        },
+        "customizations": {
+            "title": "UniCart Entry Fee",
+            "description": f"Entry fee for Lobby #{lobby.id}",
+            "logo": "",
+        },
+        "meta": {
+            "type": "entry_fee",
+            "user_id": user.id,
+            "lobby_id": lobby.id,
         },
     }
-    if settings.PAYSTACK_CALLBACK_URL:
-        payload["callback_url"] = settings.PAYSTACK_CALLBACK_URL
 
     async with httpx.AsyncClient(timeout=30.0) as client:
         resp = await client.post(
-            f"{settings.PAYSTACK_BASE_URL}{PAYSTACK_INIT_PATH}",
-            headers=_paystack_headers(), json=payload,
+            f"{settings.FLW_BASE_URL}{FLW_INIT_PATH}",
+            headers=_flw_headers(),
+            json=payload,
         )
 
     data = resp.json()
-    if not resp.is_success or not data.get("status"):
+    if not resp.is_success or data.get("status") != "success":
         raise HTTPException(400, data.get("message", "Failed to initialize payment."))
 
-    init_data = data.get("data") or {}
+    payment_link = data.get("data", {}).get("link", "")
+
     payment = PaymentTransaction(
         user_id=user.id, lobby_id=lobby.id, amount_ngn=amount_ngn,
         reference=reference, status=PaymentStatus.pending,
-        paystack_access_code=init_data.get("access_code"),
-        paystack_authorization_url=init_data.get("authorization_url"),
+        paystack_access_code=None,
+        paystack_authorization_url=payment_link,   # reusing field to store FLW link
     )
     db.add(payment)
     await db.commit()
@@ -255,9 +276,10 @@ async def initialize_entry_fee_payment(
 
     return EntryFeeInitializeResponse(
         message="Entry fee payment initialized.",
-        reference=payment.reference, amount_ngn=payment.amount_ngn,
-        authorization_url=payment.paystack_authorization_url or "",
-        access_code=payment.paystack_access_code, lobby_id=payment.lobby_id,
+        reference=payment.reference,
+        amount_ngn=payment.amount_ngn,
+        authorization_url=payment_link,
+        lobby_id=payment.lobby_id,
     )
 
 
@@ -279,28 +301,22 @@ async def verify_entry_fee_payment(
     if not payment:
         raise HTTPException(404, "Payment reference not found.")
 
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        resp = await client.get(
-            f"{settings.PAYSTACK_BASE_URL}{PAYSTACK_VERIFY_PATH}/{reference}",
-            headers=_paystack_headers(),
-        )
+    # Verify with Flutterwave
+    try:
+        flw_data = await _flw_verify_by_ref(reference)
+    except HTTPException as e:
+        raise e
 
-    data = resp.json()
-    if not resp.is_success or not data.get("status"):
-        raise HTTPException(400, data.get("message", "Unable to verify payment."))
+    flw_status = flw_data.get("status")  # "successful" | "failed" | "pending"
 
-    verify_data = data.get("data") or {}
-    paystack_status = verify_data.get("status")
-
-    if paystack_status != "success":
+    if flw_status != "successful":
         payment.status = {
             "failed": PaymentStatus.failed,
-            "abandoned": PaymentStatus.abandoned,
-        }.get(paystack_status, PaymentStatus.pending)
-        payment.gateway_response = verify_data.get("gateway_response")
+            "cancelled": PaymentStatus.abandoned,
+        }.get(flw_status, PaymentStatus.pending)
+        payment.gateway_response = flw_data.get("processor_response")
         payment.verified_at = _utcnow()
         await db.commit()
-        await db.refresh(payment)
         return PaymentVerifyResponse(
             message="Payment not completed yet.",
             reference=payment.reference, status=payment.status.value,
@@ -308,9 +324,7 @@ async def verify_entry_fee_payment(
             joined_lobby=False,
         )
 
-    joined_now = await _mark_entry_payment_success(
-        db, payment=payment, paystack_data=verify_data,
-    )
+    joined_now = await _mark_entry_payment_success(db, payment=payment, flw_data=flw_data)
     await db.commit()
     await db.refresh(payment)
 
@@ -322,7 +336,7 @@ async def verify_entry_fee_payment(
     )
 
 
-# ─── Item payment endpoints ─────────────────────────────────────────────────────
+# ─── Item payment ───────────────────────────────────────────────────────────────
 
 @router.post("/items/{item_id}/initialize", response_model=ItemPaymentInitializeResponse)
 async def initialize_item_payment(
@@ -352,7 +366,6 @@ async def initialize_item_payment(
             reference=item.item_payment_reference or "",
             amount_ngn=item.item_payment_amount_ngn,
             authorization_url=item.item_payment_authorization_url or "",
-            access_code=item.item_payment_access_code,
         )
 
     active_pass = (
@@ -368,36 +381,47 @@ async def initialize_item_payment(
         raise HTTPException(403, "Join the lobby before paying for items.")
 
     reference = f"unicart_item_{user.id}_{item.id}_{uuid4().hex[:12]}"
-    amount_ngn = item.item_amount
+    amount_ngn = float(item.item_amount)
 
     payload: dict = {
-        "email": user.email,
-        "amount": amount_ngn * 100,
-        "reference": reference,
-        "metadata": {
-            "type": "item_payment", "user_id": user.id,
-            "lobby_id": item.lobby_id, "item_id": item.id, "amount_ngn": amount_ngn,
+        "tx_ref": reference,
+        "amount": amount_ngn,           # NGN directly, NOT kobo
+        "currency": "NGN",
+        "redirect_url": settings.FLW_CALLBACK_URL,
+        "customer": {
+            "email": user.email,
+            "name": user.email.split("@")[0],
+        },
+        "customizations": {
+            "title": "UniCart Item Payment",
+            "description": f"Item payment — Lobby #{item.lobby_id}",
+        },
+        "meta": {
+            "type": "item_payment",
+            "user_id": user.id,
+            "lobby_id": item.lobby_id,
+            "item_id": item.id,
         },
     }
-    if settings.PAYSTACK_CALLBACK_URL:
-        payload["callback_url"] = settings.PAYSTACK_CALLBACK_URL
 
     async with httpx.AsyncClient(timeout=30.0) as client:
         resp = await client.post(
-            f"{settings.PAYSTACK_BASE_URL}{PAYSTACK_INIT_PATH}",
-            headers=_paystack_headers(), json=payload,
+            f"{settings.FLW_BASE_URL}{FLW_INIT_PATH}",
+            headers=_flw_headers(),
+            json=payload,
         )
 
     data = resp.json()
-    if not resp.is_success or not data.get("status"):
+    if not resp.is_success or data.get("status") != "success":
         raise HTTPException(400, data.get("message", "Failed to initialize item payment."))
 
-    init_data = data.get("data") or {}
+    payment_link = data.get("data", {}).get("link", "")
+
     item.item_payment_amount_ngn = amount_ngn
     item.item_payment_reference = reference
     item.item_payment_status = ItemPaymentStatus.pending
-    item.item_payment_access_code = init_data.get("access_code")
-    item.item_payment_authorization_url = init_data.get("authorization_url")
+    item.item_payment_access_code = None
+    item.item_payment_authorization_url = payment_link
     item.item_payment_gateway_response = None
     item.item_payment_verified_at = None
 
@@ -409,8 +433,7 @@ async def initialize_item_payment(
         item_id=item.id, lobby_id=item.lobby_id,
         reference=item.item_payment_reference or "",
         amount_ngn=item.item_payment_amount_ngn,
-        authorization_url=item.item_payment_authorization_url or "",
-        access_code=item.item_payment_access_code,
+        authorization_url=payment_link,
     )
 
 
@@ -432,25 +455,19 @@ async def verify_item_payment(
     if not item:
         raise HTTPException(404, "Item payment reference not found.")
 
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        resp = await client.get(
-            f"{settings.PAYSTACK_BASE_URL}{PAYSTACK_VERIFY_PATH}/{reference}",
-            headers=_paystack_headers(),
-        )
+    try:
+        flw_data = await _flw_verify_by_ref(reference)
+    except HTTPException as e:
+        raise e
 
-    data = resp.json()
-    if not resp.is_success or not data.get("status"):
-        raise HTTPException(400, data.get("message", "Unable to verify item payment."))
+    flw_status = flw_data.get("status")
 
-    verify_data = data.get("data") or {}
-    paystack_status = verify_data.get("status")
-
-    if paystack_status != "success":
+    if flw_status != "successful":
         item.item_payment_status = {
             "failed": ItemPaymentStatus.failed,
-            "abandoned": ItemPaymentStatus.abandoned,
-        }.get(paystack_status, ItemPaymentStatus.pending)
-        item.item_payment_gateway_response = verify_data.get("gateway_response")
+            "cancelled": ItemPaymentStatus.abandoned,
+        }.get(flw_status, ItemPaymentStatus.pending)
+        item.item_payment_gateway_response = flw_data.get("processor_response")
         item.item_payment_verified_at = _utcnow()
         await db.commit()
         await db.refresh(item)
@@ -461,20 +478,15 @@ async def verify_item_payment(
             is_locked=item.item_payment_status in {ItemPaymentStatus.pending, ItemPaymentStatus.paid},
         )
 
-    triggered_before = False
     lobby = (
         await db.execute(select(Lobby).where(Lobby.id == item.lobby_id))
     ).scalar_one_or_none()
-    if lobby:
-        triggered_before = lobby.status == LobbyStatus.triggered
+    triggered_before = lobby and lobby.status == LobbyStatus.triggered
 
-    await _mark_item_payment_success_and_check_trigger(
-        db, item=item, paystack_data=verify_data,
-    )
+    await _mark_item_payment_success_and_check_trigger(db, item=item, flw_data=flw_data)
     await db.commit()
     await db.refresh(item)
 
-    # Send trigger emails if lobby just triggered
     if lobby and lobby.status == LobbyStatus.triggered and not triggered_before:
         await send_trigger_emails(db, lobby)
 
@@ -485,165 +497,151 @@ async def verify_item_payment(
     )
 
 
-# ─── Paystack callback ──────────────────────────────────────────────────────────
+# ─── Flutterwave redirect callback ─────────────────────────────────────────────
 
 @router.get("/callback", response_class=HTMLResponse)
-async def paystack_callback(
-    reference: str | None = None,
-    trxref: str | None = None,
+async def flutterwave_callback(
+    tx_ref: str | None = None,
+    transaction_id: str | None = None,
+    status: str | None = None,
     db: AsyncSession = Depends(get_db),
 ):
-    resolved = reference or trxref
-    if not resolved:
+    """
+    Flutterwave redirects here after payment with:
+    ?tx_ref=...&transaction_id=...&status=successful|failed|cancelled
+    """
+    if not tx_ref:
         return _render_callback_page(
             title="Payment reference missing",
             message="UniCart could not detect a payment reference.",
             status="error",
         )
 
+    if status != "successful":
+        return _render_callback_page(
+            title="Payment not completed",
+            message="Your payment was not completed. Return to UniCart and try again.",
+            status="pending", reference=tx_ref,
+        )
+
+    # Verify with Flutterwave API
+    try:
+        flw_data = await _flw_verify_by_ref(tx_ref)
+    except Exception:
+        return _render_callback_page(
+            title="Verification failed",
+            message="Could not verify your payment. Return to UniCart and tap 'Verify payment'.",
+            status="error", reference=tx_ref,
+        )
+
+    if flw_data.get("status") != "successful":
+        return _render_callback_page(
+            title="Payment not completed",
+            message="Payment not confirmed yet. Return to UniCart.",
+            status="pending", reference=tx_ref,
+        )
+
+    # Entry fee payment?
     payment = (
         await db.execute(
-            select(PaymentTransaction).where(PaymentTransaction.reference == resolved)
+            select(PaymentTransaction).where(PaymentTransaction.reference == tx_ref)
         )
     ).scalar_one_or_none()
 
     if payment:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            resp = await client.get(
-                f"{settings.PAYSTACK_BASE_URL}{PAYSTACK_VERIFY_PATH}/{resolved}",
-                headers=_paystack_headers(),
-            )
-        data = resp.json()
-        if not resp.is_success or not data.get("status"):
-            return _render_callback_page(
-                title="Verification failed",
-                message=data.get("message", "Could not verify payment."),
-                status="error", reference=resolved,
-            )
-
-        verify_data = data.get("data") or {}
-        if verify_data.get("status") != "success":
-            payment.status = PaymentStatus.pending
-            payment.verified_at = _utcnow()
+        if payment.status != PaymentStatus.success:
+            await _mark_entry_payment_success(db, payment=payment, flw_data=flw_data)
             await db.commit()
-            return _render_callback_page(
-                title="Payment not completed",
-                message="Your entry fee payment is not completed yet. Return to UniCart.",
-                status="pending", reference=resolved,
-            )
-
-        await _mark_entry_payment_success(db, payment=payment, paystack_data=verify_data)
-        await db.commit()
         return _render_callback_page(
             title="Payment successful! ✅",
             message="Your entry fee is confirmed. Return to UniCart to add items.",
-            status="success", reference=resolved,
+            status="success", reference=tx_ref,
         )
 
+    # Item payment?
     item = (
         await db.execute(
-            select(LobbyItem).where(LobbyItem.item_payment_reference == resolved)
+            select(LobbyItem).where(LobbyItem.item_payment_reference == tx_ref)
         )
     ).scalar_one_or_none()
 
     if item:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            resp = await client.get(
-                f"{settings.PAYSTACK_BASE_URL}{PAYSTACK_VERIFY_PATH}/{resolved}",
-                headers=_paystack_headers(),
-            )
-        data = resp.json()
-        if not resp.is_success or not data.get("status"):
-            return _render_callback_page(
-                title="Verification failed",
-                message=data.get("message", "Could not verify item payment."),
-                status="error", reference=resolved,
-            )
+        if item.item_payment_status != ItemPaymentStatus.paid:
+            lobby = (
+                await db.execute(select(Lobby).where(Lobby.id == item.lobby_id))
+            ).scalar_one_or_none()
+            triggered_before = lobby and lobby.status == LobbyStatus.triggered
 
-        verify_data = data.get("data") or {}
-        if verify_data.get("status") != "success":
-            item.item_payment_status = ItemPaymentStatus.pending
-            item.item_payment_verified_at = _utcnow()
+            await _mark_item_payment_success_and_check_trigger(db, item=item, flw_data=flw_data)
             await db.commit()
-            return _render_callback_page(
-                title="Item payment not completed",
-                message="Your item payment is not completed yet.",
-                status="pending", reference=resolved,
-            )
 
-        lobby = (
-            await db.execute(select(Lobby).where(Lobby.id == item.lobby_id))
-        ).scalar_one_or_none()
-        triggered_before = lobby and lobby.status == LobbyStatus.triggered
-
-        await _mark_item_payment_success_and_check_trigger(
-            db, item=item, paystack_data=verify_data,
-        )
-        await db.commit()
-
-        if lobby and lobby.status == LobbyStatus.triggered and not triggered_before:
-            await send_trigger_emails(db, lobby)
+            if lobby and lobby.status == LobbyStatus.triggered and not triggered_before:
+                await send_trigger_emails(db, lobby)
 
         return _render_callback_page(
             title="Item payment successful! 🎉",
             message="Your item is paid and locked. Return to UniCart.",
-            status="success", reference=resolved,
+            status="success", reference=tx_ref,
         )
 
     return _render_callback_page(
         title="Payment not found",
         message="This reference does not exist in UniCart.",
-        status="error", reference=resolved,
+        status="error", reference=tx_ref,
     )
 
 
-# ─── Paystack webhook ───────────────────────────────────────────────────────────
+# ─── Flutterwave webhook ────────────────────────────────────────────────────────
 
-@router.post("/webhook/paystack")
-async def paystack_webhook(
+@router.post("/webhook/flutterwave")
+async def flutterwave_webhook(
     request: Request,
     db: AsyncSession = Depends(get_db),
 ):
-    raw_body = await request.body()
-    signature = request.headers.get("x-paystack-signature")
+    """
+    Flutterwave sends a webhook with header: verif-hash = FLW_SECRET_HASH
+    Set FLW_SECRET_HASH in your Render env vars and on Flutterwave dashboard.
+    """
+    secret_hash = os.environ.get("FLW_SECRET_HASH", "")
+    incoming_hash = request.headers.get("verif-hash", "")
 
-    if not settings.PAYSTACK_SECRET_KEY:
-        raise HTTPException(500, "PAYSTACK_SECRET_KEY is not configured.")
-
-    computed = hmac.new(
-        settings.PAYSTACK_SECRET_KEY.encode(), raw_body, hashlib.sha512,
-    ).hexdigest()
-
-    if not signature or not hmac.compare_digest(signature, computed):
+    if secret_hash and incoming_hash != secret_hash:
         raise HTTPException(401, "Invalid webhook signature.")
 
-    payload = json.loads(raw_body.decode("utf-8"))
-    event = payload.get("event")
-    data = payload.get("data") or {}
+    raw_body = await request.body()
+    try:
+        payload = json.loads(raw_body.decode("utf-8"))
+    except Exception:
+        raise HTTPException(400, "Invalid JSON payload.")
 
-    if event != "charge.success":
+    event = payload.get("event")
+    data  = payload.get("data") or {}
+
+    if event != "charge.completed" or data.get("status") != "successful":
         return {"message": "Webhook received."}
 
-    reference = data.get("reference")
-    if not reference:
-        return {"message": "No reference in webhook payload."}
+    tx_ref = data.get("tx_ref")
+    if not tx_ref:
+        return {"message": "No tx_ref in payload."}
 
+    # Entry fee?
     payment = (
         await db.execute(
-            select(PaymentTransaction).where(PaymentTransaction.reference == reference)
+            select(PaymentTransaction).where(PaymentTransaction.reference == tx_ref)
         )
     ).scalar_one_or_none()
 
     if payment:
         if payment.status == PaymentStatus.success:
             return {"message": "Already processed."}
-        await _mark_entry_payment_success(db, payment=payment, paystack_data=data)
+        await _mark_entry_payment_success(db, payment=payment, flw_data=data)
         await db.commit()
         return {"message": "Entry fee webhook processed."}
 
+    # Item?
     item = (
         await db.execute(
-            select(LobbyItem).where(LobbyItem.item_payment_reference == reference)
+            select(LobbyItem).where(LobbyItem.item_payment_reference == tx_ref)
         )
     ).scalar_one_or_none()
 
@@ -656,9 +654,7 @@ async def paystack_webhook(
         ).scalar_one_or_none()
         triggered_before = lobby and lobby.status == LobbyStatus.triggered
 
-        await _mark_item_payment_success_and_check_trigger(
-            db, item=item, paystack_data=data,
-        )
+        await _mark_item_payment_success_and_check_trigger(db, item=item, flw_data=data)
         await db.commit()
 
         if lobby and lobby.status == LobbyStatus.triggered and not triggered_before:
@@ -667,3 +663,7 @@ async def paystack_webhook(
         return {"message": "Item payment webhook processed."}
 
     return {"message": "Reference not found."}
+
+
+import os  # noqa: E402 — needed for webhook env var
+

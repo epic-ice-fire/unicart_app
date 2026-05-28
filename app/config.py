@@ -15,7 +15,7 @@ class Settings:
         # Render sets this via environment variable automatically
         self.DATABASE_URL: str = os.getenv(
             "DATABASE_URL",
-            "postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/postgres",
+            "postgresql+asyncpg://postgres:dominoe8@localhost/unicart_db"
         )
         self.ENTRY_FEE_NGN: int = int(os.getenv("ENTRY_FEE_NGN", "2000"))
         self.TARGET_ITEM_AMOUNT_NGN: int = int(

@@ -13,7 +13,6 @@ logging.basicConfig(
     format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
 )
-
 logger = logging.getLogger("unicart")
 
 app = FastAPI(
@@ -22,35 +21,27 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# CORS
-origins = [
-    "https://unicartbytekena.onrender.com",
-    "http://localhost:3000",
-    "http://localhost:5173",
-]
-
+# Allow all origins — works for Flutter web, mobile, Netlify, Render static
+# allow_credentials must be False when allow_origins=["*"]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 @app.middleware("http")
 async def request_middleware(request: Request, call_next):
     request_id = str(uuid.uuid4())[:8]
     start = time.perf_counter()
-
     response = await call_next(request)
-
     duration_ms = round((time.perf_counter() - start) * 1000, 1)
-
     logger.info(
         f"[{request_id}] {request.method} {request.url.path} "
         f"-> {response.status_code} ({duration_ms}ms)"
     )
-
     response.headers["X-Request-ID"] = request_id
     return response
 
@@ -58,19 +49,14 @@ async def request_middleware(request: Request, call_next):
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     logger.error(
-        f"Unhandled exception on {request.url.path}: {exc}",
-        exc_info=True
+        f"Unhandled exception on {request.url.path}: {exc}", exc_info=True
     )
-
     return JSONResponse(
         status_code=500,
-        content={
-            "detail": "An unexpected error occurred. Please try again."
-        },
+        content={"detail": "An unexpected error occurred. Please try again."},
     )
 
 
-# Routers
 app.include_router(auth.router)
 app.include_router(lobbies.router)
 app.include_router(payments.router)
@@ -78,11 +64,7 @@ app.include_router(payments.router)
 
 @app.get("/", tags=["health"])
 def root():
-    return {
-        "status": "ok",
-        "service": "UniCart API",
-        "version": "1.0.0",
-    }
+    return {"status": "ok", "service": "UniCart API", "version": "1.0.0"}
 
 
 @app.get("/health", tags=["health"])

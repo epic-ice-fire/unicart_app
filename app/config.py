@@ -11,11 +11,9 @@ class Settings:
         self.ACCESS_TOKEN_EXPIRE_MINUTES: int = int(
             os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60")
         )
-        # Local dev uses postgres default database
-        # Render sets this via environment variable automatically
         self.DATABASE_URL: str = os.getenv(
             "DATABASE_URL",
-            "postgresql+asyncpg://postgres:dominoe8@localhost/unicart_db"
+            "postgresql+asyncpg://postgres:dominoe8@localhost/postgres",
         )
         self.ENTRY_FEE_NGN: int = int(os.getenv("ENTRY_FEE_NGN", "2000"))
         self.TARGET_ITEM_AMOUNT_NGN: int = int(

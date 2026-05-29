@@ -1,0 +1,67 @@
+[33m457c6e7[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m feat: switch from Paystack to Flutterwave
+[33ma2dd270[m feat: switch from Paystack to Flutterwave
+[33m1a95b91[m feat: switch from Paystack to Flutterwave
+[33ma1f0351[m feat: switch from Paystack to Flutterwave
+[33mf4ef8c3[m Fix CORS
+[33me8f150b[m Fix CORS
+[33m996bc9e[m Fix CORS
+[33m394560b[m Fix CORS
+[33m10b1d6a[m Fix CORS
+[33m5db8dfa[m Fix CORS
+[33m703299e[m fix: Safari Paystack, underfunded banner, Unknown state handling
+[33m2463235[m fix: safari paystack - two step tap flow
+[33mbb9d11a[m fix: safari paystack - two step tap flow
+[33m19421b8[m fix: safari paystack - two step tap flow
+[33mb6252cf[m fix: safari paystack - two step tap flow
+[33mebba801[m fix: safari paystack - two step tap flow
+[33me2ff32a[m fix: safari paystack - two step tap flow
+[33meea10ba[m fix: safari paystack - two step tap flow
+[33m7047011[m fix: safari paystack - two step tap flow
+[33m56995bb[m fix: safari paystack - two step tap flow
+[33m5e9dd1c[m fix: safari paystack - two step tap flow
+[33m8ae5976[m fix: safari paystack + friendly error messages + int cast crash
+[33ma77d6c3[m test: red banner + safari fix + all updates
+[33m638b980[m test: red banner + safari fix + all updates
+[33m710e58d[m feat: add Render static site build script
+[33m242301c[m fix: lobby screen + safari + unknown state + index update
+[33m2e287c1[m fix: lobby screen + safari + unknown state + index update
+[33m66d0dc6[m fix: lobby screen + safari + unknown state + index update
+[33m7d8b2eb[m fix: add flutter install to netlify config
+[33mc5d60a8[m resolve merge conflict
+[33m6299178[m remaining updates
+[33mf18db42[m fix: Safari Paystack, underfunded banner, Unknown state handling
+[33m817e8b4[m frontend
+[33m28fb429[m fix: use python 3.12
+[33m37c1bdc[m fix: set python version for Render
+[33m998c714[m fix: use platformDefault for Paystack launch — works on Safari
+[33maf02fcb[m fix: allow all CORS origins for Netlify
+[33m6ae1b60[m fix: clean mobile-responsive lobby screen
+[33mcfa20d5[m fix: clean mobile-responsive lobby screen
+[33mbb86bd1[m fix: clean mobile-responsive lobby screen
+[33m7299657[m force update
+[33m94f1e53[m force update
+[33me104f83[m fix: mobile payment and responsive layout
+[33m3a536de[m update site name
+[33m5699de6[m fix: mobile payment flow, responsive layout, LaunchMode.externalApplication
+[33ma0f6c14[m fix: mobile payment flow, responsive layout, LaunchMode.externalApplication
+[33m897f4d0[m fix: restore working main.py with correct CORS
+[33ma85f12f[m fix: removed invalid python -c line
+[33m77e074f[m fix: CORS allow GitHub Pages origin
+[33meed858f[m fix: CORS allow GitHub Pages origin
+[33m4a50d87[m[33m ([m[1;31morigin/gh-pages[m[33m)[m deploy
+[33m812ea84[m add GitHub Actions deploy workflow + live backend URL
+[33m0d8a420[m first commit
+[33m7cec87c[m Initial commit for Flutter frontend
+[33maa50a98[m first commit
+[33m66e69c6[m Initial commit for Flutter frontend
+[33m1cf84a0[m fix: auto-correct database URL prefix for Render deployment
+[33md0a654e[m set python version to 3.11
+[33m2724dd3[m fix requirements file location
+[33m9038918[m Add requirements.txt to root
+[33m3a8af5d[m Add requirements.txt to root
+[33mf263a28[m Add requirements.txt
+[33m44a5fc6[m Add requirements.txt
+[33mf3c1b59[m Add requirements.txt
+[33m95fa7fc[m remove cache files
+[33m339b15d[m remove env file
+[33m20ca007[m UniCart MVP

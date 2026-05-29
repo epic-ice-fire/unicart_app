@@ -164,9 +164,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
     setState(() => isBusy = true);
     try {
-      await LobbyService.adminForceRemoveItem(widget.token, itemId: itemId);
+      final result = await LobbyService.adminForceRemoveItem(widget.token, itemId: itemId);
       await loadDashboard();
-      showMessage("Item #$itemId removed successfully.", isSuccess: true);
+      final isUnderfunded = result["lobby_is_underfunded"] == true;
+      final gap = result["underfunded_gap"] ?? 0;
+      if (isUnderfunded) {
+        showMessage(
+          "Item #$itemId removed. ⚠️ Batch is now ₦$gap below target due to removal.",
+          isSuccess: false,
+        );
+      } else {
+        showMessage("Item #$itemId removed successfully.", isSuccess: true);
+      }
     } catch (e) {
       showMessage(e.toString());
     } finally {
@@ -514,13 +523,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 const SizedBox(height: 8),
                 const Text(
                   "✅  I am logged OUT of Temu (or in a private window)"
-
                   "✅  I have checked each item link above as a guest"
-                  
                   "✅  The submitted prices match what I see as a guest"
-
                   "✅  Any price discrepancies have been resolved (force-removed)"
-                  
                   "✅  I am ready to place the group order",
                   style: TextStyle(
                       fontSize: 13, color: Color(0xFF344054), height: 1.7),
@@ -569,7 +574,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   Widget buildBatchActionButtons(Map<String, dynamic> batch) {
     final status = batch["status"]?.toString() ?? "";
-    final lobbyId = (batch["lobby_id"] as num?)?.toInt() ?? 0;
+    final lobbyId = batch["lobby_id"] as int;
     final items = ((batch["items"] as List?) ?? []).cast<Map<String, dynamic>>();
 
     if (status == "triggered") {
@@ -844,10 +849,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                             .cast<Map<String, dynamic>>();
                                     final batchStatus = batch["status"]?.toString() ?? "";
                                     // ── Underfunded flag from backend ──────────
-                                    final isUnderfunded = ((batch["final_item_amount"] as num?)?.toInt() ?? 0) <
-                                        ((batch["target_item_amount"] as num?)?.toInt() ?? 0);
-                                    final underfundedGap = ((batch["target_item_amount"] as num?)?.toInt() ?? 0) -
-                                        ((batch["final_item_amount"] as num?)?.toInt() ?? 0);
+                                    final isUnderfunded = batch["is_underfunded"] == true;
+                                    final underfundedGap = batch["underfunded_gap"] as int? ?? 0;
 
                                     return Container(
                                       margin: const EdgeInsets.only(bottom: 14),

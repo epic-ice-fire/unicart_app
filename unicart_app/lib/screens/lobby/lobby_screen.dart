@@ -1,9 +1,12 @@
 import "dart:async";
-// ignore: avoid_web_libraries_in_flutter
-import "dart:html" as html;
 import "package:flutter/foundation.dart" show kIsWeb;
 import "package:flutter/material.dart";
 import "package:url_launcher/url_launcher.dart";
+// dart:html is only available on web — imported conditionally
+// ignore: uri_does_not_exist
+import "dart_html_stub.dart"
+  // ignore: uri_does_not_exist
+  if (dart.library.html) "dart:html" as html;
 import "../../models/lobby.dart";
 import "../../services/auth_service.dart";
 import "../../services/lobby_service.dart";

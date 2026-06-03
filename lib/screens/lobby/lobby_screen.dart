@@ -1,4 +1,5 @@
 import "dart:async";
+import "package:flutter/foundation.dart" show kIsWeb;
 import "package:flutter/material.dart";
 import "package:url_launcher/url_launcher.dart";
 import "../../models/lobby.dart";
@@ -30,6 +31,9 @@ class _LobbyScreenState extends State<LobbyScreen> {
 
   String? pendingPaymentReference;
   String? pendingPaymentUrl;
+  // Tracks the Flutterwave URL for each item that has a pending payment
+  // so user can reopen it without re-initialising
+  final Map<int, String> _pendingItemUrls = {};
 
   Timer? _pollTimer;
 
@@ -62,11 +66,46 @@ class _LobbyScreenState extends State<LobbyScreen> {
     _pollTimer = null;
   }
 
+  /// Opens a payment URL on all platforms and browsers.
+  /// Uses platformDefault which lets each browser handle it natively.
+  /// This works on Safari, Chrome, Brave, Firefox — mobile and desktop.
+  Future<bool> _openPaymentUrl(String url) async {
+    final uri = Uri.parse(url);
+    try {
+      // Try opening in new tab first (web)
+      final result = await launchUrl(
+        uri,
+        mode: LaunchMode.platformDefault,
+        webOnlyWindowName: "_blank",
+      );
+      if (result) return true;
+      // Fallback: same tab (Safari fallback)
+      return await launchUrl(uri, mode: LaunchMode.platformDefault);
+    } catch (_) {
+      try {
+        return await launchUrl(uri);
+      } catch (_) {
+        return false;
+      }
+    }
+  }
+
   Future<void> loadAll({bool silent = false}) async {
     if (!silent) setState(() { isLoading = true; error = null; });
     try {
       Map<String, dynamic>? me, myItems, myHistory, details;
-      try { me = await AuthService.me(widget.token); } catch (_) {}
+      // Try to get user info. If 401, token expired — auto relogin.
+      try {
+        me = await AuthService.me(widget.token);
+      } catch (e) {
+        final raw = e.toString();
+        if (raw.contains("401") || raw.contains("Invalid token") || raw.contains("not found")) {
+          if (!silent) setState(() => isLoading = false);
+          await _tryAutoRelogin();
+          return;
+        }
+        // Network/500 error — keep me null, show Connecting state
+      }
       try { details = await LobbyService.mainLobbyDetails(widget.token); } catch (_) {}
       try { myItems = await LobbyService.myMainLobbyItems(widget.token); } catch (_) {}
       try { myHistory = await LobbyService.myBatchHistory(widget.token); } catch (_) {}
@@ -112,6 +151,39 @@ class _LobbyScreenState extends State<LobbyScreen> {
         MaterialPageRoute(builder: (_) => const LoginScreen()), (r) => false);
   }
 
+  /// Auto-relogin when token expires (401).
+  /// Uses saved email+password to get a fresh token silently.
+  /// If no saved credentials, redirects to login screen.
+  Future<void> _tryAutoRelogin() async {
+    if (!mounted) return;
+    try {
+      final savedEmail    = await SessionService.getSavedEmail();
+      final savedPassword = await SessionService.getSavedPassword();
+      if (savedEmail != null && savedEmail.isNotEmpty &&
+          savedPassword != null && savedPassword.isNotEmpty) {
+        final newToken = await AuthService.login(
+            email: savedEmail, password: savedPassword);
+        await SessionService.saveToken(newToken);
+        if (!mounted) return;
+        Navigator.pushAndRemoveUntil(context,
+          MaterialPageRoute(builder: (_) => LobbyScreen(token: newToken)),
+          (route) => false);
+      } else {
+        await SessionService.clearToken();
+        if (!mounted) return;
+        Navigator.pushAndRemoveUntil(context,
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+          (route) => false);
+      }
+    } catch (_) {
+      await SessionService.clearToken();
+      if (!mounted) return;
+      Navigator.pushAndRemoveUntil(context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (route) => false);
+    }
+  }
+
   Future<void> openVerifyScreen() async {
     final result = await Navigator.push(context,
         MaterialPageRoute(builder: (_) => VerifyPauScreen(token: widget.token)));
@@ -132,12 +204,11 @@ class _LobbyScreenState extends State<LobbyScreen> {
       final authUrl = response["authorization_url"]?.toString();
       setState(() { pendingPaymentReference = reference; pendingPaymentUrl = authUrl; });
       if (authUrl != null && authUrl.isNotEmpty) {
-        final launched = await launchUrl(Uri.parse(authUrl),
-            mode: LaunchMode.platformDefault, webOnlyWindowName: "_blank");
         _startPolling();
-        showMessage(launched
-            ? "Paystack opened. Pay then tap \"I've Paid\" when you return."
-            : "Could not open Paystack. Tap \"Open Paystack\" below to try again.");
+        // Open immediately — mobile browsers require URL launch in the same
+        // call stack as the user tap, not after an await gap.
+        await _openPaymentUrl(authUrl);
+        showMessage("Flutterwave opened. Complete payment then tap \"I've Paid — Confirm Now\".");
       }
     } catch (e) { showMessage(e.toString()); }
     finally { if (mounted) setState(() => isBusy = false); }
@@ -167,8 +238,10 @@ class _LobbyScreenState extends State<LobbyScreen> {
     if (pendingPaymentUrl == null || pendingPaymentUrl!.isEmpty) {
       showMessage("No payment link. Tap Pay to get a new one."); return;
     }
-    await launchUrl(Uri.parse(pendingPaymentUrl!),
-        mode: LaunchMode.platformDefault, webOnlyWindowName: "_blank");
+    final uri2 = Uri.parse(pendingPaymentUrl!);
+    try {
+      if (!await launchUrl(uri2, webOnlyWindowName: "_blank")) await launchUrl(uri2);
+    } catch (_) { await launchUrl(uri2); }
   }
 
   Future<void> leaveLobby() async {
@@ -250,12 +323,13 @@ class _LobbyScreenState extends State<LobbyScreen> {
       final response = await LobbyService.initializeItemPayment(widget.token, itemId: itemId);
       final authUrl = response["authorization_url"]?.toString();
       if (authUrl != null && authUrl.isNotEmpty) {
-        final launched = await launchUrl(Uri.parse(authUrl),
-            mode: LaunchMode.platformDefault, webOnlyWindowName: "_blank");
+        // Store URL per item so user can reopen without re-initialising
+        setState(() => _pendingItemUrls[itemId] = authUrl);
         _startPolling();
-        showMessage(launched
-            ? "Paystack opened. Come back and tap \"Verify payment\" once done."
-            : "Could not open Paystack. Try again.");
+        final itemLaunched = await _openPaymentUrl(authUrl);
+        showMessage(itemLaunched
+            ? "Flutterwave opened. Come back and tap \"Verify payment\" once done."
+            : "Could not open Flutterwave — tap \"Open Flutterwave\" on the item below.");
       }
       await loadAll();
     } catch (e) { showMessage(e.toString()); }
@@ -416,7 +490,8 @@ class _LobbyScreenState extends State<LobbyScreen> {
     final isVerified = meData?["is_student_verified"] == true;
     final isAdmin    = meData?["is_admin"] == true;
     final studentEmail = meData?["student_pau_email"]?.toString();
-    final accountEmail = meData?["email"]?.toString() ?? "Unknown";
+    final accountEmail = meData?["email"]?.toString() ?? 
+        (isLoading ? "Loading..." : "Connecting...");
 
     final myItemCount       = myItemsData?["item_count"] ?? 0;
     final myTotalItemAmount = myItemsData?["total_item_amount"] ?? 0;
@@ -431,9 +506,19 @@ class _LobbyScreenState extends State<LobbyScreen> {
     final hasPendingPayment = mainDetailsData?["has_pending_payment"] == true;
     final entryFeeAmount   = mainDetailsData?["entry_fee_amount"] ?? 2000;
 
+    // meData will be populated on load or after auto-relogin.
+    // No retry loop needed — _tryAutoRelogin handles expired tokens.
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text("UniCart", style: TextStyle(fontWeight: FontWeight.w800)),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset("assets/images/logo.png", height: 30, width: 30),
+            const SizedBox(width: 8),
+            const Text("UniCart", style: TextStyle(fontWeight: FontWeight.w800)),
+          ],
+        ),
         actions: [
           if (_pollTimer != null)
             const Padding(padding: EdgeInsets.only(right: 4),
@@ -529,48 +614,63 @@ class _LobbyScreenState extends State<LobbyScreen> {
                             style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF101828))),
                         const SizedBox(height: 14),
                         // Avatar + info row
-                        Row(children: [
+                        if (meData == null && !isLoading) ...[
                           Container(
-                            width: 48, height: 48,
-                            decoration: BoxDecoration(color: const Color(0xFF1F7A4C), borderRadius: BorderRadius.circular(14)),
-                            child: Center(child: Text(
-                              accountEmail.isNotEmpty ? accountEmail[0].toUpperCase() : "?",
-                              style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800),
-                            )),
-                          ),
-                          const SizedBox(width: 14),
-                          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            Text(accountEmail,
-                                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Color(0xFF101828)),
-                                overflow: TextOverflow.ellipsis),
-                            const SizedBox(height: 6),
-                            Wrap(spacing: 6, runSpacing: 4, children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                    color: isVerified ? const Color(0xFFECFDF3) : const Color(0xFFFEF3F2),
-                                    borderRadius: BorderRadius.circular(999),
-                                    border: Border.all(color: isVerified ? const Color(0xFF4BB543) : const Color(0xFFFECACA))),
-                                child: Text(isVerified ? "✅ PAU Verified" : "❌ Not verified",
-                                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700,
-                                        color: isVerified ? const Color(0xFF027A48) : const Color(0xFFB42318))),
-                              ),
-                              if (isAdmin) Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(color: const Color(0xFFF4F3FF),
-                                    borderRadius: BorderRadius.circular(999), border: Border.all(color: const Color(0xFF9E77ED))),
-                                child: const Text("👑 Admin",
-                                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF5925DC))),
-                              ),
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(color: const Color(0xFFEFF8FF),
+                                borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFF53B1FD))),
+                            child: const Row(children: [
+                              SizedBox(width: 18, height: 18,
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF175CD3))),
+                              SizedBox(width: 10),
+                              Expanded(child: Text("Connecting to server... please wait a moment.",
+                                  style: TextStyle(color: Color(0xFF175CD3), fontSize: 13, fontWeight: FontWeight.w600))),
                             ]),
-                            if (studentEmail != null) ...[
-                              const SizedBox(height: 4),
-                              Text("🎓 $studentEmail",
-                                  style: const TextStyle(fontSize: 11, color: Color(0xFF667085)),
+                          ),
+                        ] else ...[
+                          Row(children: [
+                            Container(
+                              width: 48, height: 48,
+                              decoration: BoxDecoration(color: const Color(0xFF1F7A4C), borderRadius: BorderRadius.circular(14)),
+                              child: Center(child: Text(
+                                accountEmail.isNotEmpty && accountEmail != "Connecting..." ? accountEmail[0].toUpperCase() : "U",
+                                style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800),
+                              )),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                              Text(accountEmail,
+                                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Color(0xFF101828)),
                                   overflow: TextOverflow.ellipsis),
-                            ],
-                          ])),
-                        ]),
+                              const SizedBox(height: 6),
+                              Wrap(spacing: 6, runSpacing: 4, children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(
+                                      color: isVerified ? const Color(0xFFECFDF3) : const Color(0xFFFEF3F2),
+                                      borderRadius: BorderRadius.circular(999),
+                                      border: Border.all(color: isVerified ? const Color(0xFF4BB543) : const Color(0xFFFECACA))),
+                                  child: Text(isVerified ? "✅ PAU Verified" : "❌ Not verified",
+                                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700,
+                                          color: isVerified ? const Color(0xFF027A48) : const Color(0xFFB42318))),
+                                ),
+                                if (isAdmin) Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(color: const Color(0xFFF4F3FF),
+                                      borderRadius: BorderRadius.circular(999), border: Border.all(color: const Color(0xFF9E77ED))),
+                                  child: const Text("👑 Admin",
+                                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF5925DC))),
+                                ),
+                              ]),
+                              if (studentEmail != null) ...[
+                                const SizedBox(height: 4),
+                                Text("🎓 $studentEmail",
+                                    style: const TextStyle(fontSize: 11, color: Color(0xFF667085)),
+                                    overflow: TextOverflow.ellipsis),
+                              ],
+                            ])),
+                          ]),
+                        ],
                         const SizedBox(height: 14),
                         SizedBox(width: double.infinity, child: ElevatedButton(
                           onPressed: isBusy ? null : openVerifyScreen,
@@ -627,7 +727,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                             OutlinedButton.icon(
                               onPressed: isBusy ? null : reopenPaymentLink,
                               icon: const Icon(Icons.open_in_new),
-                              label: const Text("Open Paystack again"),
+                              label: const Text("Open Flutterwave again"),
                             ),
                           ])
                         else
@@ -783,11 +883,27 @@ class _LobbyScreenState extends State<LobbyScreen> {
                                     icon: const Icon(Icons.payment_outlined, size: 15),
                                     label: const Text("Pay for item", style: TextStyle(fontSize: 13)),
                                   ),
-                                  if (pStat == "pending" && ref != null) ElevatedButton.icon(
-                                    onPressed: isBusy ? null : () => verifyItemPayment(ref),
-                                    icon: const Icon(Icons.verified_outlined, size: 15),
-                                    label: const Text("Verify payment", style: TextStyle(fontSize: 13)),
-                                  ),
+                                  if (pStat == "pending" && ref != null) ...[
+                                    ElevatedButton.icon(
+                                      onPressed: isBusy ? null : () => verifyItemPayment(ref),
+                                      icon: const Icon(Icons.verified_outlined, size: 15),
+                                      label: const Text("Verify payment", style: TextStyle(fontSize: 13)),
+                                    ),
+                                    // Open Paystack button — always visible when pending
+                                    OutlinedButton.icon(
+                                      onPressed: isBusy ? null : () async {
+                                        final url = _pendingItemUrls[itemId];
+                                        if (url != null && url.isNotEmpty) {
+                                          await _openPaymentUrl(url);
+                                        } else {
+                                          // Re-initialise if URL was lost
+                                          await payForItem(itemId);
+                                        }
+                                      },
+                                      icon: const Icon(Icons.open_in_new, size: 15),
+                                      label: const Text("Open Flutterwave", style: TextStyle(fontSize: 13)),
+                                    ),
+                                  ],
                                   if (!isLocked) OutlinedButton.icon(
                                     onPressed: isBusy ? null : () => removeItem(itemId),
                                     icon: const Icon(Icons.delete_outline, size: 15),

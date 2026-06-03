@@ -60,7 +60,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
         (route) => false,
       );
     } catch (e) {
-      showMessage(e.toString());
+      final raw = e.toString();
+      String friendly;
+      if (raw.contains("409") || raw.contains("already")) {
+        friendly = "An account with this email already exists. Try logging in.";
+      } else if (raw.contains("422") || raw.contains("validation")) {
+        friendly = "Please enter a valid email address.";
+      } else if (raw.contains("Failed to fetch") || raw.contains("SocketException") || raw.contains("Connection")) {
+        friendly = "Could not connect to server. Check your internet and try again.";
+      } else {
+        friendly = "Registration failed. Please try again.";
+      }
+      showMessage(friendly);
     } finally {
       if (mounted) {
         setState(() => isLoading = false);
@@ -71,7 +82,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void showMessage(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.error_outline, color: Colors.white, size: 18),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: const Color(0xFFB42318),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 4),
+      ),
     );
   }
 

@@ -335,7 +335,7 @@
       "name": "unicart_app",
       "rootUri": "../",
       "packageUri": "lib/",
-      "languageVersion": "3.11"
+      "languageVersion": "3.0"
     }
   ],
   "generator": "pub",

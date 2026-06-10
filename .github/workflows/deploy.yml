@@ -25,19 +25,17 @@ jobs:
           channel: stable
 
       - name: Get dependencies
-        working-directory: unicart_app
         run: flutter pub get
 
       - name: Build Flutter web
-        working-directory: unicart_app
         run: flutter build web --release --base-href "/unicart_app/"
 
       - name: Add _redirects for routing
-        run: echo "/*  /index.html  200" > unicart_app/build/web/_redirects
+        run: echo "/*  /index.html  200" > build/web/_redirects
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: unicart_app/build/web
+          publish_dir: build/web
           publish_branch: gh-pages

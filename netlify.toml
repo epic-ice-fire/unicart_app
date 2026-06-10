@@ -1,5 +1,5 @@
 [build]
-  base = "unicart_app"
+  base = "."
   publish = "build/web"
   command = """
   if [ ! -d "flutter" ]; then git clone https://github.com/flutter/flutter.git -b stable; fi

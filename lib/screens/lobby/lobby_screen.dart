@@ -1,4 +1,6 @@
 import "dart:async";
+// ignore: avoid_web_libraries_in_flutter
+import "dart:html" as html;
 import "package:flutter/foundation.dart" show kIsWeb;
 import "package:flutter/material.dart";
 import "package:url_launcher/url_launcher.dart";
@@ -31,7 +33,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
 
   String? pendingPaymentReference;
   String? pendingPaymentUrl;
-  // Tracks the Flutterwave URL for each item that has a pending payment
+  // Tracks the Paystack URL for each item that has a pending payment
   // so user can reopen it without re-initialising
   final Map<int, String> _pendingItemUrls = {};
 
@@ -66,26 +68,22 @@ class _LobbyScreenState extends State<LobbyScreen> {
     _pollTimer = null;
   }
 
-  /// Opens a payment URL on all platforms and browsers.
-  /// Uses platformDefault which lets each browser handle it natively.
-  /// This works on Safari, Chrome, Brave, Firefox — mobile and desktop.
+  /// Opens a payment URL cross-browser.
+  /// On web (including Safari iOS): uses window.open directly — Safari allows
+  /// this when called from a synchronous user tap. On native: uses url_launcher.
   Future<bool> _openPaymentUrl(String url) async {
-    final uri = Uri.parse(url);
-    try {
-      // Try opening in new tab first (web)
-      final result = await launchUrl(
-        uri,
-        mode: LaunchMode.platformDefault,
-        webOnlyWindowName: "_blank",
-      );
-      if (result) return true;
-      // Fallback: same tab (Safari fallback)
-      return await launchUrl(uri, mode: LaunchMode.platformDefault);
-    } catch (_) {
+    if (kIsWeb) {
       try {
-        return await launchUrl(uri);
+        html.window.open(url, "_blank");
+        return true;
       } catch (_) {
-        return false;
+        try { html.window.location.href = url; return true; } catch (_) { return false; }
+      }
+    } else {
+      try {
+        return await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+      } catch (_) {
+        try { return await launchUrl(Uri.parse(url)); } catch (_) { return false; }
       }
     }
   }
@@ -205,10 +203,19 @@ class _LobbyScreenState extends State<LobbyScreen> {
       setState(() { pendingPaymentReference = reference; pendingPaymentUrl = authUrl; });
       if (authUrl != null && authUrl.isNotEmpty) {
         _startPolling();
-        // Open immediately — mobile browsers require URL launch in the same
-        // call stack as the user tap, not after an await gap.
-        await _openPaymentUrl(authUrl);
-        showMessage("Flutterwave opened. Complete payment then tap \"I've Paid — Confirm Now\".");
+        // On Safari, webOnlyWindowName "_blank" is blocked.
+        // We open in same tab on mobile browsers — callback redirects back.
+        final uri = Uri.parse(authUrl);
+        bool launched = false;
+        try {
+          launched = await launchUrl(uri, webOnlyWindowName: "_blank");
+          if (!launched) launched = await launchUrl(uri);
+        } catch (_) {
+          launched = await launchUrl(uri);
+        }
+        showMessage(launched
+            ? "Paystack opened. Pay then tap \"I've Paid\" when you return."
+            : "Could not open Paystack. Tap \"Open Paystack\" below to try again.");
       }
     } catch (e) { showMessage(e.toString()); }
     finally { if (mounted) setState(() => isBusy = false); }
@@ -328,8 +335,8 @@ class _LobbyScreenState extends State<LobbyScreen> {
         _startPolling();
         final itemLaunched = await _openPaymentUrl(authUrl);
         showMessage(itemLaunched
-            ? "Flutterwave opened. Come back and tap \"Verify payment\" once done."
-            : "Could not open Flutterwave — tap \"Open Flutterwave\" on the item below.");
+            ? "Paystack opened. Come back and tap \"Verify payment\" once done."
+            : "Could not open Paystack — tap \"Open Paystack\" on the item below.");
       }
       await loadAll();
     } catch (e) { showMessage(e.toString()); }
@@ -511,14 +518,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Image.asset("assets/images/logo.png", height: 30, width: 30),
-            const SizedBox(width: 8),
-            const Text("UniCart", style: TextStyle(fontWeight: FontWeight.w800)),
-          ],
-        ),
+        title: const Text("UniCart", style: TextStyle(fontWeight: FontWeight.w800)),
         actions: [
           if (_pollTimer != null)
             const Padding(padding: EdgeInsets.only(right: 4),
@@ -727,7 +727,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                             OutlinedButton.icon(
                               onPressed: isBusy ? null : reopenPaymentLink,
                               icon: const Icon(Icons.open_in_new),
-                              label: const Text("Open Flutterwave again"),
+                              label: const Text("Open Paystack again"),
                             ),
                           ])
                         else
@@ -901,7 +901,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                                         }
                                       },
                                       icon: const Icon(Icons.open_in_new, size: 15),
-                                      label: const Text("Open Flutterwave", style: TextStyle(fontSize: 13)),
+                                      label: const Text("Open Paystack", style: TextStyle(fontSize: 13)),
                                     ),
                                   ],
                                   if (!isLocked) OutlinedButton.icon(

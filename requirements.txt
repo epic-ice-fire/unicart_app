@@ -1,4 +1,4 @@
-﻿aiosqlite==0.22.1
+aiosqlite==0.22.1
 alembic==1.18.4
 annotated-types==0.7.0
 anyio==4.9.0
@@ -32,9 +32,9 @@ pluggy==1.6.0
 psycopg2-binary==2.9.11
 pyasn1==0.6.2
 pycparser==3.0
-pydantic==2.11.2
-pydantic-settings==2.13.1
-pydantic_core==2.33.1
+pydantic==2.13.4
+pydantic-settings==2.14.1
+pydantic_core==2.47.0
 Pygments==2.19.1
 PyJWT==2.12.1
 pytest==8.4.2
@@ -56,5 +56,5 @@ typer==0.15.2
 typing-inspection==0.4.0
 typing_extensions==4.13.1
 uvicorn==0.34.0
-watchfiles==1.0.4
+watchfiles==1.2.0
 websockets==15.0.1

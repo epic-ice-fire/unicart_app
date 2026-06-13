@@ -1,6 +1,6 @@
 name: unicart_app
-description: "UniCart — Campus group buying platform for PAU students."
-publish_to: 'none'
+description: UniCart Campus group buying platform for PAU students
+publish_to: none
 
 version: 1.0.0+1
 

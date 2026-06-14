@@ -1,6 +1,4 @@
 import "dart:async";
-// ignore: avoid_web_libraries_in_flutter
-import "dart:js" as js;
 import "package:flutter/foundation.dart" show kIsWeb;
 import "package:flutter/material.dart";
 import "package:url_launcher/url_launcher.dart";
@@ -73,24 +71,23 @@ class _LobbyScreenState extends State<LobbyScreen> {
   /// This works on Safari, Chrome, Brave, Firefox — mobile and desktop.
   Future<bool> _openPaymentUrl(String url) async {
     final uri = Uri.parse(url);
-    if (kIsWeb) {
-      // Use JS directly — opens a real new tab, never blocked by browser popup rules
-      // because we are calling this from a button press (user gesture context).
-      try {
-        js.context.callMethod("open", [url, "_blank"]);
-        return true;
-      } catch (_) {}
-      // Fallback: same tab navigation (always works)
-      try { return await launchUrl(uri, webOnlyWindowName: "_self"); } catch (_) {}
-      return false;
-    }
-    // Native mobile app
     try {
-      final result = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      // Try opening in new tab first (web)
+      final result = await launchUrl(
+        uri,
+        mode: LaunchMode.platformDefault,
+        webOnlyWindowName: "_blank",
+      );
       if (result) return true;
-    } catch (_) {}
-    try { return await launchUrl(uri, mode: LaunchMode.platformDefault); } catch (_) {}
-    return false;
+      // Fallback: same tab (Safari fallback)
+      return await launchUrl(uri, mode: LaunchMode.platformDefault);
+    } catch (_) {
+      try {
+        return await launchUrl(uri);
+      } catch (_) {
+        return false;
+      }
+    }
   }
 
   Future<void> loadAll({bool silent = false}) async {
@@ -207,11 +204,23 @@ class _LobbyScreenState extends State<LobbyScreen> {
       final authUrl = response["authorization_url"]?.toString();
       setState(() { pendingPaymentReference = reference; pendingPaymentUrl = authUrl; });
       if (authUrl != null && authUrl.isNotEmpty) {
+        setState(() => _pendingItemUrls[itemId] = authUrl);
         _startPolling();
-        // Open immediately — mobile browsers require URL launch in the same
-        // call stack as the user tap, not after an await gap.
-        await _openPaymentUrl(authUrl);
-        showMessage("Flutterwave opened. Complete payment then tap \"I've Paid — Confirm Now\".");
+        bool itemLaunched = false;
+        if (kIsWeb && preOpenedWindow != null) {
+          try {
+            preOpenedWindow.callMethod("focus");
+            (preOpenedWindow as dynamic)["location"]["href"] = authUrl;
+            itemLaunched = true;
+          } catch (_) {
+            itemLaunched = await _openPaymentUrl(authUrl);
+          }
+        } else {
+          itemLaunched = await _openPaymentUrl(authUrl);
+        }
+        showMessage(itemLaunched
+            ? "Flutterwave opened. Come back and tap \"Verify payment\" once done."
+            : "Could not open Flutterwave — tap \"Open Flutterwave\" on the item below.");
       }
     } catch (e) { showMessage(e.toString()); }
     finally { if (mounted) setState(() => isBusy = false); }
@@ -238,13 +247,13 @@ class _LobbyScreenState extends State<LobbyScreen> {
   }
 
   Future<void> reopenPaymentLink() async {
-    // URL is lost after page refresh — re-initialize to get it back from backend.
-    // Backend returns the SAME pending payment, never creates a new charge.
     if (pendingPaymentUrl == null || pendingPaymentUrl!.isEmpty) {
-      await startEntryFeePayment();
-      return;
+      showMessage("No payment link. Tap Pay to get a new one."); return;
     }
-    await _openPaymentUrl(pendingPaymentUrl!);
+    final uri2 = Uri.parse(pendingPaymentUrl!);
+    try {
+      if (!await launchUrl(uri2, webOnlyWindowName: "_blank")) await launchUrl(uri2);
+    } catch (_) { await launchUrl(uri2); }
   }
 
   Future<void> leaveLobby() async {
@@ -295,6 +304,17 @@ class _LobbyScreenState extends State<LobbyScreen> {
   }
 
   Future<void> payForItem(int itemId) async {
+    // Open a blank window NOW (inside user gesture) so browser won't block it.
+    // We will navigate it to the payment URL after getting it from backend.
+    // ignore: unused_local_variable
+    dynamic preOpenedWindow;
+    if (kIsWeb) {
+      try {
+        // ignore: avoid_web_libraries_in_flutter
+        preOpenedWindow = js.context.callMethod("open", ["", "_blank"]);
+      } catch (_) {}
+    }
+
     // Guest price confirmation dialog
     final confirmed = await showDialog<bool>(context: context,
         builder: (ctx) => AlertDialog(
@@ -319,7 +339,13 @@ class _LobbyScreenState extends State<LobbyScreen> {
             ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text("Price is correct — Pay")),
           ],
         ));
-    if (confirmed != true) return;
+    if (confirmed != true) {
+      // Close the pre-opened blank tab since user cancelled
+      if (kIsWeb && preOpenedWindow != null) {
+        try { preOpenedWindow.callMethod("close"); } catch (_) {}
+      }
+      return;
+    }
 
     setState(() => isBusy = true);
     try {
@@ -496,7 +522,11 @@ class _LobbyScreenState extends State<LobbyScreen> {
     final accountEmail = meData?["email"]?.toString() ?? 
         (isLoading ? "Loading..." : "Connecting...");
 
-    final myItemCount       = myItemsData?["item_count"] ?? 0;
+    // Count only items the user has actually PAID for (not just added)
+    final rawItemsForCount = (myItemsData?["items"] as List?) ?? [];
+    final myItemCount = rawItemsForCount
+        .where((i) => i is Map && i["is_paid"] == true)
+        .length;
     final myTotalItemAmount = myItemsData?["total_item_amount"] ?? 0;
 
     final rawItems = (myItemsData?["items"] as List?) ?? [];

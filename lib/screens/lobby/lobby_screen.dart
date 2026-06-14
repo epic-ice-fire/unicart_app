@@ -1,6 +1,4 @@
 import "dart:async";
-// ignore: avoid_web_libraries_in_flutter
-import "dart:html" as html;
 import "package:flutter/foundation.dart" show kIsWeb;
 import "package:flutter/material.dart";
 import "package:url_launcher/url_launcher.dart";
@@ -33,7 +31,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
 
   String? pendingPaymentReference;
   String? pendingPaymentUrl;
-  // Tracks the Paystack URL for each item that has a pending payment
+  // Tracks the Flutterwave URL for each item that has a pending payment
   // so user can reopen it without re-initialising
   final Map<int, String> _pendingItemUrls = {};
 
@@ -68,23 +66,30 @@ class _LobbyScreenState extends State<LobbyScreen> {
     _pollTimer = null;
   }
 
-  /// Opens a payment URL cross-browser.
-  /// On web (including Safari iOS): uses window.open directly — Safari allows
-  /// this when called from a synchronous user tap. On native: uses url_launcher.
+  /// Opens a payment URL on all platforms and browsers.
+  /// Uses platformDefault which lets each browser handle it natively.
+  /// This works on Safari, Chrome, Brave, Firefox — mobile and desktop.
   Future<bool> _openPaymentUrl(String url) async {
+    final uri = Uri.parse(url);
+    // On web, always use same-tab navigation (_self) — browsers NEVER block this.
+    // New tab (_blank) is blocked when called after any async gap.
     if (kIsWeb) {
       try {
-        html.window.open(url, "_blank");
-        return true;
+        return await launchUrl(uri, webOnlyWindowName: "_self");
       } catch (_) {
-        try { html.window.location.href = url; return true; } catch (_) { return false; }
+        try { return await launchUrl(uri, mode: LaunchMode.platformDefault); } catch (_) {}
+        return false;
       }
-    } else {
-      try {
-        return await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-      } catch (_) {
-        try { return await launchUrl(Uri.parse(url)); } catch (_) { return false; }
-      }
+    }
+    // Mobile app: try external browser first
+    try {
+      final result = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (result) return true;
+    } catch (_) {}
+    try {
+      return await launchUrl(uri, mode: LaunchMode.platformDefault);
+    } catch (_) {
+      return false;
     }
   }
 
@@ -203,19 +208,10 @@ class _LobbyScreenState extends State<LobbyScreen> {
       setState(() { pendingPaymentReference = reference; pendingPaymentUrl = authUrl; });
       if (authUrl != null && authUrl.isNotEmpty) {
         _startPolling();
-        // On Safari, webOnlyWindowName "_blank" is blocked.
-        // We open in same tab on mobile browsers — callback redirects back.
-        final uri = Uri.parse(authUrl);
-        bool launched = false;
-        try {
-          launched = await launchUrl(uri, webOnlyWindowName: "_blank");
-          if (!launched) launched = await launchUrl(uri);
-        } catch (_) {
-          launched = await launchUrl(uri);
-        }
-        showMessage(launched
-            ? "Paystack opened. Pay then tap \"I've Paid\" when you return."
-            : "Could not open Paystack. Tap \"Open Paystack\" below to try again.");
+        // Open immediately — mobile browsers require URL launch in the same
+        // call stack as the user tap, not after an await gap.
+        await _openPaymentUrl(authUrl);
+        showMessage("Flutterwave opened. Complete payment then tap \"I've Paid — Confirm Now\".");
       }
     } catch (e) { showMessage(e.toString()); }
     finally { if (mounted) setState(() => isBusy = false); }
@@ -242,13 +238,13 @@ class _LobbyScreenState extends State<LobbyScreen> {
   }
 
   Future<void> reopenPaymentLink() async {
+    // URL is lost after page refresh — re-initialize to get it back.
+    // Backend returns the same pending payment, never double-charges.
     if (pendingPaymentUrl == null || pendingPaymentUrl!.isEmpty) {
-      showMessage("No payment link. Tap Pay to get a new one."); return;
+      await startEntryFeePayment();
+      return;
     }
-    final uri2 = Uri.parse(pendingPaymentUrl!);
-    try {
-      if (!await launchUrl(uri2, webOnlyWindowName: "_blank")) await launchUrl(uri2);
-    } catch (_) { await launchUrl(uri2); }
+    await _openPaymentUrl(pendingPaymentUrl!);
   }
 
   Future<void> leaveLobby() async {
@@ -335,8 +331,8 @@ class _LobbyScreenState extends State<LobbyScreen> {
         _startPolling();
         final itemLaunched = await _openPaymentUrl(authUrl);
         showMessage(itemLaunched
-            ? "Paystack opened. Come back and tap \"Verify payment\" once done."
-            : "Could not open Paystack — tap \"Open Paystack\" on the item below.");
+            ? "Flutterwave opened. Come back and tap \"Verify payment\" once done."
+            : "Could not open Flutterwave — tap \"Open Flutterwave\" on the item below.");
       }
       await loadAll();
     } catch (e) { showMessage(e.toString()); }
@@ -518,7 +514,14 @@ class _LobbyScreenState extends State<LobbyScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("UniCart", style: TextStyle(fontWeight: FontWeight.w800)),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset("assets/images/logo.png", height: 30, width: 30),
+            const SizedBox(width: 8),
+            const Text("UniCart", style: TextStyle(fontWeight: FontWeight.w800)),
+          ],
+        ),
         actions: [
           if (_pollTimer != null)
             const Padding(padding: EdgeInsets.only(right: 4),
@@ -727,7 +730,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                             OutlinedButton.icon(
                               onPressed: isBusy ? null : reopenPaymentLink,
                               icon: const Icon(Icons.open_in_new),
-                              label: const Text("Open Paystack again"),
+                              label: const Text("Open Flutterwave again"),
                             ),
                           ])
                         else
@@ -901,7 +904,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                                         }
                                       },
                                       icon: const Icon(Icons.open_in_new, size: 15),
-                                      label: const Text("Open Paystack", style: TextStyle(fontSize: 13)),
+                                      label: const Text("Open Flutterwave", style: TextStyle(fontSize: 13)),
                                     ),
                                   ],
                                   if (!isLocked) OutlinedButton.icon(

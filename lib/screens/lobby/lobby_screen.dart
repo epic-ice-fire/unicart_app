@@ -200,7 +200,6 @@ class _LobbyScreenState extends State<LobbyScreen> {
       final authUrl = response["authorization_url"]?.toString();
       setState(() { pendingPaymentReference = reference; pendingPaymentUrl = authUrl; });
       if (authUrl != null && authUrl.isNotEmpty) {
-        setState(() => _pendingItemUrls[itemId] = authUrl);
         _startPolling();
         final itemLaunched = await _openPaymentUrl(authUrl);
         showMessage(itemLaunched

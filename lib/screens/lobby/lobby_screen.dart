@@ -71,23 +71,19 @@ class _LobbyScreenState extends State<LobbyScreen> {
   /// This works on Safari, Chrome, Brave, Firefox — mobile and desktop.
   Future<bool> _openPaymentUrl(String url) async {
     final uri = Uri.parse(url);
-    try {
-      // Try opening in new tab first (web)
-      final result = await launchUrl(
-        uri,
-        mode: LaunchMode.platformDefault,
-        webOnlyWindowName: "_blank",
-      );
-      if (result) return true;
-      // Fallback: same tab (Safari fallback)
-      return await launchUrl(uri, mode: LaunchMode.platformDefault);
-    } catch (_) {
-      try {
-        return await launchUrl(uri);
-      } catch (_) {
-        return false;
-      }
+    // On web: same-tab navigation is NEVER blocked by browsers.
+    if (kIsWeb) {
+      try { return await launchUrl(uri, webOnlyWindowName: "_self"); } catch (_) {}
+      try { return await launchUrl(uri, mode: LaunchMode.platformDefault); } catch (_) {}
+      return false;
     }
+    // Native mobile: open in external browser
+    try {
+      final result = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (result) return true;
+    } catch (_) {}
+    try { return await launchUrl(uri, mode: LaunchMode.platformDefault); } catch (_) {}
+    return false;
   }
 
   Future<void> loadAll({bool silent = false}) async {
@@ -206,18 +202,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
       if (authUrl != null && authUrl.isNotEmpty) {
         setState(() => _pendingItemUrls[itemId] = authUrl);
         _startPolling();
-        bool itemLaunched = false;
-        if (kIsWeb && preOpenedWindow != null) {
-          try {
-            preOpenedWindow.callMethod("focus");
-            (preOpenedWindow as dynamic)["location"]["href"] = authUrl;
-            itemLaunched = true;
-          } catch (_) {
-            itemLaunched = await _openPaymentUrl(authUrl);
-          }
-        } else {
-          itemLaunched = await _openPaymentUrl(authUrl);
-        }
+        final itemLaunched = await _openPaymentUrl(authUrl);
         showMessage(itemLaunched
             ? "Flutterwave opened. Come back and tap \"Verify payment\" once done."
             : "Could not open Flutterwave — tap \"Open Flutterwave\" on the item below.");
@@ -304,17 +289,6 @@ class _LobbyScreenState extends State<LobbyScreen> {
   }
 
   Future<void> payForItem(int itemId) async {
-    // Open a blank window NOW (inside user gesture) so browser won't block it.
-    // We will navigate it to the payment URL after getting it from backend.
-    // ignore: unused_local_variable
-    dynamic preOpenedWindow;
-    if (kIsWeb) {
-      try {
-        // ignore: avoid_web_libraries_in_flutter
-        preOpenedWindow = js.context.callMethod("open", ["", "_blank"]);
-      } catch (_) {}
-    }
-
     // Guest price confirmation dialog
     final confirmed = await showDialog<bool>(context: context,
         builder: (ctx) => AlertDialog(
@@ -339,13 +313,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
             ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text("Price is correct — Pay")),
           ],
         ));
-    if (confirmed != true) {
-      // Close the pre-opened blank tab since user cancelled
-      if (kIsWeb && preOpenedWindow != null) {
-        try { preOpenedWindow.callMethod("close"); } catch (_) {}
-      }
-      return;
-    }
+    if (confirmed != true) return;
 
     setState(() => isBusy = true);
     try {

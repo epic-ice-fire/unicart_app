@@ -2,6 +2,8 @@ import "dart:async";
 import "package:flutter/foundation.dart" show kIsWeb;
 import "package:flutter/material.dart";
 import "package:url_launcher/url_launcher.dart";
+// ignore: depend_on_referenced_packages
+import "package:web/web.dart" as web show window;
 import "../../models/lobby.dart";
 import "../../services/auth_service.dart";
 import "../../services/lobby_service.dart";
@@ -71,10 +73,15 @@ class _LobbyScreenState extends State<LobbyScreen> {
   /// This works on Safari, Chrome, Brave, Firefox — mobile and desktop.
   Future<bool> _openPaymentUrl(String url) async {
     final uri = Uri.parse(url);
-    // On web: same-tab navigation is NEVER blocked by browsers.
     if (kIsWeb) {
+      // Use window.open() via package:web — works on ALL browsers including desktop Chrome.
+      // This is the modern Flutter web API (not deprecated).
+      try {
+        final result = web.window.open(url, "_blank", "noopener,noreferrer");
+        if (result != null) return true;
+      } catch (_) {}
+      // Fallback: same-tab (always works)
       try { return await launchUrl(uri, webOnlyWindowName: "_self"); } catch (_) {}
-      try { return await launchUrl(uri, mode: LaunchMode.platformDefault); } catch (_) {}
       return false;
     }
     // Native mobile: open in external browser

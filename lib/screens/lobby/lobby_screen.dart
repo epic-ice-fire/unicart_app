@@ -1,4 +1,6 @@
 import "dart:async";
+// ignore: avoid_web_libraries_in_flutter
+import "dart:js" as js;
 import "package:flutter/foundation.dart" show kIsWeb;
 import "package:flutter/material.dart";
 import "package:url_launcher/url_launcher.dart";
@@ -71,26 +73,24 @@ class _LobbyScreenState extends State<LobbyScreen> {
   /// This works on Safari, Chrome, Brave, Firefox — mobile and desktop.
   Future<bool> _openPaymentUrl(String url) async {
     final uri = Uri.parse(url);
-    // On web, always use same-tab navigation (_self) — browsers NEVER block this.
-    // New tab (_blank) is blocked when called after any async gap.
     if (kIsWeb) {
+      // Use JS directly — opens a real new tab, never blocked by browser popup rules
+      // because we are calling this from a button press (user gesture context).
       try {
-        return await launchUrl(uri, webOnlyWindowName: "_self");
-      } catch (_) {
-        try { return await launchUrl(uri, mode: LaunchMode.platformDefault); } catch (_) {}
-        return false;
-      }
+        js.context.callMethod("open", [url, "_blank"]);
+        return true;
+      } catch (_) {}
+      // Fallback: same tab navigation (always works)
+      try { return await launchUrl(uri, webOnlyWindowName: "_self"); } catch (_) {}
+      return false;
     }
-    // Mobile app: try external browser first
+    // Native mobile app
     try {
       final result = await launchUrl(uri, mode: LaunchMode.externalApplication);
       if (result) return true;
     } catch (_) {}
-    try {
-      return await launchUrl(uri, mode: LaunchMode.platformDefault);
-    } catch (_) {
-      return false;
-    }
+    try { return await launchUrl(uri, mode: LaunchMode.platformDefault); } catch (_) {}
+    return false;
   }
 
   Future<void> loadAll({bool silent = false}) async {
@@ -238,8 +238,8 @@ class _LobbyScreenState extends State<LobbyScreen> {
   }
 
   Future<void> reopenPaymentLink() async {
-    // URL is lost after page refresh — re-initialize to get it back.
-    // Backend returns the same pending payment, never double-charges.
+    // URL is lost after page refresh — re-initialize to get it back from backend.
+    // Backend returns the SAME pending payment, never creates a new charge.
     if (pendingPaymentUrl == null || pendingPaymentUrl!.isEmpty) {
       await startEntryFeePayment();
       return;

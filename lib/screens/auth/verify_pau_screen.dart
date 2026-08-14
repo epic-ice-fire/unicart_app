@@ -1,4 +1,4 @@
-import "dart:async";
+﻿import "dart:async";
 
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
@@ -101,8 +101,6 @@ class _VerifyPauScreenState extends State<VerifyPauScreen> {
 
       if (!mounted) return;
       showUniCartSnack(context, "PAU email verified successfully.", success: true);
-      await Future<void>.delayed(const Duration(milliseconds: 450));
-      if (!mounted) return;
       Navigator.pop(context, true);
     } catch (e) {
       if (mounted) showUniCartSnack(context, _friendlyError(e));

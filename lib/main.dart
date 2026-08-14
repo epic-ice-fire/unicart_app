@@ -1,11 +1,18 @@
+﻿import "dart:async";
+
 import "package:flutter/material.dart";
+
 import "screens/auth/login_screen.dart";
 import "screens/lobby/lobby_screen.dart";
+import "services/api_service.dart";
 import "services/session_service.dart";
 import "theme/unicart_theme.dart";
 import "widgets/unicart_ui.dart";
 
 void main() {
+  // Do not make the first frame wait for the API. Start waking the backend in
+  // parallel while the login/auth-gate UI renders immediately.
+  unawaited(ApiService.warmUp());
   runApp(const UniCartApp());
 }
 

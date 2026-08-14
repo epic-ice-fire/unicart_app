@@ -50,11 +50,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-    if (password.length < 12) {
-      showUniCartSnack(context, "Password must be at least 12 characters.");
-      return;
-    }
-
     if (password != confirmPassword) {
       showUniCartSnack(context, "Passwords do not match.");
       return;
@@ -106,7 +101,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (value.isEmpty) return 0;
 
     var score = 1;
-    if (value.length >= 12) score++;
+    if (value.length >= 8) score++;
     if (RegExp(r"[A-Z]").hasMatch(value) && RegExp(r"[a-z]").hasMatch(value)) {
       score++;
     }
@@ -212,7 +207,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 ),
                                 decoration: InputDecoration(
                                   labelText: "Password",
-                                  hintText: "Minimum 12 characters",
+                                  hintText: "Choose a password",
                                   prefixIcon: const Icon(Icons.lock_outline_rounded),
                                   suffixIcon: IconButton(
                                     tooltip: showPassword

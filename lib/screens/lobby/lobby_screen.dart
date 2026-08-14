@@ -1,4 +1,4 @@
-﻿import "dart:async";
+import "dart:async";
 import "package:flutter/material.dart";
 import "package:url_launcher/url_launcher.dart";
 import "../../models/lobby.dart";
@@ -289,8 +289,8 @@ class _LobbyScreenState extends State<LobbyScreen> {
         final launched = await _openPaymentUrl(authUrl);
         showMessage(
           launched
-              ? "Flutterwave opened. Pay, then tap â€˜I've Paidâ€™ when you return."
-              : "Could not open the payment page. Use â€˜Open Flutterwaveâ€™ below to try again.",
+              ? "Flutterwave opened. Pay, then tap ‘I've Paid’ when you return."
+              : "Could not open the payment page. Use ‘Open Flutterwave’ below to try again.",
           isWarning: !launched,
         );
       }
@@ -771,7 +771,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                         child: UniCartPrimaryButton(
                           minHeight: 50,
                           onPressed: () => Navigator.pop(sheetContext, true),
-                          child: const Text("Price is correct â€” Pay"),
+                          child: const Text("Price is correct — Pay"),
                         ),
                       ),
                     ],
@@ -791,7 +791,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
     final isAdmin = meData?["is_admin"] == true;
     final studentEmail = meData?["student_pau_email"]?.toString();
     final accountEmail = meData?["email"]?.toString() ??
-        (isLoading ? "Loadingâ€¦" : "Connectingâ€¦");
+        (isLoading ? "Loading…" : "Connecting…");
 
     final rawItems = (myItemsData?["items"] as List?) ?? [];
     final activeItems = rawItems
@@ -1009,7 +1009,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                     ),
                     const SizedBox(height: 14),
                     Text(
-                      "Lobby #${lobby?.lobbyId ?? "â€”"}",
+                      "Lobby #${lobby?.lobbyId ?? "—"}",
                       style: const TextStyle(
                         color: UniCartColors.textPrimary,
                         fontSize: 28,
@@ -1042,7 +1042,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                "â‚¦${lobby?.currentItemAmount ?? 0}",
+                "₦${lobby?.currentItemAmount ?? 0}",
                 style: const TextStyle(
                   color: UniCartColors.textPrimary,
                   fontSize: 24,
@@ -1076,7 +1076,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
           ),
           const SizedBox(height: 9),
           Text(
-            "Target â‚¦${lobby?.targetItemAmount ?? 0}",
+            "Target ₦${lobby?.targetItemAmount ?? 0}",
             style: const TextStyle(
               color: UniCartColors.textMuted,
               fontSize: 12,
@@ -1121,7 +1121,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
               Expanded(
                 child: UniCartMetricCard(
                   label: "My paid",
-                  value: "â‚¦$myTotal",
+                  value: "₦$myTotal",
                   caption: "Locked total",
                   icon: Icons.payments_outlined,
                   accent: UniCartColors.success,
@@ -1137,7 +1137,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
               child: UniCartMetricCard(
                 label: "Members",
                 value: "${lobby?.memberCount ?? 0}",
-                caption: "Active students in Lobby #${lobby?.lobbyId ?? "â€”"}",
+                caption: "Active students in Lobby #${lobby?.lobbyId ?? "—"}",
                 icon: Icons.people_outline_rounded,
                 accent: UniCartColors.primarySoft,
               ),
@@ -1156,7 +1156,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
             Expanded(
               child: UniCartMetricCard(
                 label: "My paid total",
-                value: "â‚¦$myTotal",
+                value: "₦$myTotal",
                 caption: "Value already locked into the vault",
                 icon: Icons.payments_outlined,
                 accent: UniCartColors.success,
@@ -1250,7 +1250,9 @@ class _LobbyScreenState extends State<LobbyScreen> {
                     if (studentEmail != null && studentEmail.isNotEmpty) ...[
                       const SizedBox(height: 3),
                       Text(
-                        studentEmail,
+                        isVerified
+                            ? studentEmail
+                            : "$studentEmail · pending verification",
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
@@ -1332,14 +1334,14 @@ class _LobbyScreenState extends State<LobbyScreen> {
           Row(
             children: [
               Expanded(
-                child: _miniInfo("Lobby", "#${lobby?.lobbyId ?? "â€”"}"),
+                child: _miniInfo("Lobby", "#${lobby?.lobbyId ?? "—"}"),
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: _miniInfo("Status", _prettyStatus(lobby?.status ?? "â€”")),
+                child: _miniInfo("Status", _prettyStatus(lobby?.status ?? "—")),
               ),
               const SizedBox(width: 8),
-              Expanded(child: _miniInfo("Entry fee", "â‚¦$entryFeeAmount")),
+              Expanded(child: _miniInfo("Entry fee", "₦$entryFeeAmount")),
             ],
           ),
           const SizedBox(height: 16),
@@ -1371,7 +1373,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
               leadingIcon: Icons.verified_rounded,
               loading: isBusy,
               onPressed: isBusy ? null : verifyEntryFeePayment,
-              child: const Text("I've Paid â€” Confirm now"),
+              child: const Text("I've Paid — Confirm now"),
             ),
             const SizedBox(height: 9),
             UniCartPrimaryButton(
@@ -1387,7 +1389,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
               leadingIcon: Icons.credit_card_rounded,
               loading: isBusy,
               onPressed: isBusy || !isVerified ? null : startEntryFeePayment,
-              child: Text("Pay â‚¦$entryFeeAmount to join"),
+              child: Text("Pay ₦$entryFeeAmount to join"),
             ),
           if (hasJoined) ...[
             const SizedBox(height: 10),
@@ -1422,7 +1424,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
             icon: Icons.visibility_off_outlined,
             title: "Use guest pricing",
             message:
-                "Log out of Temu or use a private/incognito window. Submit the price visible to a guest â€” not a personalised price.",
+                "Log out of Temu or use a private/incognito window. Submit the price visible to a guest — not a personalised price.",
           ),
           const SizedBox(height: 10),
           const UniCartInfoBanner(
@@ -1438,7 +1440,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
             style: const TextStyle(color: UniCartColors.textPrimary),
             decoration: const InputDecoration(
               labelText: "Product link",
-              hintText: "https://â€¦",
+              hintText: "https://…",
               prefixIcon: Icon(Icons.link_rounded),
               helperText: "Open the product as a logged-out guest before checking its price.",
               helperStyle: TextStyle(
@@ -1453,7 +1455,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
             keyboardType: TextInputType.number,
             style: const TextStyle(color: UniCartColors.textPrimary),
             decoration: const InputDecoration(
-              labelText: "Guest price (â‚¦)",
+              labelText: "Guest price (₦)",
               hintText: "e.g. 8500",
               prefixIcon: Icon(Icons.payments_outlined),
             ),
@@ -1583,7 +1585,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      "â‚¦$itemAmount",
+                      "₦$itemAmount",
                       style: const TextStyle(
                         color: UniCartColors.textPrimary,
                         fontSize: 21,
@@ -1770,10 +1772,10 @@ class _LobbyScreenState extends State<LobbyScreen> {
             runSpacing: 8,
             children: [
               _softInfo(
-                "Final â‚¦${batch["final_item_amount"]} / â‚¦${batch["target_item_amount"]}",
+                "Final ₦${batch["final_item_amount"]} / ₦${batch["target_item_amount"]}",
               ),
               _softInfo("My items ${batch["my_item_count"]}"),
-              _softInfo("My total â‚¦${batch["my_total_item_amount"]}"),
+              _softInfo("My total ₦${batch["my_total_item_amount"]}"),
             ],
           ),
         ],

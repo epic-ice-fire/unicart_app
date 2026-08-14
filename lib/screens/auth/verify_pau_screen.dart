@@ -1,4 +1,4 @@
-﻿import "dart:async";
+import "dart:async";
 
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
@@ -119,6 +119,9 @@ class _VerifyPauScreenState extends State<VerifyPauScreen> {
     }
     if (raw.contains("429")) {
       return "Please wait before requesting another verification code.";
+    }
+    if (raw.contains("503")) {
+      return "UniCart could not send the verification email. Please try again shortly.";
     }
     if (raw.contains("Connection") || raw.contains("ClientException")) {
       return "Could not connect to UniCart. Check your connection and try again.";

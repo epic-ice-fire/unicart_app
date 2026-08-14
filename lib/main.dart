@@ -1,18 +1,14 @@
-﻿import "dart:async";
-
 import "package:flutter/material.dart";
 
 import "screens/auth/login_screen.dart";
 import "screens/lobby/lobby_screen.dart";
-import "services/api_service.dart";
 import "services/session_service.dart";
 import "theme/unicart_theme.dart";
 import "widgets/unicart_ui.dart";
 
 void main() {
-  // Do not make the first frame wait for the API. Start waking the backend in
-  // parallel while the login/auth-gate UI renders immediately.
-  unawaited(ApiService.warmUp());
+  // The HTML shell now wakes the backend immediately, so Flutter can focus on
+  // painting the first app frame as quickly as possible.
   runApp(const UniCartApp());
 }
 
@@ -49,12 +45,12 @@ class AuthGate extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    UniCartLogoMark(size: 68),
+                    UniCartLogoMark(size: 82),
                     SizedBox(height: 24),
                     SizedBox(
-                      width: 26,
-                      height: 26,
-                      child: CircularProgressIndicator(strokeWidth: 2.2),
+                      width: 28,
+                      height: 28,
+                      child: CircularProgressIndicator(strokeWidth: 2.3),
                     ),
                     SizedBox(height: 14),
                     Text(

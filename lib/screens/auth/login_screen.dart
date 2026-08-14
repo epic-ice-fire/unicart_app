@@ -1,6 +1,8 @@
 import "package:flutter/material.dart";
 import "../../services/auth_service.dart";
 import "../../services/session_service.dart";
+import "../../theme/unicart_theme.dart";
+import "../../widgets/unicart_ui.dart";
 import "../lobby/lobby_screen.dart";
 import "register_screen.dart";
 
@@ -12,10 +14,11 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final emailController    = TextEditingController();
+  final emailController = TextEditingController();
   final passwordController = TextEditingController();
-  bool isLoading    = false;
-  bool rememberMe   = true;
+
+  bool isLoading = false;
+  bool rememberMe = true;
   bool showPassword = false;
 
   @override
@@ -25,18 +28,15 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _loadSavedCredentials() async {
-    final savedEmail    = await SessionService.getSavedEmail();
-    final savedPassword = await SessionService.getSavedPassword();
+    final savedEmail = await SessionService.getSavedEmail();
     if (!mounted) return;
-    if (savedEmail != null && savedEmail.isNotEmpty) {
-      setState(() {
+
+    setState(() {
+      if (savedEmail != null && savedEmail.isNotEmpty) {
         emailController.text = savedEmail;
         rememberMe = true;
-      });
-    }
-    if (savedPassword != null && savedPassword.isNotEmpty) {
-      setState(() => passwordController.text = savedPassword);
-    }
+      }
+    });
   }
 
   @override
@@ -47,11 +47,11 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> login() async {
-    final email    = emailController.text.trim();
-    final password = passwordController.text.trim();
+    final email = emailController.text.trim();
+    final password = passwordController.text;
 
     if (email.isEmpty || password.isEmpty) {
-      showMessage("Enter your email and password.");
+      showUniCartSnack(context, "Enter your email and password.");
       return;
     }
 
@@ -63,10 +63,8 @@ class _LoginScreenState extends State<LoginScreen> {
       await SessionService.saveToken(token);
       if (rememberMe) {
         await SessionService.saveEmail(email);
-        await SessionService.savePassword(password);
       } else {
         await SessionService.clearEmail();
-        await SessionService.clearPassword();
       }
 
       if (!mounted) return;
@@ -76,141 +74,369 @@ class _LoginScreenState extends State<LoginScreen> {
       );
     } catch (e) {
       final raw = e.toString();
-      String msg;
+      String message;
+
       if (raw.contains("401") || raw.contains("Invalid email or password")) {
-        msg = "Incorrect email or password. Please try again.";
+        message = "Incorrect email or password. Please try again.";
       } else if (raw.contains("Failed to fetch") ||
           raw.contains("SocketException") ||
           raw.contains("ClientException") ||
           raw.contains("Connection")) {
-        msg = "Could not connect to server. Check your internet and try again.";
+        message = "Could not connect to UniCart. Check your connection and try again.";
       } else if (raw.contains("500")) {
-        msg = "Server is waking up — please try again in a moment.";
+        message = "The server is waking up. Try again in a moment.";
       } else {
-        msg = "Login failed. Please try again.";
+        message = "Login failed. Please try again.";
       }
-      showMessage(msg);
+
+      if (mounted) showUniCartSnack(context, message);
     } finally {
       if (mounted) setState(() => isLoading = false);
     }
   }
 
-  void showMessage(String message) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Row(children: [
-        const Icon(Icons.error_outline, color: Colors.white, size: 18),
-        const SizedBox(width: 10),
-        Expanded(child: Text(message,
-            style: const TextStyle(fontWeight: FontWeight.w600))),
-      ]),
-      backgroundColor: const Color(0xFFB42318),
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      margin: const EdgeInsets.all(16),
-      duration: const Duration(seconds: 4),
-    ));
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 460),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Image.asset(
-                    "assets/images/logo.png",
-                    height: 80,
-                    width: 80,
-                  ),
-                  const SizedBox(height: 20),
-                  const Text("Welcome back",
-                      style: TextStyle(fontSize: 30, fontWeight: FontWeight.w800,
-                          color: Color(0xFF101828))),
-                  const SizedBox(height: 8),
-                  const Text("Log in to continue your campus group buying.",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 15, color: Color(0xFF667085))),
-                  const SizedBox(height: 24),
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Column(children: [
-                        TextField(
-                          controller: emailController,
-                          keyboardType: TextInputType.emailAddress,
-                          decoration: const InputDecoration(
-                            labelText: "Email",
-                            prefixIcon: Icon(Icons.mail_outline),
+      body: UniCartBackdrop(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final wide = constraints.maxWidth >= 900;
+
+            return Center(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.symmetric(
+                  horizontal: constraints.maxWidth < 480 ? 20 : 32,
+                  vertical: 24,
+                ),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 980),
+                  child: wide
+                      ? Row(
+                          children: [
+                            const Expanded(child: _LoginStory()),
+                            const SizedBox(width: 56),
+                            Expanded(child: _loginCard()),
+                          ],
+                        )
+                      : ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 440),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              const Align(
+                                alignment: Alignment.centerLeft,
+                                child: UniCartLogoMark(
+                                  size: 58,
+                                  showWordmark: true,
+                                ),
+                              ),
+                              const SizedBox(height: 36),
+                              _mobileHeader(),
+                              const SizedBox(height: 24),
+                              _loginCard(),
+                            ],
                           ),
                         ),
-                        const SizedBox(height: 14),
-                        TextField(
-                          controller: passwordController,
-                          obscureText: !showPassword,
-                          decoration: InputDecoration(
-                            labelText: "Password",
-                            prefixIcon: const Icon(Icons.lock_outline),
-                            suffixIcon: IconButton(
-                              icon: Icon(showPassword
-                                  ? Icons.visibility_off_outlined
-                                  : Icons.visibility_outlined,
-                                  size: 20, color: const Color(0xFF667085)),
-                              onPressed: () =>
-                                  setState(() => showPassword = !showPassword),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(children: [
-                          Checkbox(
-                            value: rememberMe,
-                            activeColor: const Color(0xFF1F7A4C),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(4)),
-                            onChanged: (v) =>
-                                setState(() => rememberMe = v ?? true),
-                          ),
-                          const Text("Remember me",
-                              style: TextStyle(fontSize: 14,
-                                  color: Color(0xFF344054),
-                                  fontWeight: FontWeight.w500)),
-                          const Spacer(),
-                          Text("Stay logged in",
-                              style: TextStyle(fontSize: 12,
-                                  color: Colors.grey.shade400)),
-                        ]),
-                        const SizedBox(height: 10),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: isLoading ? null : login,
-                            child: Text(isLoading ? "Logging in..." : "Login"),
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        TextButton(
-                          onPressed: isLoading ? null : () {
-                            Navigator.push(context, MaterialPageRoute(
-                                builder: (_) => const RegisterScreen()));
-                          },
-                          child: const Text("Create an account"),
-                        ),
-                      ]),
-                    ),
-                  ),
-                ],
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _mobileHeader() {
+    return const Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        UniCartEyebrow(
+          icon: Icons.school_outlined,
+          label: "Built for PAU students",
+        ),
+        SizedBox(height: 18),
+        Text(
+          "Welcome back.",
+          style: TextStyle(
+            color: UniCartColors.textPrimary,
+            fontSize: 34,
+            height: 1.05,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -1,
+          ),
+        ),
+        SizedBox(height: 10),
+        Text(
+          "Sign in to join a lobby, lock in your items, and track the batch from one place.",
+          style: TextStyle(
+            color: UniCartColors.textSecondary,
+            fontSize: 15,
+            height: 1.55,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _loginCard() {
+    return UniCartPanel(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            "Sign in",
+            style: TextStyle(
+              color: UniCartColors.textPrimary,
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            "Use the account you created for UniCart.",
+            style: TextStyle(
+              color: UniCartColors.textSecondary,
+              fontSize: 13,
+            ),
+          ),
+          const SizedBox(height: 22),
+          TextField(
+            controller: emailController,
+            keyboardType: TextInputType.emailAddress,
+            textInputAction: TextInputAction.next,
+            autofillHints: const [AutofillHints.email],
+            style: const TextStyle(color: UniCartColors.textPrimary),
+            decoration: const InputDecoration(
+              labelText: "Email address",
+              hintText: "you@example.com",
+              prefixIcon: Icon(Icons.alternate_email_rounded),
+            ),
+          ),
+          const SizedBox(height: 14),
+          TextField(
+            controller: passwordController,
+            obscureText: !showPassword,
+            textInputAction: TextInputAction.done,
+            autofillHints: const [AutofillHints.password],
+            onSubmitted: (_) => isLoading ? null : login(),
+            style: const TextStyle(color: UniCartColors.textPrimary),
+            decoration: InputDecoration(
+              labelText: "Password",
+              prefixIcon: const Icon(Icons.lock_outline_rounded),
+              suffixIcon: IconButton(
+                tooltip: showPassword ? "Hide password" : "Show password",
+                onPressed: () => setState(() => showPassword = !showPassword),
+                icon: Icon(
+                  showPassword
+                      ? Icons.visibility_off_outlined
+                      : Icons.visibility_outlined,
+                ),
               ),
             ),
           ),
-        ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              SizedBox(
+                width: 44,
+                height: 44,
+                child: Checkbox(
+                  value: rememberMe,
+                  activeColor: UniCartColors.primary,
+                  checkColor: Colors.white,
+                  side: const BorderSide(color: UniCartColors.border),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                  onChanged: isLoading
+                      ? null
+                      : (value) => setState(() => rememberMe = value ?? true),
+                ),
+              ),
+              const SizedBox(width: 2),
+              const Expanded(
+                child: Text(
+                  "Remember email",
+                  style: TextStyle(
+                    color: UniCartColors.textSecondary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              const Text(
+                "Password is never saved",
+                style: TextStyle(
+                  color: UniCartColors.textMuted,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          UniCartPrimaryButton(
+            onPressed: isLoading ? null : login,
+            loading: isLoading,
+            leadingIcon: Icons.arrow_forward_rounded,
+            child: Text(isLoading ? "Signing in" : "Continue to UniCart"),
+          ),
+          const SizedBox(height: 18),
+          Row(
+            children: [
+              const Expanded(child: Divider()),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Text(
+                  "New here?",
+                  style: TextStyle(
+                    color: UniCartColors.textMuted,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              const Expanded(child: Divider()),
+            ],
+          ),
+          const SizedBox(height: 18),
+          UniCartPrimaryButton(
+            outlined: true,
+            onPressed: isLoading
+                ? null
+                : () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                    );
+                  },
+            child: const Text("Create an account"),
+          ),
+        ],
       ),
+    );
+  }
+}
+
+class _LoginStory extends StatelessWidget {
+  const _LoginStory();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.only(left: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          UniCartLogoMark(size: 64, showWordmark: true),
+          SizedBox(height: 42),
+          UniCartEyebrow(
+            icon: Icons.shield_outlined,
+            label: "PAU-verified group buying",
+          ),
+          SizedBox(height: 20),
+          Text(
+            "Campus shopping,\nwithout the chaos.",
+            style: TextStyle(
+              color: UniCartColors.textPrimary,
+              fontSize: 46,
+              height: 1.03,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -1.6,
+            ),
+          ),
+          SizedBox(height: 18),
+          SizedBox(
+            width: 430,
+            child: Text(
+              "Join a verified lobby, pay securely, add your items, and follow the batch until it is ready for processing.",
+              style: TextStyle(
+                color: UniCartColors.textSecondary,
+                fontSize: 16,
+                height: 1.6,
+              ),
+            ),
+          ),
+          SizedBox(height: 32),
+          _StoryPoint(
+            icon: Icons.verified_user_outlined,
+            title: "Verified campus access",
+            body: "PAU email verification keeps the community student-only.",
+          ),
+          SizedBox(height: 14),
+          _StoryPoint(
+            icon: Icons.account_balance_wallet_outlined,
+            title: "Clear payment states",
+            body: "Know what is pending, paid, locked, or ready at a glance.",
+          ),
+          SizedBox(height: 14),
+          _StoryPoint(
+            icon: Icons.inventory_2_outlined,
+            title: "One batch, one source of truth",
+            body: "Your lobby progress and items stay organized in one dashboard.",
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StoryPoint extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String body;
+
+  const _StoryPoint({
+    required this.icon,
+    required this.title,
+    required this.body,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            color: UniCartColors.primary.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(13),
+            border: Border.all(
+              color: UniCartColors.primaryBright.withValues(alpha: 0.22),
+            ),
+          ),
+          child: Icon(icon, color: UniCartColors.primarySoft, size: 20),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  color: UniCartColors.textPrimary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                body,
+                style: const TextStyle(
+                  color: UniCartColors.textSecondary,
+                  fontSize: 13,
+                  height: 1.45,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

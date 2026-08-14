@@ -1,66 +1,70 @@
 import "package:shared_preferences/shared_preferences.dart";
 
 class SessionService {
-  static const String _tokenKey    = "unicart_token";
-  static const String _emailKey    = "unicart_email";
-  static const String _passwordKey = "unicart_password";
+  static const String _tokenKey = "unicart_token";
+  static const String _emailKey = "unicart_email";
+
+  // Legacy versions of UniCart stored the user's plaintext password in
+  // SharedPreferences for automatic re-login. Never keep passwords in app
+  // storage. This key is removed opportunistically whenever session storage is
+  // accessed so existing installations are cleaned automatically.
+  static const String _legacyPasswordKey = "unicart_password";
+
+  static Future<void> _purgeLegacySensitiveData(
+    SharedPreferences prefs,
+  ) async {
+    if (prefs.containsKey(_legacyPasswordKey)) {
+      await prefs.remove(_legacyPasswordKey);
+    }
+  }
 
   // ── Token ──────────────────────────────────────────────────────────────────
 
   static Future<void> saveToken(String token) async {
     final prefs = await SharedPreferences.getInstance();
+    await _purgeLegacySensitiveData(prefs);
     await prefs.setString(_tokenKey, token);
   }
 
   static Future<String?> getToken() async {
     final prefs = await SharedPreferences.getInstance();
+    await _purgeLegacySensitiveData(prefs);
     return prefs.getString(_tokenKey);
   }
 
   static Future<void> clearToken() async {
     final prefs = await SharedPreferences.getInstance();
+    await _purgeLegacySensitiveData(prefs);
     await prefs.remove(_tokenKey);
   }
 
-  // ── Email ──────────────────────────────────────────────────────────────────
+  // ── Email only ─────────────────────────────────────────────────────────────
 
   static Future<void> saveEmail(String email) async {
     final prefs = await SharedPreferences.getInstance();
+    await _purgeLegacySensitiveData(prefs);
     await prefs.setString(_emailKey, email);
   }
 
   static Future<String?> getSavedEmail() async {
     final prefs = await SharedPreferences.getInstance();
+    await _purgeLegacySensitiveData(prefs);
     return prefs.getString(_emailKey);
   }
 
   static Future<void> clearEmail() async {
     final prefs = await SharedPreferences.getInstance();
+    await _purgeLegacySensitiveData(prefs);
     await prefs.remove(_emailKey);
   }
 
-  // ── Password ───────────────────────────────────────────────────────────────
-
-  static Future<void> savePassword(String password) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_passwordKey, password);
-  }
-
-  static Future<String?> getSavedPassword() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_passwordKey);
-  }
-
-  static Future<void> clearPassword() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_passwordKey);
-  }
-
-  // ── Full clear ─────────────────────────────────────────────────────────────
+  // ── Full local sign-out ────────────────────────────────────────────────────
 
   static Future<void> clearAll() async {
     final prefs = await SharedPreferences.getInstance();
+    await _purgeLegacySensitiveData(prefs);
     await prefs.remove(_tokenKey);
-    // Keep email/password so Remember Me works next login
+    // The remembered email is intentionally preserved unless the user disables
+    // "Remember email" on the login screen. Passwords are never persisted.
   }
 }

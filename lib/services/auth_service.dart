@@ -30,6 +30,36 @@ class AuthService {
     return response["access_token"] as String;
   }
 
+  static Future<void> logout(String token) async {
+    await ApiService.post(
+      "/auth/logout",
+      token: token,
+    );
+  }
+
+  static Future<void> logoutAll(String token) async {
+    await ApiService.post(
+      "/auth/logout-all",
+      token: token,
+    );
+  }
+
+  static Future<String> changePassword({
+    required String token,
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final response = await ApiService.post(
+      "/auth/change-password",
+      token: token,
+      body: {
+        "current_password": currentPassword,
+        "new_password": newPassword,
+      },
+    );
+    return response["access_token"] as String;
+  }
+
   static Future<Map<String, dynamic>> me(String token) async {
     return await ApiService.get("/auth/me", token: token);
   }

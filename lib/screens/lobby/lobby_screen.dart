@@ -1,19 +1,19 @@
 import "dart:async";
-import "package:flutter/foundation.dart" show kIsWeb;
 import "package:flutter/material.dart";
 import "package:url_launcher/url_launcher.dart";
-// ignore: depend_on_referenced_packages
-import "package:web/web.dart" as web show window;
 import "../../models/lobby.dart";
 import "../../services/auth_service.dart";
 import "../../services/lobby_service.dart";
 import "../../services/session_service.dart";
+import "../../theme/unicart_theme.dart";
+import "../../widgets/unicart_ui.dart";
 import "../admin/admin_dashboard_screen.dart";
 import "../auth/login_screen.dart";
 import "../auth/verify_pau_screen.dart";
 
 class LobbyScreen extends StatefulWidget {
   final String token;
+
   const LobbyScreen({super.key, required this.token});
 
   @override
@@ -33,8 +33,6 @@ class _LobbyScreenState extends State<LobbyScreen> {
 
   String? pendingPaymentReference;
   String? pendingPaymentUrl;
-  // Tracks the Flutterwave URL for each item that has a pending payment
-  // so user can reopen it without re-initialising
   final Map<int, String> _pendingItemUrls = {};
 
   Timer? _pollTimer;
@@ -68,79 +66,132 @@ class _LobbyScreenState extends State<LobbyScreen> {
     _pollTimer = null;
   }
 
-  /// Opens a payment URL on all platforms and browsers.
-  /// Uses platformDefault which lets each browser handle it natively.
-  /// This works on Safari, Chrome, Brave, Firefox — mobile and desktop.
   Future<bool> _openPaymentUrl(String url) async {
-    final uri = Uri.parse(url);
-    if (kIsWeb) {
-      // Use window.open() via package:web — works on ALL browsers including desktop Chrome.
-      // This is the modern Flutter web API (not deprecated).
-      try {
-        final result = web.window.open(url, "_blank", "noopener,noreferrer");
-        if (result != null) return true;
-      } catch (_) {}
-      // Fallback: same-tab (always works)
-      try { return await launchUrl(uri, webOnlyWindowName: "_self"); } catch (_) {}
+    final uri = Uri.tryParse(url);
+    if (uri == null || !uri.hasScheme) {
       return false;
     }
-    // Native mobile: open in external browser
+
     try {
-      final result = await launchUrl(uri, mode: LaunchMode.externalApplication);
-      if (result) return true;
-    } catch (_) {}
-    try { return await launchUrl(uri, mode: LaunchMode.platformDefault); } catch (_) {}
-    return false;
+      return await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+        webOnlyWindowName: "_blank",
+      );
+    } catch (_) {
+      try {
+        return await launchUrl(
+          uri,
+          webOnlyWindowName: "_blank",
+        );
+      } catch (_) {
+        return false;
+      }
+    }
   }
 
   Future<void> loadAll({bool silent = false}) async {
-    if (!silent) setState(() { isLoading = true; error = null; });
+    if (!silent) {
+      setState(() {
+        isLoading = true;
+        error = null;
+      });
+    }
+
     try {
-      Map<String, dynamic>? me, myItems, myHistory, details;
-      // Try to get user info. If 401, token expired — auto relogin.
+      Map<String, dynamic>? me;
+      Map<String, dynamic>? myItems;
+      Map<String, dynamic>? myHistory;
+      Map<String, dynamic>? details;
+
       try {
         me = await AuthService.me(widget.token);
       } catch (e) {
         final raw = e.toString();
-        if (raw.contains("401") || raw.contains("Invalid token") || raw.contains("not found")) {
-          if (!silent) setState(() => isLoading = false);
+        if (raw.contains("401") ||
+            raw.contains("Invalid token") ||
+            raw.contains("not found")) {
+          if (!silent && mounted) setState(() => isLoading = false);
           await _tryAutoRelogin();
           return;
         }
-        // Network/500 error — keep me null, show Connecting state
       }
-      try { details = await LobbyService.mainLobbyDetails(widget.token); } catch (_) {}
-      try { myItems = await LobbyService.myMainLobbyItems(widget.token); } catch (_) {}
-      try { myHistory = await LobbyService.myBatchHistory(widget.token); } catch (_) {}
+
+      try {
+        details = await LobbyService.mainLobbyDetails(widget.token);
+      } catch (_) {}
+      try {
+        myItems = await LobbyService.myMainLobbyItems(widget.token);
+      } catch (_) {}
+      try {
+        myHistory = await LobbyService.myBatchHistory(widget.token);
+      } catch (_) {}
+
       if (!mounted) return;
+
       setState(() {
         meData = me;
         myItemsData = myItems;
         myHistoryData = myHistory;
         mainDetailsData = details;
+
         if (details != null) {
           lobby = Lobby(
             lobbyId: details["lobby_id"] as int? ?? 0,
             status: details["status"]?.toString() ?? "open",
-            currentItemAmount: (details["current_item_amount"] as num?)?.toInt() ?? 0,
-            targetItemAmount: (details["target_item_amount"] as num?)?.toInt() ?? 0,
+            currentItemAmount:
+                (details["current_item_amount"] as num?)?.toInt() ?? 0,
+            targetItemAmount:
+                (details["target_item_amount"] as num?)?.toInt() ?? 0,
             memberCount: details["member_count"] as int? ?? 0,
           );
         }
+
         final backendRef = details?["pending_payment_reference"]?.toString();
+        final backendPaymentUrl =
+            details?["pending_payment_authorization_url"]?.toString();
         if (backendRef != null && backendRef.isNotEmpty) {
           pendingPaymentReference = backendRef;
+          if (backendPaymentUrl != null && backendPaymentUrl.isNotEmpty) {
+            pendingPaymentUrl = backendPaymentUrl;
+          }
         } else if (details?["has_pending_payment"] != true) {
           pendingPaymentReference = null;
           pendingPaymentUrl = null;
         }
+
+        _pendingItemUrls.clear();
+        final backendItems = myItems?["items"] as List? ?? const [];
+        for (final rawItem in backendItems) {
+          if (rawItem is! Map) continue;
+          final itemId = (rawItem["item_id"] as num?)?.toInt();
+          final itemStatus = rawItem["item_payment_status"]?.toString();
+          final itemPaymentUrl =
+              rawItem["item_payment_authorization_url"]?.toString();
+          if (itemId != null &&
+              itemStatus == "pending" &&
+              itemPaymentUrl != null &&
+              itemPaymentUrl.isNotEmpty) {
+            _pendingItemUrls[itemId] = itemPaymentUrl;
+          }
+        }
       });
-      final hasPending = details?["has_pending_payment"] == true || pendingPaymentReference != null;
-      final hasItemPending = (myItems?["items"] as List? ?? []).any(
-        (i) => i is Map && i["item_payment_status"] == "pending");
-      if (hasPending || hasItemPending) { _startPolling(); } else { _stopPolling(); }
+
+      final hasPending =
+          details?["has_pending_payment"] == true ||
+          pendingPaymentReference != null;
+      final hasItemPending =
+          (myItems?["items"] as List? ?? []).any(
+            (i) => i is Map && i["item_payment_status"] == "pending",
+          );
+
+      if (hasPending || hasItemPending) {
+        _startPolling();
+      } else {
+        _stopPolling();
+      }
     } catch (e) {
-      if (!silent) setState(() => error = e.toString());
+      if (!silent && mounted) setState(() => error = e.toString());
     } finally {
       if (mounted && !silent) setState(() => isLoading = false);
     }
@@ -148,851 +199,1807 @@ class _LobbyScreenState extends State<LobbyScreen> {
 
   Future<void> logout() async {
     _stopPolling();
+
+    // Revoke the server-side session first. Local cleanup still happens if the
+    // network request fails so the user is never trapped in a signed-in UI.
+    try {
+      await AuthService.logout(widget.token);
+    } catch (_) {}
+
     await SessionService.clearToken();
     if (!mounted) return;
-    Navigator.pushAndRemoveUntil(context,
-        MaterialPageRoute(builder: (_) => const LoginScreen()), (r) => false);
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      (route) => false,
+    );
   }
 
-  /// Auto-relogin when token expires (401).
-  /// Uses saved email+password to get a fresh token silently.
-  /// If no saved credentials, redirects to login screen.
   Future<void> _tryAutoRelogin() async {
     if (!mounted) return;
-    try {
-      final savedEmail    = await SessionService.getSavedEmail();
-      final savedPassword = await SessionService.getSavedPassword();
-      if (savedEmail != null && savedEmail.isNotEmpty &&
-          savedPassword != null && savedPassword.isNotEmpty) {
-        final newToken = await AuthService.login(
-            email: savedEmail, password: savedPassword);
-        await SessionService.saveToken(newToken);
-        if (!mounted) return;
-        Navigator.pushAndRemoveUntil(context,
-          MaterialPageRoute(builder: (_) => LobbyScreen(token: newToken)),
-          (route) => false);
-      } else {
-        await SessionService.clearToken();
-        if (!mounted) return;
-        Navigator.pushAndRemoveUntil(context,
-          MaterialPageRoute(builder: (_) => const LoginScreen()),
-          (route) => false);
-      }
-    } catch (_) {
-      await SessionService.clearToken();
-      if (!mounted) return;
-      Navigator.pushAndRemoveUntil(context,
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-        (route) => false);
-    }
+
+    // Never replay a stored password. If the server says the bearer session is
+    // expired or revoked, clear it locally and require a normal login.
+    await SessionService.clearToken();
+    if (!mounted) return;
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      (route) => false,
+    );
   }
 
   Future<void> openVerifyScreen() async {
-    final result = await Navigator.push(context,
-        MaterialPageRoute(builder: (_) => VerifyPauScreen(token: widget.token)));
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => VerifyPauScreen(token: widget.token)),
+    );
     if (result == true) await loadAll();
   }
 
   Future<void> openAdminDashboard() async {
-    await Navigator.push(context,
-        MaterialPageRoute(builder: (_) => AdminDashboardScreen(token: widget.token)));
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AdminDashboardScreen(token: widget.token),
+      ),
+    );
     await loadAll();
   }
 
   Future<void> startEntryFeePayment() async {
     setState(() => isBusy = true);
     try {
-      final response = await LobbyService.initializeEntryFeePayment(widget.token);
+      final response =
+          await LobbyService.initializeEntryFeePayment(widget.token);
       final reference = response["reference"]?.toString();
       final authUrl = response["authorization_url"]?.toString();
-      setState(() { pendingPaymentReference = reference; pendingPaymentUrl = authUrl; });
+
+      setState(() {
+        pendingPaymentReference = reference;
+        pendingPaymentUrl = authUrl;
+      });
+
       if (authUrl != null && authUrl.isNotEmpty) {
         _startPolling();
-        final itemLaunched = await _openPaymentUrl(authUrl);
-        showMessage(itemLaunched
-            ? "Flutterwave opened. Come back and tap \"Verify payment\" once done."
-            : "Could not open Flutterwave — tap \"Open Flutterwave\" on the item below.");
+        final launched = await _openPaymentUrl(authUrl);
+        showMessage(
+          launched
+              ? "Flutterwave opened. Pay, then tap ‘I've Paid’ when you return."
+              : "Could not open the payment page. Use ‘Open Flutterwave’ below to try again.",
+          isWarning: !launched,
+        );
       }
-    } catch (e) { showMessage(e.toString()); }
-    finally { if (mounted) setState(() => isBusy = false); }
+    } catch (e) {
+      showMessage(e.toString());
+    } finally {
+      if (mounted) setState(() => isBusy = false);
+    }
   }
 
   Future<void> verifyEntryFeePayment() async {
     final reference = pendingPaymentReference;
     if (reference == null || reference.isEmpty) {
-      showMessage("No pending payment found. Try refreshing."); return;
+      showMessage("No pending payment found. Try refreshing.");
+      return;
     }
+
     setState(() => isBusy = true);
     try {
-      final response = await LobbyService.verifyEntryFeePayment(widget.token, reference: reference);
+      final response = await LobbyService.verifyEntryFeePayment(
+        widget.token,
+        reference: reference,
+      );
+
       if (response["status"]?.toString() == "success") {
-        setState(() { pendingPaymentReference = null; pendingPaymentUrl = null; });
+        setState(() {
+          pendingPaymentReference = null;
+          pendingPaymentUrl = null;
+        });
         _stopPolling();
-        showMessage("Payment confirmed! You've joined the lobby.", isSuccess: true);
+        showMessage(
+          "Payment confirmed! You've joined the lobby.",
+          isSuccess: true,
+        );
       } else {
-        showMessage(response["message"]?.toString() ?? "Payment not confirmed yet. Try again in a moment.");
+        showMessage(
+          response["message"]?.toString() ??
+              "Payment not confirmed yet. Try again in a moment.",
+          isWarning: true,
+        );
       }
       await loadAll();
-    } catch (e) { showMessage(e.toString()); }
-    finally { if (mounted) setState(() => isBusy = false); }
+    } catch (e) {
+      showMessage(e.toString());
+    } finally {
+      if (mounted) setState(() => isBusy = false);
+    }
   }
 
   Future<void> reopenPaymentLink() async {
-    if (pendingPaymentUrl == null || pendingPaymentUrl!.isEmpty) {
-      showMessage("No payment link. Tap Pay to get a new one."); return;
-    }
-    final uri2 = Uri.parse(pendingPaymentUrl!);
+    // Ask the backend for the authoritative checkout every time. A fresh
+    // pending checkout is restored; an expired checkout is safely reconciled
+    // with Flutterwave and replaced with a new reference/link when appropriate.
+    setState(() => isBusy = true);
     try {
-      if (!await launchUrl(uri2, webOnlyWindowName: "_blank")) await launchUrl(uri2);
-    } catch (_) { await launchUrl(uri2); }
+      final response =
+          await LobbyService.initializeEntryFeePayment(widget.token);
+      final reference = response["reference"]?.toString();
+      final authUrl = response["authorization_url"]?.toString();
+
+      if (authUrl == null || authUrl.isEmpty) {
+        await loadAll();
+        showMessage(
+          "Flutterwave did not return a checkout link. Try again in a moment.",
+          isWarning: true,
+        );
+        return;
+      }
+
+      if (mounted) {
+        setState(() {
+          pendingPaymentReference = reference;
+          pendingPaymentUrl = authUrl;
+        });
+      }
+
+      _startPolling();
+      final launched = await _openPaymentUrl(authUrl);
+      if (!launched) {
+        showMessage(
+          "Could not open Flutterwave. Try the checkout button again.",
+          isWarning: true,
+        );
+      }
+      await loadAll();
+    } catch (e) {
+      await loadAll();
+      final message = e.toString().replaceFirst("Exception: ", "");
+      final recovered = message.toLowerCase().contains("already completed");
+      showMessage(
+        message,
+        isSuccess: recovered,
+        isWarning: !recovered,
+      );
+    } finally {
+      if (mounted) setState(() => isBusy = false);
+    }
   }
 
   Future<void> leaveLobby() async {
-    final confirmed = await showDialog<bool>(context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text("Leave lobby?"),
-          content: const Text("You will need to pay the entry fee again to rejoin. Unpaid items will be removed."),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text("Cancel")),
-            ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text("Leave")),
-          ],
-        ));
+    final confirmed = await _showConfirmationSheet(
+      icon: Icons.exit_to_app_rounded,
+      color: UniCartColors.danger,
+      title: "Leave this lobby?",
+      message:
+          "Your entry fee is non-refundable. Unpaid items will be removed and you will need to pay again to rejoin.",
+      confirmLabel: "Leave lobby",
+    );
+
     if (confirmed != true) return;
+
     setState(() => isBusy = true);
     try {
-      final r = await LobbyService.leaveLobby(widget.token);
+      final response = await LobbyService.leaveLobby(widget.token);
       await loadAll();
-      showMessage(r["message"]?.toString() ?? "Left lobby");
-    } catch (e) { showMessage(e.toString()); }
-    finally { if (mounted) setState(() => isBusy = false); }
+      showMessage(response["message"]?.toString() ?? "Left lobby.");
+    } catch (e) {
+      showMessage(e.toString());
+    } finally {
+      if (mounted) setState(() => isBusy = false);
+    }
   }
 
   Future<void> addItem() async {
     final amountRaw = double.tryParse(itemAmountController.text.trim());
-    final amount = amountRaw != null ? double.parse(amountRaw.toStringAsFixed(2)) : null;
+    final amount = amountRaw != null
+        ? double.parse(amountRaw.toStringAsFixed(2))
+        : null;
     final itemLink = itemLinkController.text.trim();
+
     if (itemLink.isEmpty || amount == null || amount <= 0) {
-      showMessage("Enter a valid item link and amount."); return;
+      showMessage("Enter a valid product link and guest price.");
+      return;
     }
+
+    final parsedLink = Uri.tryParse(itemLink);
+    final hasValidWebScheme = parsedLink != null &&
+        (parsedLink.scheme == "https" || parsedLink.scheme == "http") &&
+        parsedLink.host.isNotEmpty;
+    if (!hasValidWebScheme) {
+      showMessage(
+        "Paste the full product URL, including https:// (for example: https://www.temu.com/...).",
+        isWarning: true,
+      );
+      return;
+    }
+
     setState(() => isBusy = true);
     try {
-      final response = await LobbyService.addItem(widget.token, itemLink: itemLink, itemAmount: amount.toInt());
-      itemLinkController.clear(); itemAmountController.clear();
+      final response = await LobbyService.addItem(
+        widget.token,
+        itemLink: itemLink,
+        itemAmount: amount.toInt(),
+      );
+      itemLinkController.clear();
+      itemAmountController.clear();
       await loadAll();
-      showMessage(response["message"]?.toString() ?? "Item added. Pay for it to lock it in.", isSuccess: true);
-    } catch (e) { showMessage(e.toString()); }
-    finally { if (mounted) setState(() => isBusy = false); }
+      showMessage(
+        response["message"]?.toString() ??
+            "Item added. Pay for it to lock it in.",
+        isSuccess: true,
+      );
+    } catch (e) {
+      showMessage(e.toString());
+    } finally {
+      if (mounted) setState(() => isBusy = false);
+    }
   }
 
   Future<void> removeItem(int itemId) async {
     setState(() => isBusy = true);
     try {
-      final r = await LobbyService.removeItem(widget.token, itemId: itemId);
+      final response =
+          await LobbyService.removeItem(widget.token, itemId: itemId);
       await loadAll();
-      showMessage(r["message"]?.toString() ?? "Item removed.");
-    } catch (e) { showMessage(e.toString()); }
-    finally { if (mounted) setState(() => isBusy = false); }
+      showMessage(response["message"]?.toString() ?? "Item removed.");
+    } catch (e) {
+      showMessage(e.toString());
+    } finally {
+      if (mounted) setState(() => isBusy = false);
+    }
   }
 
   Future<void> payForItem(int itemId) async {
-    // Guest price confirmation dialog
-    final confirmed = await showDialog<bool>(context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Row(children: [
-            Icon(Icons.warning_amber_rounded, color: Color(0xFFB54708)),
-            SizedBox(width: 8),
-            Flexible(child: Text("Confirm guest price", style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16))),
-          ]),
-          content: const SingleChildScrollView(
-            child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text("Before paying, confirm your price is the guest (logged-out) price.", style: TextStyle(fontSize: 14, height: 1.5)),
-              SizedBox(height: 14),
-              Text("✅  I browsed this product while logged OUT\n✅  I used a private / incognito window\n✅  The price matches what a guest sees\n✅  I understand payments are non-refundable",
-                  style: TextStyle(fontSize: 13, height: 1.7, color: Color(0xFF344054))),
-              SizedBox(height: 12),
-              Text("Submitting a personalised price is a violation and may result in removal with no refund.",
-                  style: TextStyle(fontSize: 12, color: Color(0xFFB42318), fontWeight: FontWeight.w600)),
-            ]),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text("Cancel")),
-            ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text("Price is correct — Pay")),
-          ],
-        ));
+    final confirmed = await _showGuestPriceSheet();
     if (confirmed != true) return;
 
     setState(() => isBusy = true);
     try {
-      final response = await LobbyService.initializeItemPayment(widget.token, itemId: itemId);
+      final response = await LobbyService.initializeItemPayment(
+        widget.token,
+        itemId: itemId,
+      );
       final authUrl = response["authorization_url"]?.toString();
+
       if (authUrl != null && authUrl.isNotEmpty) {
-        // Store URL per item so user can reopen without re-initialising
         setState(() => _pendingItemUrls[itemId] = authUrl);
         _startPolling();
-        final itemLaunched = await _openPaymentUrl(authUrl);
-        showMessage(itemLaunched
-            ? "Flutterwave opened. Come back and tap \"Verify payment\" once done."
-            : "Could not open Flutterwave — tap \"Open Flutterwave\" on the item below.");
+        final launched = await _openPaymentUrl(authUrl);
+        showMessage(
+          launched
+              ? "Flutterwave opened. Return here and verify the payment when you're done."
+              : "Could not open Flutterwave. Use the Open Flutterwave action on the item.",
+          isWarning: !launched,
+        );
       }
       await loadAll();
-    } catch (e) { showMessage(e.toString()); }
-    finally { if (mounted) setState(() => isBusy = false); }
+    } catch (e) {
+      showMessage(e.toString());
+    } finally {
+      if (mounted) setState(() => isBusy = false);
+    }
   }
 
   Future<void> verifyItemPayment(String reference) async {
     setState(() => isBusy = true);
     try {
-      final response = await LobbyService.verifyItemPayment(widget.token, reference: reference);
+      final response = await LobbyService.verifyItemPayment(
+        widget.token,
+        reference: reference,
+      );
       await loadAll();
-      showMessage(response["payment_status"]?.toString() == "paid"
-          ? "Item locked in!" : response["message"]?.toString() ?? "Not confirmed yet.",
-          isSuccess: response["payment_status"]?.toString() == "paid");
-    } catch (e) { showMessage(e.toString()); }
-    finally { if (mounted) setState(() => isBusy = false); }
-  }
-
-  void showMessage(String message, {bool isSuccess = false}) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Row(children: [
-        Icon(isSuccess ? Icons.check_circle_outline : Icons.info_outline, color: Colors.white, size: 18),
-        const SizedBox(width: 8),
-        Expanded(child: Text(message)),
-      ]),
-      backgroundColor: isSuccess ? const Color(0xFF027A48) : const Color(0xFF344054),
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      margin: const EdgeInsets.all(16),
-      duration: Duration(seconds: isSuccess ? 3 : 5),
-    ));
-  }
-
-  // ── Helpers ──────────────────────────────────────────────────────────────
-
-  Widget _pill(String v) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-    decoration: BoxDecoration(color: const Color(0xFFF9FAFB),
-        borderRadius: BorderRadius.circular(999), border: Border.all(color: const Color(0xFFE4E7EC))),
-    child: Text(v, style: const TextStyle(color: Color(0xFF344054), fontWeight: FontWeight.w600, fontSize: 13)),
-  );
-
-  Widget _colorBox(String t, {required Color bg, required Color border, required Color fg}) =>
-      Container(width: double.infinity, padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(14), border: Border.all(color: border)),
-        child: Text(t, style: TextStyle(color: fg, fontWeight: FontWeight.w600, height: 1.5)));
-
-  Widget _warnBox(String t) => _colorBox(t, bg: const Color(0xFFFFF7E6), border: const Color(0xFFFAC515), fg: const Color(0xFF7A2E0E));
-  Widget _okBox(String t)   => _colorBox(t, bg: const Color(0xFFECFDF3), border: const Color(0xFF4BB543), fg: const Color(0xFF027A48));
-  Widget _infoBox(String t) => _colorBox(t, bg: const Color(0xFFEFF8FF), border: const Color(0xFF53B1FD), fg: const Color(0xFF175CD3));
-
-  Widget _empty(String msg, {IconData icon = Icons.inbox_outlined}) => Container(
-    width: double.infinity, padding: const EdgeInsets.all(28),
-    decoration: BoxDecoration(color: const Color(0xFFF9FAFB),
-        borderRadius: BorderRadius.circular(18), border: Border.all(color: const Color(0xFFE4E7EC))),
-    child: Column(children: [
-      Icon(icon, size: 36, color: const Color(0xFFD0D5DD)), const SizedBox(height: 12),
-      Text(msg, textAlign: TextAlign.center, style: const TextStyle(color: Color(0xFF667085), fontSize: 14)),
-    ]),
-  );
-
-  Widget _statChip(String label, String value) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-    decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(18), border: Border.all(color: Colors.white.withValues(alpha: 0.18))),
-    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: const TextStyle(fontSize: 11, color: Color(0xFFEAF7EF), fontWeight: FontWeight.w600)),
-      const SizedBox(height: 4),
-      Text(value, style: const TextStyle(fontSize: 15, color: Colors.white, fontWeight: FontWeight.w800)),
-    ]),
-  );
-
-  Widget _paymentBadge(String s) {
-    Color bg, border; IconData icon; String label;
-    switch (s) {
-      case "paid":      bg = const Color(0xFFECFDF3); border = const Color(0xFF4BB543); icon = Icons.lock_outline; label = "Paid & Locked"; break;
-      case "pending":   bg = const Color(0xFFFFFAEB); border = const Color(0xFFF79009); icon = Icons.hourglass_bottom_outlined; label = "Pending"; break;
-      case "failed":    bg = const Color(0xFFFEF3F2); border = const Color(0xFFF04438); icon = Icons.error_outline; label = "Failed"; break;
-      case "abandoned": bg = const Color(0xFFFEF3F2); border = const Color(0xFFF04438); icon = Icons.cancel_outlined; label = "Abandoned"; break;
-      default:          bg = const Color(0xFFF2F4F7); border = const Color(0xFFD0D5DD); icon = Icons.radio_button_unchecked; label = "Unpaid";
+      final paid = response["payment_status"]?.toString() == "paid";
+      showMessage(
+        paid
+            ? "Item locked in!"
+            : response["message"]?.toString() ?? "Not confirmed yet.",
+        isSuccess: paid,
+        isWarning: !paid,
+      );
+    } catch (e) {
+      showMessage(e.toString());
+    } finally {
+      if (mounted) setState(() => isBusy = false);
     }
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(999), border: Border.all(color: border)),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Icon(icon, size: 13, color: const Color(0xFF344054)), const SizedBox(width: 4),
-        Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF344054))),
-      ]),
+  }
+
+  void showMessage(
+    String message, {
+    bool isSuccess = false,
+    bool isWarning = false,
+  }) {
+    if (!mounted) return;
+    showUniCartSnack(
+      context,
+      message,
+      success: isSuccess,
+      warning: isWarning,
     );
   }
 
-  String _prettyStatus(String s) => const {
-    "triggered": "Target reached", "processing": "Processing",
-    "in_transit": "In transit", "completed": "Delivered", "open": "Open",
-  }[s] ?? s;
-
-  String _statusDesc(String s) => const {
-    "triggered": "Vault hit its target. Admin is preparing the order.",
-    "processing": "Admin is placing the group order now.",
-    "in_transit": "Your order is on its way!",
-    "completed": "Delivered! Thank you for using UniCart.",
-  }[s] ?? "Status update.";
-
-  Color _statusBg(String s) => const {
-    "triggered": Color(0xFFFFF7E6), "processing": Color(0xFFEFF8FF),
-    "in_transit": Color(0xFFF4F3FF), "completed": Color(0xFFECFDF3),
-  }[s] ?? const Color(0xFFF9FAFB);
-
-  Color _statusBorder(String s) => const {
-    "triggered": Color(0xFFFAC515), "processing": Color(0xFF53B1FD),
-    "in_transit": Color(0xFF9E77ED), "completed": Color(0xFF4BB543),
-  }[s] ?? const Color(0xFFE4E7EC);
-
-  IconData _statusIcon(String s) => const {
-    "triggered": Icons.flag_outlined, "processing": Icons.inventory_2_outlined,
-    "in_transit": Icons.local_shipping_outlined, "completed": Icons.check_circle_outline,
-  }[s] ?? Icons.info_outline;
-
-  Widget _statusBadge(String s) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-    decoration: BoxDecoration(color: _statusBg(s), borderRadius: BorderRadius.circular(999), border: Border.all(color: _statusBorder(s))),
-    child: Row(mainAxisSize: MainAxisSize.min, children: [
-      Icon(_statusIcon(s), size: 15, color: const Color(0xFF344054)), const SizedBox(width: 6),
-      Text(_prettyStatus(s), style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF344054), fontSize: 13)),
-    ]),
-  );
-
-  Widget _progressRow(String s) {
-    const statuses = ["triggered", "processing", "in_transit", "completed"];
-    final idx = statuses.indexOf(s);
-    return Wrap(spacing: 8, runSpacing: 8, children: List.generate(statuses.length, (i) {
-      final done = idx >= i;
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-            color: done ? const Color(0xFFECFDF3) : const Color(0xFFF2F4F7),
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: done ? const Color(0xFF4BB543) : const Color(0xFFD0D5DD))),
-        child: Text(_prettyStatus(statuses[i]), style: TextStyle(
-            fontSize: 12, fontWeight: FontWeight.w700,
-            color: done ? const Color(0xFF027A48) : const Color(0xFF667085))),
-      );
-    }));
+  Future<bool?> _showConfirmationSheet({
+    required IconData icon,
+    required Color color,
+    required String title,
+    required String message,
+    required String confirmLabel,
+  }) {
+    return showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        return SafeArea(
+          top: false,
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(22, 12, 22, 24),
+            decoration: const BoxDecoration(
+              color: UniCartColors.surfaceRaised,
+              borderRadius: BorderRadius.vertical(
+                top: Radius.circular(UniCartRadius.xxl),
+              ),
+              border: Border(
+                top: BorderSide(color: UniCartColors.border),
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 42,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: UniCartColors.textMuted,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 22),
+                Container(
+                  width: 48,
+                  height: 48,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: color.withValues(alpha: 0.26)),
+                  ),
+                  child: Icon(icon, color: color, size: 23),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: UniCartColors.textPrimary,
+                    fontSize: 19,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  message,
+                  style: const TextStyle(
+                    color: UniCartColors.textSecondary,
+                    fontSize: 13,
+                    height: 1.55,
+                  ),
+                ),
+                const SizedBox(height: 22),
+                Row(
+                  children: [
+                    Expanded(
+                      child: UniCartPrimaryButton(
+                        outlined: true,
+                        accentColor: UniCartColors.textSecondary,
+                        minHeight: 50,
+                        onPressed: () => Navigator.pop(sheetContext, false),
+                        child: const Text("Cancel"),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: UniCartPrimaryButton(
+                        accentColor: color,
+                        minHeight: 50,
+                        onPressed: () => Navigator.pop(sheetContext, true),
+                        child: Text(confirmLabel),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
-  // ── Build ─────────────────────────────────────────────────────────────────
+  Future<bool?> _showGuestPriceSheet() {
+    const checks = [
+      "I browsed this product while logged out of Temu.",
+      "I used a private or incognito window.",
+      "The submitted amount matches the guest price I saw.",
+      "I understand item payments are non-refundable.",
+    ];
+
+    return showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        return SafeArea(
+          top: false,
+          child: SingleChildScrollView(
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(22, 12, 22, 24),
+              decoration: const BoxDecoration(
+                color: UniCartColors.surfaceRaised,
+                borderRadius: BorderRadius.vertical(
+                  top: Radius.circular(UniCartRadius.xxl),
+                ),
+                border: Border(
+                  top: BorderSide(color: UniCartColors.border),
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 42,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: UniCartColors.textMuted,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 22),
+                  const UniCartEyebrow(
+                    icon: Icons.shield_outlined,
+                    label: "Payment check",
+                    color: UniCartColors.warning,
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    "Confirm the guest price",
+                    style: TextStyle(
+                      color: UniCartColors.textPrimary,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 7),
+                  const Text(
+                    "UniCart standardises items using the logged-out guest price. Confirm every point below before paying.",
+                    style: TextStyle(
+                      color: UniCartColors.textSecondary,
+                      fontSize: 13,
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  ...checks.map(
+                    (check) => Padding(
+                      padding: const EdgeInsets.only(bottom: 11),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: 24,
+                            height: 24,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: UniCartColors.primary.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(7),
+                              border: Border.all(
+                                color: UniCartColors.primary.withValues(alpha: 0.28),
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.check_rounded,
+                              size: 15,
+                              color: UniCartColors.primarySoft,
+                            ),
+                          ),
+                          const SizedBox(width: 11),
+                          Expanded(
+                            child: Text(
+                              check,
+                              style: const TextStyle(
+                                color: UniCartColors.textPrimary,
+                                fontSize: 13,
+                                height: 1.45,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  const UniCartInfoBanner(
+                    color: UniCartColors.danger,
+                    icon: Icons.gavel_rounded,
+                    title: "No-refund policy",
+                    message:
+                        "A personalised or fabricated price is a policy violation and may be removed without refund.",
+                  ),
+                  const SizedBox(height: 18),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: UniCartPrimaryButton(
+                          outlined: true,
+                          accentColor: UniCartColors.textSecondary,
+                          minHeight: 50,
+                          onPressed: () => Navigator.pop(sheetContext, false),
+                          child: const Text("Cancel"),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: UniCartPrimaryButton(
+                          minHeight: 50,
+                          onPressed: () => Navigator.pop(sheetContext, true),
+                          child: const Text("Price is correct — Pay"),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isWide = screenWidth > 600;
-    final hPad = isWide ? 20.0 : 14.0;
-
-    final progress = (lobby == null || lobby!.targetItemAmount == 0)
-        ? 0.0 : (lobby!.currentItemAmount / lobby!.targetItemAmount).clamp(0.0, 1.0);
-
     final isVerified = meData?["is_student_verified"] == true;
-    final isAdmin    = meData?["is_admin"] == true;
+    final isAdmin = meData?["is_admin"] == true;
     final studentEmail = meData?["student_pau_email"]?.toString();
-    final accountEmail = meData?["email"]?.toString() ?? 
-        (isLoading ? "Loading..." : "Connecting...");
-
-    // Count only items the user has actually PAID for (not just added)
-    final rawItemsForCount = (myItemsData?["items"] as List?) ?? [];
-    final myItemCount = rawItemsForCount
-        .where((i) => i is Map && i["is_paid"] == true)
-        .length;
-    final myTotalItemAmount = myItemsData?["total_item_amount"] ?? 0;
+    final accountEmail = meData?["email"]?.toString() ??
+        (isLoading ? "Loading…" : "Connecting…");
 
     final rawItems = (myItemsData?["items"] as List?) ?? [];
     final activeItems = rawItems
-        .where((i) => i is Map<String, dynamic> && i["is_active"] == true)
-        .cast<Map<String, dynamic>>().toList();
+        .where(
+          (i) => i is Map<String, dynamic> && i["is_active"] == true,
+        )
+        .cast<Map<String, dynamic>>()
+        .toList();
 
-    final historyBatches = ((myHistoryData?["batches"] as List?) ?? []).cast<Map<String, dynamic>>();
-    final hasJoined        = mainDetailsData?["has_joined"] == true;
-    final hasPendingPayment = mainDetailsData?["has_pending_payment"] == true;
-    final entryFeeAmount   = mainDetailsData?["entry_fee_amount"] ?? 2000;
+    final historyBatches =
+        ((myHistoryData?["batches"] as List?) ?? [])
+            .cast<Map<String, dynamic>>();
+    final hasJoined = mainDetailsData?["has_joined"] == true;
+    final hasPendingPayment =
+        mainDetailsData?["has_pending_payment"] == true ||
+        pendingPaymentReference != null;
+    final entryFeeAmount = mainDetailsData?["entry_fee_amount"] ?? 2000;
 
-    // meData will be populated on load or after auto-relogin.
-    // No retry loop needed — _tryAutoRelogin handles expired tokens.
+    final progress = (lobby == null || lobby!.targetItemAmount == 0)
+        ? 0.0
+        : (lobby!.currentItemAmount / lobby!.targetItemAmount)
+            .clamp(0.0, 1.0);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Image.asset("assets/images/logo.png", height: 30, width: 30),
-            const SizedBox(width: 8),
-            const Text("UniCart", style: TextStyle(fontWeight: FontWeight.w800)),
-          ],
-        ),
-        actions: [
-          if (_pollTimer != null)
-            const Padding(padding: EdgeInsets.only(right: 4),
-              child: Center(child: SizedBox(width: 16, height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2)))),
-          IconButton(onPressed: isLoading ? null : loadAll, icon: const Icon(Icons.refresh)),
-          IconButton(onPressed: logout, icon: const Icon(Icons.logout)),
-        ],
-      ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SafeArea(
-              child: RefreshIndicator(
-                onRefresh: loadAll,
-                child: ListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: EdgeInsets.symmetric(horizontal: hPad, vertical: 14),
-                  children: [
+      body: UniCartBackdrop(
+        safeArea: false,
+        child: SafeArea(
+          child: Column(
+            children: [
+              _buildTopBar(),
+              Expanded(
+                child: isLoading
+                    ? const _LobbyLoadingState()
+                    : RefreshIndicator(
+                        color: UniCartColors.primarySoft,
+                        backgroundColor: UniCartColors.surfaceRaised,
+                        onRefresh: loadAll,
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            final horizontalPadding = constraints.maxWidth >= 900
+                                ? 28.0
+                                : constraints.maxWidth >= 600
+                                    ? 20.0
+                                    : 14.0;
 
-                    // Error
-                    if (error != null) ...[
-                      Container(
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(color: const Color(0xFFFEF3F2),
-                            borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFFFECACA))),
-                        child: Row(children: [
-                          const Icon(Icons.error_outline, color: Color(0xFFB42318), size: 18),
-                          const SizedBox(width: 8),
-                          Expanded(child: Text(error!, style: const TextStyle(color: Color(0xFFB42318), fontWeight: FontWeight.w600))),
-                        ]),
-                      ),
-                      const SizedBox(height: 14),
-                    ],
-
-                    // ── Hero ──────────────────────────────────────────────
-                    Container(
-                      padding: EdgeInsets.all(isWide ? 22 : 18),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(colors: [Color(0xFF1F7A4C), Color(0xFF2E8B57)],
-                            begin: Alignment.topLeft, end: Alignment.bottomRight),
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text("Campus group buying", style: TextStyle(
-                            fontSize: isWide ? 26 : 22, fontWeight: FontWeight.w800, color: Colors.white, height: 1.2)),
-                        const SizedBox(height: 6),
-                        const Text("Add items, pay for them, hit the vault target together.",
-                            style: TextStyle(fontSize: 13, color: Color(0xFFEAF7EF))),
-                        const SizedBox(height: 16),
-                        Wrap(spacing: 8, runSpacing: 8, children: [
-                          _statChip("Members", "${lobby?.memberCount ?? 0}"),
-                          _statChip("Status", lobby?.status ?? "—"),
-                          _statChip("My Paid Items", "$myItemCount"),
-                          _statChip("My Paid Total", "₦$myTotalItemAmount"),
-                        ]),
-                      ]),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // ── Vault progress ────────────────────────────────────
-                    Card(elevation: 0, child: Padding(
-                      padding: const EdgeInsets.all(18),
-                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Row(children: [
-                          const Expanded(child: Text("Vault progress",
-                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF101828)))),
-                          Text("${(progress * 100).toStringAsFixed(1)}%",
-                              style: const TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF1F7A4C), fontSize: 15)),
-                        ]),
-                        const SizedBox(height: 6),
-                        Text("Lobby #${lobby?.lobbyId ?? "-"}", style: const TextStyle(color: Color(0xFF667085), fontSize: 13)),
-                        const SizedBox(height: 12),
-                        ClipRRect(borderRadius: BorderRadius.circular(999),
-                            child: LinearProgressIndicator(value: progress, minHeight: 12)),
-                        const SizedBox(height: 10),
-                        Text("₦${lobby?.currentItemAmount ?? 0}  /  ₦${lobby?.targetItemAmount ?? 0}",
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF101828))),
-                        if (progress >= 1.0) ...[
-                          const SizedBox(height: 10),
-                          _okBox("🎉 Vault target reached! This batch has been triggered."),
-                        ],
-                      ]),
-                    )),
-
-                    const SizedBox(height: 14),
-
-                    // ── My account ────────────────────────────────────────
-                    Card(elevation: 0, child: Padding(
-                      padding: const EdgeInsets.all(18),
-                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        const Text("My account",
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF101828))),
-                        const SizedBox(height: 14),
-                        // Avatar + info row
-                        if (meData == null && !isLoading) ...[
-                          Container(
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(color: const Color(0xFFEFF8FF),
-                                borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFF53B1FD))),
-                            child: const Row(children: [
-                              SizedBox(width: 18, height: 18,
-                                  child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF175CD3))),
-                              SizedBox(width: 10),
-                              Expanded(child: Text("Connecting to server... please wait a moment.",
-                                  style: TextStyle(color: Color(0xFF175CD3), fontSize: 13, fontWeight: FontWeight.w600))),
-                            ]),
-                          ),
-                        ] else ...[
-                          Row(children: [
-                            Container(
-                              width: 48, height: 48,
-                              decoration: BoxDecoration(color: const Color(0xFF1F7A4C), borderRadius: BorderRadius.circular(14)),
-                              child: Center(child: Text(
-                                accountEmail.isNotEmpty && accountEmail != "Connecting..." ? accountEmail[0].toUpperCase() : "U",
-                                style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800),
-                              )),
-                            ),
-                            const SizedBox(width: 14),
-                            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                              Text(accountEmail,
-                                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Color(0xFF101828)),
-                                  overflow: TextOverflow.ellipsis),
-                              const SizedBox(height: 6),
-                              Wrap(spacing: 6, runSpacing: 4, children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                  decoration: BoxDecoration(
-                                      color: isVerified ? const Color(0xFFECFDF3) : const Color(0xFFFEF3F2),
-                                      borderRadius: BorderRadius.circular(999),
-                                      border: Border.all(color: isVerified ? const Color(0xFF4BB543) : const Color(0xFFFECACA))),
-                                  child: Text(isVerified ? "✅ PAU Verified" : "❌ Not verified",
-                                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700,
-                                          color: isVerified ? const Color(0xFF027A48) : const Color(0xFFB42318))),
-                                ),
-                                if (isAdmin) Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                  decoration: BoxDecoration(color: const Color(0xFFF4F3FF),
-                                      borderRadius: BorderRadius.circular(999), border: Border.all(color: const Color(0xFF9E77ED))),
-                                  child: const Text("👑 Admin",
-                                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF5925DC))),
-                                ),
-                              ]),
-                              if (studentEmail != null) ...[
-                                const SizedBox(height: 4),
-                                Text("🎓 $studentEmail",
-                                    style: const TextStyle(fontSize: 11, color: Color(0xFF667085)),
-                                    overflow: TextOverflow.ellipsis),
-                              ],
-                            ])),
-                          ]),
-                        ],
-                        const SizedBox(height: 14),
-                        SizedBox(width: double.infinity, child: ElevatedButton(
-                          onPressed: isBusy ? null : openVerifyScreen,
-                          child: Text(isVerified ? "Update PAU verification" : "Verify PAU email"),
-                        )),
-                        if (isAdmin) ...[
-                          const SizedBox(height: 10),
-                          SizedBox(width: double.infinity, child: OutlinedButton.icon(
-                            onPressed: isBusy ? null : openAdminDashboard,
-                            icon: const Icon(Icons.admin_panel_settings_outlined),
-                            label: const Text("Admin dashboard"),
-                          )),
-                        ],
-                      ]),
-                    )),
-
-                    const SizedBox(height: 14),
-
-                    // ── Lobby access ──────────────────────────────────────
-                    Card(elevation: 0, child: Padding(
-                      padding: const EdgeInsets.all(18),
-                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        const Text("Lobby access",
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF101828))),
-                        const SizedBox(height: 6),
-                        const Text("Pay the entry fee, join, and manage your spot.",
-                            style: TextStyle(color: Color(0xFF667085), fontSize: 13)),
-                        const SizedBox(height: 14),
-                        Wrap(spacing: 10, runSpacing: 10, children: [
-                          _tileSmall("Lobby ID", "#${lobby?.lobbyId ?? "-"}"),
-                          _tileSmall("Status", lobby?.status ?? "Unknown"),
-                          _tileSmall("Entry fee", "₦$entryFeeAmount"),
-                        ]),
-                        const SizedBox(height: 14),
-                        if (!isVerified)
-                          _warnBox("Verify your PAU email before paying to join.")
-                        else if (hasJoined)
-                          _okBox("✅ You're in the lobby. Add items and pay for them.")
-                        else if (hasPendingPayment || pendingPaymentReference != null)
-                          Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                            _infoBox("⏳ Entry fee payment pending.${pendingPaymentReference != null ? "\nRef: $pendingPaymentReference" : ""}"),
-                            const SizedBox(height: 12),
-                            // BIG green verify button — can't miss on mobile
-                            ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF1F7A4C),
-                                  minimumSize: const Size.fromHeight(52)),
-                              onPressed: isBusy ? null : verifyEntryFeePayment,
-                              icon: const Icon(Icons.verified_outlined, color: Colors.white),
-                              label: const Text("I've Paid — Confirm Now",
-                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15)),
-                            ),
-                            const SizedBox(height: 8),
-                            OutlinedButton.icon(
-                              onPressed: isBusy ? null : reopenPaymentLink,
-                              icon: const Icon(Icons.open_in_new),
-                              label: const Text("Open Flutterwave again"),
-                            ),
-                          ])
-                        else
-                          SizedBox(width: double.infinity, child: ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(52)),
-                            onPressed: isBusy ? null : startEntryFeePayment,
-                            icon: const Icon(Icons.payment),
-                            label: Text("Pay ₦$entryFeeAmount to Join"),
-                          )),
-                        const SizedBox(height: 10),
-                        SizedBox(width: double.infinity, child: OutlinedButton(
-                          onPressed: isBusy || !hasJoined ? null : leaveLobby,
-                          child: const Text("Leave lobby"),
-                        )),
-                      ]),
-                    )),
-
-                    const SizedBox(height: 14),
-
-                    // ── Add item ──────────────────────────────────────────
-                    Card(elevation: 0, child: Padding(
-                      padding: const EdgeInsets.all(18),
-                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        const Text("Add item",
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF101828))),
-                        const SizedBox(height: 6),
-                        const Text("Paste your product link and guest price. Pay to lock it into the vault.",
-                            style: TextStyle(color: Color(0xFF667085), fontSize: 13)),
-                        const SizedBox(height: 12),
-                        // Guest price warning
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(color: const Color(0xFFFFF7E6),
-                              borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFFAC515))),
-                          child: const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            Row(children: [
-                              Icon(Icons.warning_amber_rounded, size: 16, color: Color(0xFFB54708)),
-                              SizedBox(width: 6),
-                              Text("Use guest (logged-out) pricing",
-                                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Color(0xFF7A2E0E))),
-                            ]),
-                            SizedBox(height: 6),
-                            Text(
-                              "Log OUT of Temu before viewing the price. "
-                              "Open the product in a private/incognito window. "
-                              "Submit the price you see as a guest — not your personalised price.",
-                              style: TextStyle(fontSize: 12, color: Color(0xFF7A2E0E), height: 1.5),
-                            ),
-                          ]),
-                        ),
-                        const SizedBox(height: 10),
-                        // No-refund
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(color: const Color(0xFFFEF3F2),
-                              borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFFFECACA))),
-                          child: const Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                            Icon(Icons.gavel_outlined, size: 14, color: Color(0xFFB42318)),
-                            SizedBox(width: 6),
-                            Expanded(child: Text(
-                              "No-Refund Policy: Item payments are non-refundable. "
-                              "Items removed for violations will not be refunded.",
-                              style: TextStyle(fontSize: 11, color: Color(0xFFB42318), fontWeight: FontWeight.w600, height: 1.5),
-                            )),
-                          ]),
-                        ),
-                        const SizedBox(height: 14),
-                        TextField(
-                          controller: itemLinkController,
-                          decoration: const InputDecoration(
-                            labelText: "Product link",
-                            prefixIcon: Icon(Icons.link),
-                            helperText: "From a guest / logged-out browser session",
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        TextField(
-                          controller: itemAmountController,
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                          decoration: const InputDecoration(
-                            labelText: "Guest price (₦)",
-                            prefixIcon: Icon(Icons.payments_outlined),
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        SizedBox(width: double.infinity, child: ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(50)),
-                          onPressed: isBusy || !hasJoined ? null : addItem,
-                          icon: const Icon(Icons.add),
-                          label: const Text("Add item"),
-                        )),
-                        if (!hasJoined) Padding(
-                          padding: const EdgeInsets.only(top: 8),
-                          child: Text("Join the lobby first to add items.",
-                              style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
-                        ),
-                      ]),
-                    )),
-
-                    const SizedBox(height: 14),
-
-                    // ── My active items ───────────────────────────────────
-                    Card(elevation: 0, child: Padding(
-                      padding: const EdgeInsets.all(18),
-                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Row(children: [
-                          const Expanded(child: Text("My active items",
-                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF101828)))),
-                          if (activeItems.isNotEmpty)
-                            _pill("${activeItems.length} item${activeItems.length == 1 ? "" : "s"}"),
-                        ]),
-                        const SizedBox(height: 6),
-                        const Text("Pay to lock items in. Unpaid items are removed when the batch triggers.",
-                            style: TextStyle(color: Color(0xFF667085), fontSize: 13)),
-                        const SizedBox(height: 14),
-                        if (activeItems.isEmpty)
-                          _empty("No active items yet.\nAdd an item above and pay for it to lock it in.",
-                              icon: Icons.shopping_bag_outlined)
-                        else
-                          ...activeItems.map((item) {
-                            final itemId   = item["item_id"] as int;
-                            final itemLink = item["item_link"]?.toString() ?? "";
-                            final itemAmt  = item["item_amount"] ?? 0;
-                            final pStat    = item["item_payment_status"]?.toString() ?? "unpaid";
-                            final isLocked = item["is_locked"] == true;
-                            final isPaid   = item["is_paid"] == true;
-                            final ref      = item["item_payment_reference"]?.toString();
-
-                            return Container(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              padding: const EdgeInsets.all(14),
-                              decoration: BoxDecoration(
-                                color: isPaid ? const Color(0xFFF0FDF4)
-                                    : pStat == "pending" ? const Color(0xFFFFFBEB) : const Color(0xFFF9FAFB),
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                    color: isPaid ? const Color(0xFF86EFAC)
-                                        : pStat == "pending" ? const Color(0xFFFDE68A) : const Color(0xFFE4E7EC)),
+                            return ListView(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              padding: EdgeInsets.fromLTRB(
+                                horizontalPadding,
+                                18,
+                                horizontalPadding,
+                                42,
                               ),
-                              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                Text(itemLink,
-                                    style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF101828), fontSize: 13),
-                                    maxLines: 2, overflow: TextOverflow.ellipsis),
-                                const SizedBox(height: 8),
-                                Wrap(spacing: 8, runSpacing: 6, children: [
-                                  _pill("₦$itemAmt"),
-                                  _paymentBadge(pStat),
-                                ]),
-                                const SizedBox(height: 10),
-                                Wrap(spacing: 8, runSpacing: 8, children: [
-                                  if (!isLocked) OutlinedButton.icon(
-                                    onPressed: isBusy ? null : () => payForItem(itemId),
-                                    icon: const Icon(Icons.payment_outlined, size: 15),
-                                    label: const Text("Pay for item", style: TextStyle(fontSize: 13)),
-                                  ),
-                                  if (pStat == "pending" && ref != null) ...[
-                                    ElevatedButton.icon(
-                                      onPressed: isBusy ? null : () => verifyItemPayment(ref),
-                                      icon: const Icon(Icons.verified_outlined, size: 15),
-                                      label: const Text("Verify payment", style: TextStyle(fontSize: 13)),
+                              children: [
+                                Center(
+                                  child: ConstrainedBox(
+                                    constraints:
+                                        const BoxConstraints(maxWidth: 1180),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
+                                      children: [
+                                        if (error != null) ...[
+                                          UniCartInfoBanner(
+                                            color: UniCartColors.danger,
+                                            icon: Icons.error_outline_rounded,
+                                            title: "Could not refresh everything",
+                                            message: error,
+                                          ),
+                                          const SizedBox(height: 14),
+                                        ],
+                                        _buildVaultHero(progress),
+                                        const SizedBox(height: 14),
+                                        _buildMetrics(),
+                                        const SizedBox(height: 14),
+                                        _responsivePair(
+                                          constraints.maxWidth,
+                                          _buildAccountCard(
+                                            accountEmail: accountEmail,
+                                            studentEmail: studentEmail,
+                                            isVerified: isVerified,
+                                            isAdmin: isAdmin,
+                                          ),
+                                          _buildLobbyAccessCard(
+                                            isVerified: isVerified,
+                                            hasJoined: hasJoined,
+                                            hasPendingPayment:
+                                                hasPendingPayment,
+                                            entryFeeAmount: entryFeeAmount,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 14),
+                                        _buildAddItemCard(hasJoined),
+                                        const SizedBox(height: 14),
+                                        _buildItemsCard(activeItems),
+                                        const SizedBox(height: 14),
+                                        _buildHistoryCard(historyBatches),
+                                      ],
                                     ),
-                                    // Open Paystack button — always visible when pending
-                                    OutlinedButton.icon(
-                                      onPressed: isBusy ? null : () async {
-                                        final url = _pendingItemUrls[itemId];
-                                        if (url != null && url.isNotEmpty) {
-                                          await _openPaymentUrl(url);
-                                        } else {
-                                          // Re-initialise if URL was lost
-                                          await payForItem(itemId);
-                                        }
-                                      },
-                                      icon: const Icon(Icons.open_in_new, size: 15),
-                                      label: const Text("Open Flutterwave", style: TextStyle(fontSize: 13)),
-                                    ),
-                                  ],
-                                  if (!isLocked) OutlinedButton.icon(
-                                    onPressed: isBusy ? null : () => removeItem(itemId),
-                                    icon: const Icon(Icons.delete_outline, size: 15),
-                                    label: const Text("Remove", style: TextStyle(fontSize: 13)),
                                   ),
-                                  if (isPaid) Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                                    decoration: BoxDecoration(color: const Color(0xFFECFDF3),
-                                        borderRadius: BorderRadius.circular(999), border: Border.all(color: const Color(0xFF4BB543))),
-                                    child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                                      Icon(Icons.lock_outline, size: 13, color: Color(0xFF027A48)), SizedBox(width: 4),
-                                      Text("Locked", style: TextStyle(color: Color(0xFF027A48), fontWeight: FontWeight.w700, fontSize: 12)),
-                                    ]),
-                                  ),
-                                ]),
-                              ]),
+                                ),
+                              ],
                             );
-                          }),
-                      ]),
-                    )),
-
-                    const SizedBox(height: 14),
-
-                    // ── Batch history ─────────────────────────────────────
-                    Card(elevation: 0, child: Padding(
-                      padding: const EdgeInsets.all(18),
-                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        const Text("My batch history",
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF101828))),
-                        const SizedBox(height: 6),
-                        const Text("Track past and current batches you've participated in.",
-                            style: TextStyle(color: Color(0xFF667085), fontSize: 13)),
-                        const SizedBox(height: 14),
-                        if (historyBatches.isEmpty)
-                          _empty("No batch history yet.\nCompleted batches will appear here.", icon: Icons.history_outlined)
-                        else
-                          ...historyBatches.map((batch) {
-                            final rawStatus = batch["status"]?.toString() ?? "";
-                            return Container(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              padding: const EdgeInsets.all(14),
-                              decoration: BoxDecoration(color: const Color(0xFFF9FAFB),
-                                  borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFFE4E7EC))),
-                              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                Row(children: [
-                                  Expanded(child: Text("Batch #${batch["lobby_id"]}",
-                                      style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF101828)))),
-                                  _statusBadge(rawStatus),
-                                ]),
-                                const SizedBox(height: 8),
-                                Text(_statusDesc(rawStatus),
-                                    style: const TextStyle(color: Color(0xFF667085), fontSize: 13)),
-                                const SizedBox(height: 10),
-                                _progressRow(rawStatus),
-                                const SizedBox(height: 10),
-                                Wrap(spacing: 8, runSpacing: 8, children: [
-                                  _pill("Final: ₦${batch["final_item_amount"]} / ₦${batch["target_item_amount"]}"),
-                                  _pill("My items: ${batch["my_item_count"]}"),
-                                  _pill("My total: ₦${batch["my_total_item_amount"]}"),
-                                ]),
-                              ]),
-                            );
-                          }),
-                      ]),
-                    )),
-
-                    const SizedBox(height: 32),
-                  ],
-                ),
+                          },
+                        ),
+                      ),
               ),
-            ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
-  Widget _tileSmall(String label, String value) => Container(
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(color: const Color(0xFFF9FAFB),
-        borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFFE4E7EC))),
-    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: const TextStyle(fontSize: 11, color: Color(0xFF667085), fontWeight: FontWeight.w600)),
-      const SizedBox(height: 4),
-      Text(value, style: const TextStyle(fontSize: 14, color: Color(0xFF101828), fontWeight: FontWeight.w800)),
-    ]),
-  );
+  Widget _buildTopBar() {
+    return Container(
+      height: 66,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: UniCartColors.background.withValues(alpha: 0.92),
+        border: const Border(
+          bottom: BorderSide(color: UniCartColors.divider),
+        ),
+      ),
+      child: Row(
+        children: [
+          const UniCartLogoMark(size: 38),
+          const SizedBox(width: 11),
+          const Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "UniCart",
+                style: TextStyle(
+                  color: UniCartColors.textPrimary,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.45,
+                ),
+              ),
+              Text(
+                "Campus group buying",
+                style: TextStyle(
+                  color: UniCartColors.textMuted,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const Spacer(),
+          if (_pollTimer != null) ...[
+            const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            const SizedBox(width: 10),
+          ],
+          UniCartIconButton(
+            icon: Icons.refresh_rounded,
+            tooltip: "Refresh",
+            onPressed: isLoading ? null : loadAll,
+          ),
+          const SizedBox(width: 8),
+          UniCartIconButton(
+            icon: Icons.logout_rounded,
+            tooltip: "Log out",
+            foregroundColor: UniCartColors.danger,
+            onPressed: logout,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVaultHero(double progress) {
+    final status = lobby?.status ?? "open";
+    final statusColor = _lobbyStatusColor(status);
+
+    return Container(
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF102657), Color(0xFF091634), Color(0xFF0B1220)],
+        ),
+        borderRadius: BorderRadius.circular(UniCartRadius.xxl),
+        border: Border.all(
+          color: UniCartColors.primaryBright.withValues(alpha: 0.30),
+        ),
+        boxShadow: const [
+          BoxShadow(
+            color: UniCartColors.primaryGlow,
+            blurRadius: 34,
+            offset: Offset(0, 14),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const UniCartEyebrow(
+                      icon: Icons.account_balance_wallet_outlined,
+                      label: "Live vault",
+                    ),
+                    const SizedBox(height: 14),
+                    Text(
+                      "Lobby #${lobby?.lobbyId ?? "—"}",
+                      style: const TextStyle(
+                        color: UniCartColors.textPrimary,
+                        fontSize: 28,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.8,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      "Pay together. Reach the target. Move the batch forward.",
+                      style: TextStyle(
+                        color: UniCartColors.textSecondary,
+                        fontSize: 13,
+                        height: 1.45,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              UniCartStatusPill(
+                label: _prettyStatus(status),
+                color: statusColor,
+                icon: _statusIcon(status),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "₦${lobby?.currentItemAmount ?? 0}",
+                style: const TextStyle(
+                  color: UniCartColors.textPrimary,
+                  fontSize: 24,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              Text(
+                "${(progress * 100).toStringAsFixed(1)}%",
+                style: const TextStyle(
+                  color: UniCartColors.primarySoft,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: SizedBox(
+              height: 10,
+              child: LinearProgressIndicator(
+                value: progress,
+                backgroundColor: const Color(0xFF0A1630),
+                valueColor: const AlwaysStoppedAnimation<Color>(
+                  UniCartColors.primaryBright,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 9),
+          Text(
+            "Target ₦${lobby?.targetItemAmount ?? 0}",
+            style: const TextStyle(
+              color: UniCartColors.textMuted,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMetrics() {
+    final itemCount = myItemsData?["item_count"] ?? 0;
+    final myTotal = myItemsData?["total_item_amount"] ?? 0;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 620;
+        if (compact) {
+          return Row(
+            children: [
+              Expanded(
+                child: UniCartMetricCard(
+                  label: "Members",
+                  value: "${lobby?.memberCount ?? 0}",
+                  caption: "In this lobby",
+                  icon: Icons.people_outline_rounded,
+                  accent: UniCartColors.primarySoft,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: UniCartMetricCard(
+                  label: "My items",
+                  value: "$itemCount",
+                  caption: "In the batch",
+                  icon: Icons.inventory_2_outlined,
+                  accent: UniCartColors.purple,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: UniCartMetricCard(
+                  label: "My paid",
+                  value: "₦$myTotal",
+                  caption: "Locked total",
+                  icon: Icons.payments_outlined,
+                  accent: UniCartColors.success,
+                ),
+              ),
+            ],
+          );
+        }
+
+        return Row(
+          children: [
+            Expanded(
+              child: UniCartMetricCard(
+                label: "Members",
+                value: "${lobby?.memberCount ?? 0}",
+                caption: "Active students in Lobby #${lobby?.lobbyId ?? "—"}",
+                icon: Icons.people_outline_rounded,
+                accent: UniCartColors.primarySoft,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: UniCartMetricCard(
+                label: "My items",
+                value: "$itemCount",
+                caption: "Your items in the current lobby",
+                icon: Icons.inventory_2_outlined,
+                accent: UniCartColors.purple,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: UniCartMetricCard(
+                label: "My paid total",
+                value: "₦$myTotal",
+                caption: "Value already locked into the vault",
+                icon: Icons.payments_outlined,
+                accent: UniCartColors.success,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _responsivePair(double width, Widget left, Widget right) {
+    if (width >= 820) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(child: left),
+          const SizedBox(width: 14),
+          Expanded(child: right),
+        ],
+      );
+    }
+
+    return Column(
+      children: [
+        left,
+        const SizedBox(height: 14),
+        right,
+      ],
+    );
+  }
+
+  Widget _buildAccountCard({
+    required String accountEmail,
+    required String? studentEmail,
+    required bool isVerified,
+    required bool isAdmin,
+  }) {
+    return UniCartPanel(
+      color: UniCartColors.surface.withValues(alpha: 0.92),
+      borderColor: UniCartColors.border.withValues(alpha: 0.72),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const UniCartSectionTitle(
+            title: "Your account",
+            subtitle: "Identity and campus access",
+          ),
+          const SizedBox(height: 18),
+          Row(
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF1E3A6E), Color(0xFF1D4ED8)],
+                  ),
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(
+                    color: UniCartColors.primaryBright.withValues(alpha: 0.34),
+                  ),
+                ),
+                child: Text(
+                  accountEmail.isNotEmpty
+                      ? accountEmail[0].toUpperCase()
+                      : "U",
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 13),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      accountEmail,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: UniCartColors.textPrimary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    if (studentEmail != null && studentEmail.isNotEmpty) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        studentEmail,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: UniCartColors.textSecondary,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 7),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: [
+                        UniCartStatusPill(
+                          label: isVerified ? "PAU verified" : "Not verified",
+                          color: isVerified
+                              ? UniCartColors.success
+                              : UniCartColors.warning,
+                          icon: isVerified
+                              ? Icons.verified_rounded
+                              : Icons.school_outlined,
+                        ),
+                        if (isAdmin)
+                          const UniCartStatusPill(
+                            label: "Admin",
+                            color: UniCartColors.purple,
+                            icon: Icons.admin_panel_settings_outlined,
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          UniCartPrimaryButton(
+            outlined: true,
+            accentColor: UniCartColors.primarySoft,
+            leadingIcon: Icons.school_outlined,
+            minHeight: 48,
+            onPressed: isBusy ? null : openVerifyScreen,
+            child: Text(
+              isVerified ? "Update PAU verification" : "Verify PAU email",
+            ),
+          ),
+          if (isAdmin) ...[
+            const SizedBox(height: 9),
+            UniCartPrimaryButton(
+              accentColor: UniCartColors.purple,
+              leadingIcon: Icons.admin_panel_settings_outlined,
+              minHeight: 48,
+              onPressed: isBusy ? null : openAdminDashboard,
+              child: const Text("Open admin dashboard"),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLobbyAccessCard({
+    required bool isVerified,
+    required bool hasJoined,
+    required bool hasPendingPayment,
+    required dynamic entryFeeAmount,
+  }) {
+    return UniCartPanel(
+      color: UniCartColors.surface.withValues(alpha: 0.92),
+      borderColor: UniCartColors.border.withValues(alpha: 0.72),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const UniCartSectionTitle(
+            title: "Lobby access",
+            subtitle: "Pay the entry fee once to unlock this batch",
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _miniInfo("Lobby", "#${lobby?.lobbyId ?? "—"}"),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _miniInfo("Status", _prettyStatus(lobby?.status ?? "—")),
+              ),
+              const SizedBox(width: 8),
+              Expanded(child: _miniInfo("Entry fee", "₦$entryFeeAmount")),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (!isVerified)
+            const UniCartInfoBanner(
+              color: UniCartColors.warning,
+              icon: Icons.lock_outline_rounded,
+              title: "PAU verification required",
+              message: "Verify your university email before joining a lobby.",
+            )
+          else if (hasJoined)
+            const UniCartInfoBanner(
+              color: UniCartColors.success,
+              icon: Icons.check_circle_rounded,
+              title: "You are in this lobby",
+              message: "Add items below and pay for each one you want locked into the batch.",
+            )
+          else if (hasPendingPayment) ...[
+            UniCartInfoBanner(
+              color: UniCartColors.primarySoft,
+              icon: Icons.hourglass_bottom_rounded,
+              title: "Entry payment pending",
+              message: pendingPaymentReference == null
+                  ? "Complete the Flutterwave payment and confirm it here."
+                  : "Reference: $pendingPaymentReference",
+            ),
+            const SizedBox(height: 12),
+            UniCartPrimaryButton(
+              leadingIcon: Icons.verified_rounded,
+              loading: isBusy,
+              onPressed: isBusy ? null : verifyEntryFeePayment,
+              child: const Text("I've Paid — Confirm now"),
+            ),
+            const SizedBox(height: 9),
+            UniCartPrimaryButton(
+              outlined: true,
+              accentColor: UniCartColors.primarySoft,
+              leadingIcon: Icons.open_in_new_rounded,
+              minHeight: 48,
+              onPressed: isBusy ? null : reopenPaymentLink,
+              child: const Text("Refresh / reopen Flutterwave"),
+            ),
+          ] else
+            UniCartPrimaryButton(
+              leadingIcon: Icons.credit_card_rounded,
+              loading: isBusy,
+              onPressed: isBusy || !isVerified ? null : startEntryFeePayment,
+              child: Text("Pay ₦$entryFeeAmount to join"),
+            ),
+          if (hasJoined) ...[
+            const SizedBox(height: 10),
+            UniCartPrimaryButton(
+              outlined: true,
+              accentColor: UniCartColors.danger,
+              leadingIcon: Icons.exit_to_app_rounded,
+              minHeight: 48,
+              onPressed: isBusy ? null : leaveLobby,
+              child: const Text("Leave lobby"),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAddItemCard(bool hasJoined) {
+    return UniCartPanel(
+      color: UniCartColors.surface.withValues(alpha: 0.92),
+      borderColor: UniCartColors.border.withValues(alpha: 0.72),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const UniCartSectionTitle(
+            title: "Add an item",
+            subtitle: "Submit the guest price, then pay to lock the item into the vault",
+          ),
+          const SizedBox(height: 16),
+          const UniCartInfoBanner(
+            color: UniCartColors.warning,
+            icon: Icons.visibility_off_outlined,
+            title: "Use guest pricing",
+            message:
+                "Log out of Temu or use a private/incognito window. Submit the price visible to a guest — not a personalised price.",
+          ),
+          const SizedBox(height: 10),
+          const UniCartInfoBanner(
+            color: UniCartColors.danger,
+            icon: Icons.gavel_rounded,
+            title: "Item payments are non-refundable",
+            message:
+                "Items removed for fraudulent prices or policy violations will not be refunded.",
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: itemLinkController,
+            style: const TextStyle(color: UniCartColors.textPrimary),
+            decoration: const InputDecoration(
+              labelText: "Product link",
+              hintText: "https://…",
+              prefixIcon: Icon(Icons.link_rounded),
+              helperText: "Open the product as a logged-out guest before checking its price.",
+              helperStyle: TextStyle(
+                color: UniCartColors.textMuted,
+                fontSize: 11,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: itemAmountController,
+            keyboardType: TextInputType.number,
+            style: const TextStyle(color: UniCartColors.textPrimary),
+            decoration: const InputDecoration(
+              labelText: "Guest price (₦)",
+              hintText: "e.g. 8500",
+              prefixIcon: Icon(Icons.payments_outlined),
+            ),
+          ),
+          const SizedBox(height: 16),
+          UniCartPrimaryButton(
+            leadingIcon: Icons.add_rounded,
+            loading: isBusy,
+            onPressed: isBusy || !hasJoined ? null : addItem,
+            child: const Text("Add item"),
+          ),
+          if (!hasJoined) ...[
+            const SizedBox(height: 9),
+            const Text(
+              "Join the lobby first to add items.",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: UniCartColors.textMuted,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildItemsCard(List<Map<String, dynamic>> activeItems) {
+    return UniCartPanel(
+      color: UniCartColors.surface.withValues(alpha: 0.92),
+      borderColor: UniCartColors.border.withValues(alpha: 0.72),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          UniCartSectionTitle(
+            title: "My active items",
+            subtitle:
+                "Only paid items are locked in. Unpaid items are removed when the batch triggers.",
+            trailing: activeItems.isEmpty
+                ? null
+                : UniCartStatusPill(
+                    label:
+                        "${activeItems.length} item${activeItems.length == 1 ? "" : "s"}",
+                    color: UniCartColors.primarySoft,
+                    icon: Icons.inventory_2_outlined,
+                  ),
+          ),
+          const SizedBox(height: 16),
+          if (activeItems.isEmpty)
+            _emptyState(
+              icon: Icons.shopping_bag_outlined,
+              title: "No active items yet",
+              message: "Add a product above and pay for it to lock it into the batch.",
+            )
+          else
+            ...activeItems.map(_buildItemTile),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildItemTile(Map<String, dynamic> item) {
+    final itemId = item["item_id"] as int;
+    final itemLink = item["item_link"]?.toString() ?? "";
+    final itemAmount = item["item_amount"] ?? 0;
+    final paymentStatus = item["item_payment_status"]?.toString() ?? "unpaid";
+    final isLocked = item["is_locked"] == true;
+    final isPaid = item["is_paid"] == true;
+    final reference = item["item_payment_reference"]?.toString();
+
+    final accent = isPaid
+        ? UniCartColors.success
+        : paymentStatus == "pending"
+            ? UniCartColors.warning
+            : UniCartColors.border;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: UniCartColors.surfaceRaised,
+        borderRadius: BorderRadius.circular(UniCartRadius.lg),
+        border: Border.all(
+          color: accent == UniCartColors.border
+              ? UniCartColors.border
+              : accent.withValues(alpha: 0.35),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: UniCartColors.surfaceSoft,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  isPaid ? Icons.lock_rounded : Icons.shopping_bag_outlined,
+                  size: 19,
+                  color: isPaid
+                      ? UniCartColors.success
+                      : UniCartColors.primarySoft,
+                ),
+              ),
+              const SizedBox(width: 11),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      itemLink,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: UniCartColors.textPrimary,
+                        fontSize: 13,
+                        height: 1.35,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      "₦$itemAmount",
+                      style: const TextStyle(
+                        color: UniCartColors.textPrimary,
+                        fontSize: 21,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              _paymentStatusPill(paymentStatus, isPaid),
+            ],
+          ),
+          const SizedBox(height: 13),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              if (!isLocked)
+                _itemAction(
+                  label: "Pay for item",
+                  icon: Icons.payment_rounded,
+                  color: UniCartColors.primarySoft,
+                  onTap: isBusy ? null : () => payForItem(itemId),
+                ),
+              if (paymentStatus == "pending" && reference != null) ...[
+                _itemAction(
+                  label: "Verify payment",
+                  icon: Icons.verified_rounded,
+                  color: UniCartColors.success,
+                  onTap: isBusy
+                      ? null
+                      : () => verifyItemPayment(reference),
+                ),
+                _itemAction(
+                  label: "Open Flutterwave",
+                  icon: Icons.open_in_new_rounded,
+                  color: UniCartColors.primarySoft,
+                  onTap: isBusy
+                      ? null
+                      : () async {
+                          final url = _pendingItemUrls[itemId];
+                          if (url != null && url.isNotEmpty) {
+                            await _openPaymentUrl(url);
+                          } else {
+                            await payForItem(itemId);
+                          }
+                        },
+                ),
+              ],
+              if (!isLocked)
+                _itemAction(
+                  label: "Remove",
+                  icon: Icons.delete_outline_rounded,
+                  color: UniCartColors.danger,
+                  onTap: isBusy ? null : () => removeItem(itemId),
+                ),
+              if (isPaid)
+                const UniCartStatusPill(
+                  label: "Locked in vault",
+                  color: UniCartColors.success,
+                  icon: Icons.lock_rounded,
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _itemAction({
+    required String label,
+    required IconData icon,
+    required Color color,
+    required VoidCallback? onTap,
+  }) {
+    return Material(
+      color: color.withValues(alpha: onTap == null ? 0.04 : 0.09),
+      borderRadius: BorderRadius.circular(11),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(11),
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 40),
+          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(11),
+            border: Border.all(color: color.withValues(alpha: 0.24)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 15, color: color),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHistoryCard(List<Map<String, dynamic>> batches) {
+    return UniCartPanel(
+      color: UniCartColors.surface.withValues(alpha: 0.92),
+      borderColor: UniCartColors.border.withValues(alpha: 0.72),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const UniCartSectionTitle(
+            title: "Batch history",
+            subtitle: "Track batches you've participated in from trigger to delivery",
+          ),
+          const SizedBox(height: 16),
+          if (batches.isEmpty)
+            _emptyState(
+              icon: Icons.history_rounded,
+              title: "No batch history yet",
+              message: "Triggered and completed batches will appear here.",
+            )
+          else
+            ...batches.map(_buildHistoryTile),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHistoryTile(Map<String, dynamic> batch) {
+    final status = batch["status"]?.toString() ?? "";
+    final color = _lobbyStatusColor(status);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: UniCartColors.surfaceRaised,
+        borderRadius: BorderRadius.circular(UniCartRadius.lg),
+        border: Border.all(color: UniCartColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  "Batch #${batch["lobby_id"]}",
+                  style: const TextStyle(
+                    color: UniCartColors.textPrimary,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              UniCartStatusPill(
+                label: _prettyStatus(status),
+                color: color,
+                icon: _statusIcon(status),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _statusDescription(status),
+            style: const TextStyle(
+              color: UniCartColors.textSecondary,
+              fontSize: 12,
+              height: 1.45,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _buildBatchProgress(status),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _softInfo(
+                "Final ₦${batch["final_item_amount"]} / ₦${batch["target_item_amount"]}",
+              ),
+              _softInfo("My items ${batch["my_item_count"]}"),
+              _softInfo("My total ₦${batch["my_total_item_amount"]}"),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBatchProgress(String status) {
+    const stages = ["triggered", "processing", "in_transit", "completed"];
+    final currentIndex = stages.indexOf(status);
+
+    return Row(
+      children: List.generate(stages.length * 2 - 1, (index) {
+        if (index.isOdd) {
+          final leftStage = index ~/ 2;
+          final done = currentIndex > leftStage;
+          return Expanded(
+            child: Container(
+              height: 2,
+              color: done
+                  ? UniCartColors.success.withValues(alpha: 0.55)
+                  : UniCartColors.divider,
+            ),
+          );
+        }
+
+        final stageIndex = index ~/ 2;
+        final stage = stages[stageIndex];
+        final done = currentIndex >= stageIndex;
+        final color = done
+            ? _lobbyStatusColor(stage)
+            : UniCartColors.textMuted;
+
+        return Tooltip(
+          message: _prettyStatus(stage),
+          child: Container(
+            width: 30,
+            height: 30,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: done ? 0.14 : 0.07),
+              shape: BoxShape.circle,
+              border: Border.all(color: color.withValues(alpha: 0.32)),
+            ),
+            child: Icon(_statusIcon(stage), size: 14, color: color),
+          ),
+        );
+      }),
+    );
+  }
+
+  Widget _miniInfo(String label, String value) {
+    return Container(
+      padding: const EdgeInsets.all(11),
+      decoration: BoxDecoration(
+        color: UniCartColors.surfaceRaised,
+        borderRadius: BorderRadius.circular(13),
+        border: Border.all(color: UniCartColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              color: UniCartColors.textMuted,
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: UniCartColors.textPrimary,
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _softInfo(String value) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: UniCartColors.surfaceSoft.withValues(alpha: 0.72),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: UniCartColors.border),
+      ),
+      child: Text(
+        value,
+        style: const TextStyle(
+          color: UniCartColors.textSecondary,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  Widget _paymentStatusPill(String status, bool isPaid) {
+    if (isPaid || status == "paid") {
+      return const UniCartStatusPill(
+        label: "Paid & locked",
+        color: UniCartColors.success,
+        icon: Icons.lock_rounded,
+      );
+    }
+    if (status == "pending") {
+      return const UniCartStatusPill(
+        label: "Pending",
+        color: UniCartColors.warning,
+        icon: Icons.hourglass_bottom_rounded,
+      );
+    }
+    if (status == "failed" || status == "abandoned") {
+      return const UniCartStatusPill(
+        label: "Failed",
+        color: UniCartColors.danger,
+        icon: Icons.error_outline_rounded,
+      );
+    }
+    return const UniCartStatusPill(
+      label: "Unpaid",
+      color: UniCartColors.textSecondary,
+      icon: Icons.radio_button_unchecked_rounded,
+    );
+  }
+
+  Widget _emptyState({
+    required IconData icon,
+    required String title,
+    required String message,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 28),
+      decoration: BoxDecoration(
+        color: UniCartColors.surfaceRaised,
+        borderRadius: BorderRadius.circular(UniCartRadius.lg),
+        border: Border.all(color: UniCartColors.border),
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 54,
+            height: 54,
+            decoration: BoxDecoration(
+              color: UniCartColors.surfaceSoft,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Icon(icon, size: 25, color: UniCartColors.textMuted),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            title,
+            style: const TextStyle(
+              color: UniCartColors.textPrimary,
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: UniCartColors.textSecondary,
+              fontSize: 12,
+              height: 1.45,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _prettyStatus(String status) {
+    return const {
+          "triggered": "Target reached",
+          "processing": "Processing",
+          "in_transit": "In transit",
+          "completed": "Delivered",
+          "open": "Open",
+        }[status] ??
+        status;
+  }
+
+  String _statusDescription(String status) {
+    return const {
+          "triggered": "The vault reached its target. Admin is preparing the group order.",
+          "processing": "The group order is being reviewed and placed.",
+          "in_transit": "The batch is on its way.",
+          "completed": "This batch has been delivered.",
+        }[status] ??
+        "Batch status update.";
+  }
+
+  Color _lobbyStatusColor(String status) {
+    return const {
+          "triggered": UniCartColors.warning,
+          "processing": UniCartColors.primarySoft,
+          "in_transit": UniCartColors.purple,
+          "completed": UniCartColors.success,
+          "open": UniCartColors.success,
+        }[status] ??
+        UniCartColors.textSecondary;
+  }
+
+  IconData _statusIcon(String status) {
+    return const {
+          "triggered": Icons.flag_outlined,
+          "processing": Icons.inventory_2_outlined,
+          "in_transit": Icons.local_shipping_outlined,
+          "completed": Icons.check_circle_outline,
+          "open": Icons.lock_open_rounded,
+        }[status] ??
+        Icons.info_outline_rounded;
+  }
+}
+
+class _LobbyLoadingState extends StatelessWidget {
+  const _LobbyLoadingState();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: 28,
+            height: 28,
+            child: CircularProgressIndicator(strokeWidth: 2.3),
+          ),
+          SizedBox(height: 13),
+          Text(
+            "Loading your lobby",
+            style: TextStyle(
+              color: UniCartColors.textSecondary,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

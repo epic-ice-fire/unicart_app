@@ -1,4 +1,5 @@
 import "package:flutter/material.dart";
+import "package:flutter/services.dart";
 import "../../services/auth_service.dart";
 import "../../services/session_service.dart";
 import "../../theme/unicart_theme.dart";
@@ -66,6 +67,10 @@ class _LoginScreenState extends State<LoginScreen> {
       } else {
         await SessionService.clearEmail();
       }
+
+      // Successful sign-in: let the browser / OS password manager offer to
+      // save and autofill credentials. UniCart never persists the raw password.
+      TextInput.finishAutofillContext(shouldSave: rememberMe);
 
       if (!mounted) return;
       Navigator.pushReplacement(
@@ -206,7 +211,7 @@ class _LoginScreenState extends State<LoginScreen> {
             controller: emailController,
             keyboardType: TextInputType.emailAddress,
             textInputAction: TextInputAction.next,
-            autofillHints: const [AutofillHints.email],
+            autofillHints: const [AutofillHints.username, AutofillHints.email],
             style: const TextStyle(color: UniCartColors.textPrimary),
             decoration: const InputDecoration(
               labelText: "Email address",
@@ -258,7 +263,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(width: 2),
               const Expanded(
                 child: Text(
-                  "Remember email",
+                  "Remember sign-in",
                   style: TextStyle(
                     color: UniCartColors.textSecondary,
                     fontSize: 13,
@@ -267,7 +272,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const Text(
-                "Password is never saved",
+                "Saved by your password manager",
                 style: TextStyle(
                   color: UniCartColors.textMuted,
                   fontSize: 12,

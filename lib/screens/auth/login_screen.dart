@@ -59,7 +59,11 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => isLoading = true);
 
     try {
-      final token = await AuthService.login(email: email, password: password);
+      final token = await AuthService.login(
+        email: email,
+        password: password,
+        rememberMe: rememberMe,
+      );
 
       await SessionService.saveToken(token);
       if (rememberMe) {
@@ -68,8 +72,8 @@ class _LoginScreenState extends State<LoginScreen> {
         await SessionService.clearEmail();
       }
 
-      // Successful sign-in: let the browser / OS password manager offer to
-      // save and autofill credentials. UniCart never persists the raw password.
+      // Let the browser / OS password manager save and autofill credentials.
+      // UniCart itself never stores the raw password.
       TextInput.finishAutofillContext(shouldSave: rememberMe);
 
       if (!mounted) return;
@@ -185,140 +189,142 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _loginCard() {
-    return UniCartPanel(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const Text(
-            "Sign in",
-            style: TextStyle(
-              color: UniCartColors.textPrimary,
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 6),
-          const Text(
-            "Use the account you created for UniCart.",
-            style: TextStyle(
-              color: UniCartColors.textSecondary,
-              fontSize: 13,
-            ),
-          ),
-          const SizedBox(height: 22),
-          TextField(
-            controller: emailController,
-            keyboardType: TextInputType.emailAddress,
-            textInputAction: TextInputAction.next,
-            autofillHints: const [AutofillHints.username, AutofillHints.email],
-            style: const TextStyle(color: UniCartColors.textPrimary),
-            decoration: const InputDecoration(
-              labelText: "Email address",
-              hintText: "you@example.com",
-              prefixIcon: Icon(Icons.alternate_email_rounded),
-            ),
-          ),
-          const SizedBox(height: 14),
-          TextField(
-            controller: passwordController,
-            obscureText: !showPassword,
-            textInputAction: TextInputAction.done,
-            autofillHints: const [AutofillHints.password],
-            onSubmitted: (_) => isLoading ? null : login(),
-            style: const TextStyle(color: UniCartColors.textPrimary),
-            decoration: InputDecoration(
-              labelText: "Password",
-              prefixIcon: const Icon(Icons.lock_outline_rounded),
-              suffixIcon: IconButton(
-                tooltip: showPassword ? "Hide password" : "Show password",
-                onPressed: () => setState(() => showPassword = !showPassword),
-                icon: Icon(
-                  showPassword
-                      ? Icons.visibility_off_outlined
-                      : Icons.visibility_outlined,
-                ),
+    return AutofillGroup(
+      child: UniCartPanel(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              "Sign in",
+              style: TextStyle(
+                color: UniCartColors.textPrimary,
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
               ),
             ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              SizedBox(
-                width: 44,
-                height: 44,
-                child: Checkbox(
-                  value: rememberMe,
-                  activeColor: UniCartColors.primary,
-                  checkColor: Colors.white,
-                  side: const BorderSide(color: UniCartColors.border),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                  onChanged: isLoading
-                      ? null
-                      : (value) => setState(() => rememberMe = value ?? true),
-                ),
+            const SizedBox(height: 6),
+            const Text(
+              "Use the account you created for UniCart.",
+              style: TextStyle(
+                color: UniCartColors.textSecondary,
+                fontSize: 13,
               ),
-              const SizedBox(width: 2),
-              const Expanded(
-                child: Text(
-                  "Remember sign-in",
-                  style: TextStyle(
-                    color: UniCartColors.textSecondary,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
+            ),
+            const SizedBox(height: 22),
+            TextField(
+              controller: emailController,
+              keyboardType: TextInputType.emailAddress,
+              textInputAction: TextInputAction.next,
+              autofillHints: const [AutofillHints.username, AutofillHints.email],
+              style: const TextStyle(color: UniCartColors.textPrimary),
+              decoration: const InputDecoration(
+                labelText: "Email address",
+                hintText: "you@example.com",
+                prefixIcon: Icon(Icons.alternate_email_rounded),
+              ),
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: passwordController,
+              obscureText: !showPassword,
+              textInputAction: TextInputAction.done,
+              autofillHints: const [AutofillHints.password],
+              onSubmitted: (_) => isLoading ? null : login(),
+              style: const TextStyle(color: UniCartColors.textPrimary),
+              decoration: InputDecoration(
+                labelText: "Password",
+                prefixIcon: const Icon(Icons.lock_outline_rounded),
+                suffixIcon: IconButton(
+                  tooltip: showPassword ? "Hide password" : "Show password",
+                  onPressed: () => setState(() => showPassword = !showPassword),
+                  icon: Icon(
+                    showPassword
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
                   ),
                 ),
               ),
-              const Text(
-                "Saved by your password manager",
-                style: TextStyle(
-                  color: UniCartColors.textMuted,
-                  fontSize: 12,
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                SizedBox(
+                  width: 44,
+                  height: 44,
+                  child: Checkbox(
+                    value: rememberMe,
+                    activeColor: UniCartColors.primary,
+                    checkColor: Colors.white,
+                    side: const BorderSide(color: UniCartColors.border),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    onChanged: isLoading
+                        ? null
+                        : (value) => setState(() => rememberMe = value ?? true),
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 18),
-          UniCartPrimaryButton(
-            onPressed: isLoading ? null : login,
-            loading: isLoading,
-            leadingIcon: Icons.arrow_forward_rounded,
-            child: Text(isLoading ? "Signing in" : "Continue to UniCart"),
-          ),
-          const SizedBox(height: 18),
-          Row(
-            children: [
-              const Expanded(child: Divider()),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Text(
-                  "New here?",
+                const SizedBox(width: 2),
+                const Expanded(
+                  child: Text(
+                    "Remember sign-in",
+                    style: TextStyle(
+                      color: UniCartColors.textSecondary,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                const Text(
+                  "Stay signed in on this device",
                   style: TextStyle(
                     color: UniCartColors.textMuted,
                     fontSize: 12,
-                    fontWeight: FontWeight.w600,
                   ),
                 ),
-              ),
-              const Expanded(child: Divider()),
-            ],
-          ),
-          const SizedBox(height: 18),
-          UniCartPrimaryButton(
-            outlined: true,
-            onPressed: isLoading
-                ? null
-                : () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const RegisterScreen()),
-                    );
-                  },
-            child: const Text("Create an account"),
-          ),
-        ],
+              ],
+            ),
+            const SizedBox(height: 18),
+            UniCartPrimaryButton(
+              onPressed: isLoading ? null : login,
+              loading: isLoading,
+              leadingIcon: Icons.arrow_forward_rounded,
+              child: Text(isLoading ? "Signing in" : "Continue to UniCart"),
+            ),
+            const SizedBox(height: 18),
+            Row(
+              children: [
+                const Expanded(child: Divider()),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Text(
+                    "New here?",
+                    style: TextStyle(
+                      color: UniCartColors.textMuted,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                const Expanded(child: Divider()),
+              ],
+            ),
+            const SizedBox(height: 18),
+            UniCartPrimaryButton(
+              outlined: true,
+              onPressed: isLoading
+                  ? null
+                  : () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                      );
+                    },
+              child: const Text("Create an account"),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -1,9 +1,10 @@
 name: Deploy UniCart Flutter Web
 
-on:
+"on":
   push:
     branches:
-      - main   # triggers on every push to main
+      - main
+  workflow_dispatch: {}
 
 permissions:
   contents: write
@@ -13,6 +14,7 @@ permissions:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
 
     steps:
       - name: Checkout repo
@@ -21,11 +23,15 @@ jobs:
       - name: Install Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: "3.29.2"
+          flutter-version: "3.47.0"
           channel: stable
+          cache: true
 
       - name: Get dependencies
         run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
 
       - name: Build Flutter web
         run: flutter build web --release --base-href "/unicart_app/"

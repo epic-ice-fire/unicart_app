@@ -17,6 +17,20 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Reject tracked secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git ls-files | grep -Eq '(^|/)\.env($|\.)'; then
+            echo 'A real .env file is tracked by Git.'
+            exit 1
+          fi
+          patterns='FLWSECK(_TEST)?-[A-Za-z0-9_-]{16,}|GOCSPX-[A-Za-z0-9_-]{20,}|1//[A-Za-z0-9_-]{20,}|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----|postgres(ql)?://[^[:space:]/:]+:[^[:space:]@]+@'
+          if git grep -I -n -E "$patterns" -- .; then
+            echo 'Possible credential material found in tracked files.'
+            exit 1
+          fi
+
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:

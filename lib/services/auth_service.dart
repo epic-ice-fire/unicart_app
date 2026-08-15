@@ -17,6 +17,7 @@ class AuthService {
   static Future<String> login({
     required String email,
     required String password,
+    bool rememberMe = true,
   }) async {
     final response = await ApiService.post(
       "/auth/login",
@@ -24,6 +25,7 @@ class AuthService {
       body: {
         "username": email,
         "password": password,
+        "remember_me": rememberMe ? "true" : "false",
       },
     );
 

@@ -1,7 +1,6 @@
 .env
-__pycache__/
-
-# Flutter
+.env.*
+!.env.example
 .dart_tool/
 build/
 .flutter-plugins
@@ -9,10 +8,10 @@ build/
 .packages
 .pub/
 .pub-cache/
-
-# IDE
+coverage/
 .idea/
 .vscode/
-
-# Logs
+*.iml
 *.log
+.DS_Store
+Thumbs.db

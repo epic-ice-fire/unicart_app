@@ -29,7 +29,6 @@ class LobbyService {
     }
   }
 
-  // GET /lobbies/main/details
   static Future<Map<String, dynamic>> mainLobbyDetails(String token) async {
     final response = await http.get(
       Uri.parse("$baseUrl/lobbies/main/details"),
@@ -41,7 +40,6 @@ class LobbyService {
     throw _errorFromResponse(response);
   }
 
-  // GET /lobbies/main/my-items
   static Future<Map<String, dynamic>> myMainLobbyItems(String token) async {
     final response = await http.get(
       Uri.parse("$baseUrl/lobbies/main/my-items"),
@@ -53,7 +51,6 @@ class LobbyService {
     throw _errorFromResponse(response);
   }
 
-  // GET /lobbies/my-history
   static Future<Map<String, dynamic>> myBatchHistory(String token) async {
     final response = await http.get(
       Uri.parse("$baseUrl/lobbies/my-history"),
@@ -65,7 +62,6 @@ class LobbyService {
     throw _errorFromResponse(response);
   }
 
-  // POST /payments/entry-fee/initialize
   static Future<Map<String, dynamic>> initializeEntryFeePayment(
       String token) async {
     final response = await http.post(
@@ -78,7 +74,6 @@ class LobbyService {
     throw _errorFromResponse(response);
   }
 
-  // GET /payments/verify/{reference}
   static Future<Map<String, dynamic>> verifyEntryFeePayment(
     String token, {
     required String reference,
@@ -93,7 +88,6 @@ class LobbyService {
     throw _errorFromResponse(response);
   }
 
-  // POST /lobbies/main/leave
   static Future<Map<String, dynamic>> leaveLobby(String token) async {
     final response = await http.post(
       Uri.parse("$baseUrl/lobbies/main/leave"),
@@ -105,7 +99,6 @@ class LobbyService {
     throw _errorFromResponse(response);
   }
 
-  // POST /lobbies/main/items
   static Future<Map<String, dynamic>> addItem(
     String token, {
     required String itemLink,
@@ -122,7 +115,6 @@ class LobbyService {
     throw _errorFromResponse(response);
   }
 
-  // POST /lobbies/main/items/{item_id}/remove
   static Future<Map<String, dynamic>> removeItem(
     String token, {
     required int itemId,
@@ -137,7 +129,6 @@ class LobbyService {
     throw _errorFromResponse(response);
   }
 
-  // POST /lobbies/admin/items/{item_id}/remove  ← Admin force-remove
   static Future<Map<String, dynamic>> adminForceRemoveItem(
     String token, {
     required int itemId,
@@ -152,7 +143,6 @@ class LobbyService {
     throw _errorFromResponse(response);
   }
 
-  // POST /payments/items/{item_id}/initialize
   static Future<Map<String, dynamic>> initializeItemPayment(
     String token, {
     required int itemId,
@@ -167,7 +157,6 @@ class LobbyService {
     throw _errorFromResponse(response);
   }
 
-  // GET /payments/items/verify/{reference}
   static Future<Map<String, dynamic>> verifyItemPayment(
     String token, {
     required String reference,
@@ -182,7 +171,6 @@ class LobbyService {
     throw _errorFromResponse(response);
   }
 
-  // GET /lobbies/admin/dashboard
   static Future<Map<String, dynamic>> adminDashboard(String token) async {
     final response = await http.get(
       Uri.parse("$baseUrl/lobbies/admin/dashboard"),
@@ -194,7 +182,6 @@ class LobbyService {
     throw _errorFromResponse(response);
   }
 
-  // PATCH /lobbies/admin/open-lobby/target
   static Future<Map<String, dynamic>> adminUpdateOpenLobbyTarget(
     String token, {
     required int targetItemAmount,
@@ -210,7 +197,6 @@ class LobbyService {
     throw _errorFromResponse(response);
   }
 
-  // PATCH /lobbies/admin/batches/{lobby_id}/status
   static Future<Map<String, dynamic>> adminUpdateBatchStatus(
     String token, {
     required int lobbyId,

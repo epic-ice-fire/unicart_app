@@ -1,4 +1,4 @@
-﻿import "dart:async";
+import "dart:async";
 import "dart:convert";
 
 import "package:http/http.dart" as http;
@@ -8,14 +8,8 @@ import "../config/api.dart";
 class ApiService {
   ApiService._();
 
-  // Keep one client for the life of the app so requests can reuse the browser's
-  // existing network connection instead of creating a new top-level client for
-  // every call.
   static final http.Client _client = http.Client();
 
-  // Fire this as soon as UniCart starts. It does not block the UI. Its job is
-  // to start waking the API before the user presses Login when the host has
-  // idled the backend.
   static Future<void> warmUp() async {
     try {
       await _client
@@ -25,8 +19,7 @@ class ApiService {
           )
           .timeout(const Duration(seconds: 60));
     } catch (_) {
-      // Warm-up is best-effort only. Real requests still surface their own
-      // errors normally.
+      return;
     }
   }
 

@@ -7,8 +7,6 @@ import "theme/unicart_theme.dart";
 import "widgets/unicart_ui.dart";
 
 void main() {
-  // The HTML shell now wakes the backend immediately, so Flutter can focus on
-  // painting the first app frame as quickly as possible.
   runApp(const UniCartApp());
 }
 

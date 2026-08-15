@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
-# Install Flutter in writable directory
 if [ ! -d "$HOME/flutter" ]; then
-  git clone https://github.com/flutter/flutter.git -b stable $HOME/flutter
+  git clone https://github.com/flutter/flutter.git -b stable "$HOME/flutter"
 fi
 
-export PATH="$PATH:$HOME/flutter/bin"
-
-flutter doctor
+export PATH="$HOME/flutter/bin:$PATH"
+flutter config --enable-web
 flutter pub get
 flutter build web --release

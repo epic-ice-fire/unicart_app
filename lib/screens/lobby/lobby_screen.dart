@@ -1091,6 +1091,9 @@ class _LobbyScreenState extends State<LobbyScreen> {
   Widget _buildMetrics() {
     final itemCount = myItemsData?["item_count"] ?? 0;
     final myTotal = myItemsData?["total_item_amount"] ?? 0;
+    final remaining = ((lobby?.targetItemAmount ?? 0) -
+            (lobby?.currentItemAmount ?? 0))
+        .clamp(0, 1 << 31);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -1100,10 +1103,10 @@ class _LobbyScreenState extends State<LobbyScreen> {
             children: [
               Expanded(
                 child: UniCartMetricCard(
-                  label: "Members",
-                  value: "${lobby?.memberCount ?? 0}",
-                  caption: "In this lobby",
-                  icon: Icons.people_outline_rounded,
+                  label: "Remaining",
+                  value: "₦$remaining",
+                  caption: "To trigger",
+                  icon: Icons.flag_outlined,
                   accent: UniCartColors.primarySoft,
                 ),
               ),
@@ -1135,10 +1138,10 @@ class _LobbyScreenState extends State<LobbyScreen> {
           children: [
             Expanded(
               child: UniCartMetricCard(
-                label: "Members",
-                value: "${lobby?.memberCount ?? 0}",
-                caption: "Active students in Lobby #${lobby?.lobbyId ?? "—"}",
-                icon: Icons.people_outline_rounded,
+                label: "Remaining",
+                value: "₦$remaining",
+                caption: "Needed before this batch triggers",
+                icon: Icons.flag_outlined,
                 accent: UniCartColors.primarySoft,
               ),
             ),

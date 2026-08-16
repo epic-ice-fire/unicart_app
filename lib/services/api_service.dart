@@ -9,19 +9,57 @@ class ApiService {
   ApiService._();
 
   static const Duration _requestTimeout = Duration(seconds: 25);
+  static const Duration _healthAttemptTimeout = Duration(seconds: 12);
+  static const Duration _backendReadyCache = Duration(minutes: 5);
   static final http.Client _client = http.Client();
+  static DateTime? _lastBackendReadyAt;
 
   static Future<void> warmUp() async {
     try {
-      await _client
-          .get(
-            Uri.parse(ApiConfig.baseUrl),
-            headers: const {"Accept": "application/json"},
-          )
-          .timeout(const Duration(seconds: 20));
+      await ensureBackendReady(maxWait: const Duration(seconds: 75));
     } catch (_) {
       return;
     }
+  }
+
+  static Future<void> ensureBackendReady({
+    Duration maxWait = const Duration(seconds: 75),
+  }) async {
+    final lastReady = _lastBackendReadyAt;
+    if (lastReady != null &&
+        DateTime.now().difference(lastReady) < _backendReadyCache) {
+      return;
+    }
+
+    final deadline = DateTime.now().add(maxWait);
+
+    while (DateTime.now().isBefore(deadline)) {
+      try {
+        final response = await _client
+            .get(
+              Uri.parse("${ApiConfig.baseUrl}/health"),
+              headers: const {"Accept": "application/json"},
+            )
+            .timeout(_healthAttemptTimeout);
+
+        if (response.statusCode >= 200 && response.statusCode < 300) {
+          _lastBackendReadyAt = DateTime.now();
+          return;
+        }
+      } catch (_) {}
+
+      final remaining = deadline.difference(DateTime.now());
+      if (remaining <= Duration.zero) break;
+      await Future.delayed(
+        remaining < const Duration(seconds: 2)
+            ? remaining
+            : const Duration(seconds: 2),
+      );
+    }
+
+    throw TimeoutException(
+      "UniCart server is taking longer than expected to wake up.",
+    );
   }
 
   static Future<http.Response> _withTimeout(

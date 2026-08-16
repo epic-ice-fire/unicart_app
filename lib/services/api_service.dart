@@ -8,6 +8,7 @@ import "../config/api.dart";
 class ApiService {
   ApiService._();
 
+  static const Duration _requestTimeout = Duration(seconds: 25);
   static final http.Client _client = http.Client();
 
   static Future<void> warmUp() async {
@@ -17,9 +18,19 @@ class ApiService {
             Uri.parse(ApiConfig.baseUrl),
             headers: const {"Accept": "application/json"},
           )
-          .timeout(const Duration(seconds: 60));
+          .timeout(const Duration(seconds: 20));
     } catch (_) {
       return;
+    }
+  }
+
+  static Future<http.Response> _withTimeout(
+    Future<http.Response> request,
+  ) async {
+    try {
+      return await request.timeout(_requestTimeout);
+    } on TimeoutException {
+      throw TimeoutException("Connection to UniCart timed out.");
     }
   }
 
@@ -27,12 +38,14 @@ class ApiService {
     String endpoint, {
     String? token,
   }) async {
-    final response = await _client.get(
-      Uri.parse("${ApiConfig.baseUrl}$endpoint"),
-      headers: {
-        "Accept": "application/json",
-        if (token != null) "Authorization": "Bearer $token",
-      },
+    final response = await _withTimeout(
+      _client.get(
+        Uri.parse("${ApiConfig.baseUrl}$endpoint"),
+        headers: {
+          "Accept": "application/json",
+          if (token != null) "Authorization": "Bearer $token",
+        },
+      ),
     );
 
     return _handleResponse("GET", endpoint, response);
@@ -44,20 +57,22 @@ class ApiService {
     String? token,
     bool formEncoded = false,
   }) async {
-    final response = await _client.post(
-      Uri.parse("${ApiConfig.baseUrl}$endpoint"),
-      headers: formEncoded
-          ? {
-              "Accept": "application/json",
-              "Content-Type": "application/x-www-form-urlencoded",
-              if (token != null) "Authorization": "Bearer $token",
-            }
-          : {
-              "Accept": "application/json",
-              "Content-Type": "application/json",
-              if (token != null) "Authorization": "Bearer $token",
-            },
-      body: formEncoded ? body : jsonEncode(body ?? {}),
+    final response = await _withTimeout(
+      _client.post(
+        Uri.parse("${ApiConfig.baseUrl}$endpoint"),
+        headers: formEncoded
+            ? {
+                "Accept": "application/json",
+                "Content-Type": "application/x-www-form-urlencoded",
+                if (token != null) "Authorization": "Bearer $token",
+              }
+            : {
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+                if (token != null) "Authorization": "Bearer $token",
+              },
+        body: formEncoded ? body : jsonEncode(body ?? {}),
+      ),
     );
 
     return _handleResponse("POST", endpoint, response);
@@ -68,14 +83,16 @@ class ApiService {
     Map<String, dynamic>? body,
     String? token,
   }) async {
-    final response = await _client.patch(
-      Uri.parse("${ApiConfig.baseUrl}$endpoint"),
-      headers: {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-        if (token != null) "Authorization": "Bearer $token",
-      },
-      body: jsonEncode(body ?? {}),
+    final response = await _withTimeout(
+      _client.patch(
+        Uri.parse("${ApiConfig.baseUrl}$endpoint"),
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+          if (token != null) "Authorization": "Bearer $token",
+        },
+        body: jsonEncode(body ?? {}),
+      ),
     );
 
     return _handleResponse("PATCH", endpoint, response);
@@ -87,9 +104,7 @@ class ApiService {
     http.Response response,
   ) {
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      if (response.body.isEmpty) {
-        return {};
-      }
+      if (response.body.isEmpty) return {};
       return jsonDecode(response.body) as Map<String, dynamic>;
     }
 

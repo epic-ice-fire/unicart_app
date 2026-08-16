@@ -105,29 +105,55 @@
       animation: unicart-spin .72s linear infinite;
     }
 
-    @media (max-width: 480px) {
-      #unicart-boot {
-        place-items: center;
-      }
-
-      .unicart-boot-card {
-        gap: 16px;
-      }
-    }
-
     @keyframes unicart-spin {
       to { transform: rotate(360deg); }
     }
   </style>
 
   <script>
-    // Wake the API before Flutter has finished downloading/initialising.
-    // This is deliberately fire-and-forget and never blocks the first frame.
-    fetch("https://unicart-backend-v6u9.onrender.com/health", {
-      mode: "no-cors",
-      cache: "no-store",
-      credentials: "omit"
-    }).catch(function () {});
+    (function () {
+      const nativeOpen = window.open.bind(window);
+      window.open = function (url, target, features) {
+        let opened = null;
+        try {
+          opened = nativeOpen(url, target, features);
+        } catch (_) {}
+
+        if (!opened && target === "_blank" && typeof url === "string" && url.startsWith("https://")) {
+          window.location.assign(url);
+          return window;
+        }
+        return opened;
+      };
+
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.getRegistrations()
+          .then(function (registrations) {
+            registrations.forEach(function (registration) {
+              registration.unregister();
+            });
+          })
+          .catch(function () {});
+      }
+
+      if ("caches" in window) {
+        caches.keys()
+          .then(function (keys) {
+            return Promise.all(
+              keys
+                .filter(function (key) { return key.toLowerCase().includes("flutter"); })
+                .map(function (key) { return caches.delete(key); })
+            );
+          })
+          .catch(function () {});
+      }
+
+      fetch("https://unicart-backend-v6u9.onrender.com/health", {
+        mode: "no-cors",
+        cache: "no-store",
+        credentials: "omit"
+      }).catch(function () {});
+    })();
   </script>
 </head>
 <body>
@@ -147,6 +173,14 @@
       const boot = document.getElementById("unicart-boot");
       if (boot) boot.remove();
     });
+
+    setTimeout(function () {
+      const boot = document.getElementById("unicart-boot");
+      const subtitle = document.querySelector(".unicart-boot-subtitle");
+      if (boot && subtitle) {
+        subtitle.textContent = "Still loading. Check your connection, then refresh this page.";
+      }
+    }, 15000);
   </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>

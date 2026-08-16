@@ -34,7 +34,7 @@ jobs:
         run: flutter analyze
 
       - name: Build Flutter web
-        run: flutter build web --release --base-href "/unicart_app/"
+        run: flutter build web --release --pwa-strategy=none --no-web-resources-cdn --base-href "/unicart_app/"
 
       - name: Add _redirects for routing
         run: echo "/*  /index.html  200" > build/web/_redirects

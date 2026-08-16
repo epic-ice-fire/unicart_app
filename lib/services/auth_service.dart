@@ -5,6 +5,7 @@ class AuthService {
     required String email,
     required String password,
   }) async {
+    await ApiService.ensureBackendReady();
     return await ApiService.post(
       "/auth/register",
       body: {
@@ -19,6 +20,7 @@ class AuthService {
     required String password,
     bool rememberMe = true,
   }) async {
+    await ApiService.ensureBackendReady();
     final response = await ApiService.post(
       "/auth/login",
       formEncoded: true,
@@ -63,6 +65,7 @@ class AuthService {
   }
 
   static Future<Map<String, dynamic>> me(String token) async {
+    await ApiService.ensureBackendReady();
     return await ApiService.get("/auth/me", token: token);
   }
 

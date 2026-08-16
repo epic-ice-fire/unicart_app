@@ -1,0 +1,5 @@
+[[redirects]]
+  from = "/*"
+  to = "https://unicartbytekena.onrender.com/:splat"
+  status = 302
+  force = true

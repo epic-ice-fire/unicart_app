@@ -357,33 +357,34 @@ class UniCartLogoMark extends StatelessWidget {
 class UniCartEyebrow extends StatelessWidget {
   final IconData icon;
   final String label;
-  final Color color;
+  final Color? color;
 
   const UniCartEyebrow({
     super.key,
     required this.icon,
     required this.label,
-    this.color = UniCartColors.primarySoft,
+    this.color,
   });
 
   @override
   Widget build(BuildContext context) {
+    final resolvedColor = color ?? UniCartColors.primarySoft;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.10),
+        color: resolvedColor.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color.withValues(alpha: 0.28)),
+        border: Border.all(color: resolvedColor.withValues(alpha: 0.28)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 15, color: color),
+          Icon(icon, size: 15, color: resolvedColor),
           const SizedBox(width: 7),
           Text(
             label,
             style: TextStyle(
-              color: color,
+              color: resolvedColor,
               fontSize: 12,
               fontWeight: FontWeight.w700,
               letterSpacing: 0.2,

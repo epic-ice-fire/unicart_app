@@ -341,7 +341,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       ),
                     ),
                     const SizedBox(height: 22),
-                    const UniCartEyebrow(
+                    UniCartEyebrow(
                       icon: Icons.fact_check_outlined,
                       label: "Required admin check",
                       color: UniCartColors.primarySoft,
@@ -505,7 +505,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 color: UniCartColors.primary.withValues(alpha: 0.28),
               ),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.check_rounded,
               size: 15,
               color: UniCartColors.primarySoft,
@@ -537,7 +537,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const UniCartInfoBanner(
+          UniCartInfoBanner(
             color: UniCartColors.primarySoft,
             icon: Icons.fact_check_outlined,
             title: "Verify guest prices before processing",
@@ -1122,7 +1122,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               ),
               Text(
                 "${(progress * 100).toStringAsFixed(1)}%",
-                style: const TextStyle(
+                style: TextStyle(
                   color: UniCartColors.primarySoft,
                   fontSize: 13,
                   fontWeight: FontWeight.w800,
@@ -1180,7 +1180,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             child: const Text("Update MOV"),
           ),
           const SizedBox(height: 10),
-          const UniCartInfoBanner(
+          UniCartInfoBanner(
             color: UniCartColors.primarySoft,
             icon: Icons.info_outline_rounded,
             title: "Target affects the live vault",

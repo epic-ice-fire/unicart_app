@@ -5,11 +5,11 @@
 <h1 align="center">UniCart</h1>
 
 <p align="center">
-  A campus group-buying platform for Pan-Atlantic University students.
+  A multi-campus group-buying platform for Pan-Atlantic University, Augustine University and Babcock University.
 </p>
 
 <p align="center">
-  <a href="https://unicartbytekena.onrender.com">Live PAU Beta</a> ·
+  <a href="https://unicartbytekena.onrender.com">Live UniCart Beta</a> ·
   <a href="https://github.com/epic-ice-fire/unicart-backend">Backend API</a>
 </p>
 
@@ -19,13 +19,14 @@
 
 ## Overview
 
-UniCart helps verified PAU students combine purchases into shared batches, pay securely, submit item links, and follow each batch from funding to processing.
+UniCart helps campus communities combine purchases into shared batches, pay securely, submit item links, and follow each batch from funding to processing.
 
-The project is designed as a responsive Flutter application with a production FastAPI backend, PostgreSQL persistence, Flutterwave payments, and PAU email verification.
+The project is designed as a responsive Flutter application with a FastAPI backend, PostgreSQL persistence, Flutterwave payments, and campus-specific themes.
 
 ## Highlights
 
-- PAU-only access through `@pau.edu.ng` email verification
+- Campus selection for Pan-Atlantic University (`pau`), Augustine University (`augustine`) and Babcock University (`babcock`)
+- Personal-email account registration without institutional email OTP or manual student approval
 - Secure account and revocable session handling
 - Flutterwave entry-fee and item payment flows
 - Shared lobby progress with batch targets
@@ -67,7 +68,7 @@ flutter test
 flutter run -d chrome
 ```
 
-The client uses the local API in development and the production API for release builds.
+The client uses the local API in development and the configured API for release builds. Campus selection determines the marketplace and accent theme; the backend enforces campus data boundaries.
 
 ## Security
 
@@ -77,4 +78,4 @@ See [SECURITY.md](SECURITY.md) for vulnerability reporting.
 
 ## Status
 
-UniCart is in a controlled PAU beta while the first real student usage and batch activity are measured before wider rollout.
+The multi-campus commercial branch is under development. Validate each campus flow, payment handling and administrator scope in staging before public rollout.

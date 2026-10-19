@@ -9,7 +9,7 @@ import "../../theme/unicart_theme.dart";
 import "../../widgets/unicart_ui.dart";
 import "../admin/admin_dashboard_screen.dart";
 import "../auth/login_screen.dart";
-import "../auth/verify_pau_screen.dart";
+import "../auth/university_selection_screen.dart";
 
 class LobbyScreen extends StatefulWidget {
   final String token;
@@ -253,12 +253,14 @@ class _LobbyScreenState extends State<LobbyScreen> {
     );
   }
 
-  Future<void> openVerifyScreen() async {
-    final result = await Navigator.push(
+  Future<void> openUniversitySelection() async {
+    await Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => VerifyPauScreen(token: widget.token)),
+      MaterialPageRoute(
+        builder: (_) => UniversitySelectionScreen(token: widget.token),
+      ),
     );
-    if (result == true) unawaited(loadAll(silent: true));
+    if (mounted) unawaited(loadAll(silent: true));
   }
 
   Future<void> openAdminDashboard() async {
@@ -725,7 +727,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                                 color: UniCartColors.primary.withValues(alpha: 0.28),
                               ),
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.check_rounded,
                               size: 15,
                               color: UniCartColors.primarySoft,
@@ -787,9 +789,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isVerified = meData?["is_student_verified"] == true;
     final isAdmin = meData?["is_admin"] == true;
-    final studentEmail = meData?["student_pau_email"]?.toString();
     final accountEmail = meData?["email"]?.toString() ??
         (isLoading ? "Loading…" : "Connecting…");
 
@@ -871,12 +871,13 @@ class _LobbyScreenState extends State<LobbyScreen> {
                                           constraints.maxWidth,
                                           _buildAccountCard(
                                             accountEmail: accountEmail,
-                                            studentEmail: studentEmail,
-                                            isVerified: isVerified,
+                                            campusName: UniversityBranding.nameFor(
+                                              meData?["university_code"]?.toString() ??
+                                                  UniversityBranding.code,
+                                            ),
                                             isAdmin: isAdmin,
                                           ),
                                           _buildLobbyAccessCard(
-                                            isVerified: isVerified,
                                             hasJoined: hasJoined,
                                             hasPendingPayment:
                                                 hasPendingPayment,
@@ -1052,7 +1053,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
               ),
               Text(
                 "${(progress * 100).toStringAsFixed(1)}%",
-                style: const TextStyle(
+                style: TextStyle(
                   color: UniCartColors.primarySoft,
                   fontSize: 16,
                   fontWeight: FontWeight.w800,
@@ -1194,8 +1195,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
 
   Widget _buildAccountCard({
     required String accountEmail,
-    required String? studentEmail,
-    required bool isVerified,
+    required String campusName,
     required bool isAdmin,
   }) {
     return UniCartPanel(
@@ -1216,8 +1216,8 @@ class _LobbyScreenState extends State<LobbyScreen> {
                 height: 52,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF1E3A6E), Color(0xFF1D4ED8)],
+                  gradient: LinearGradient(
+                    colors: [UniCartColors.primary, UniCartColors.primaryBright],
                   ),
                   borderRadius: BorderRadius.circular(15),
                   border: Border.all(
@@ -1250,33 +1250,25 @@ class _LobbyScreenState extends State<LobbyScreen> {
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    if (studentEmail != null && studentEmail.isNotEmpty) ...[
-                      const SizedBox(height: 3),
-                      Text(
-                        isVerified
-                            ? studentEmail
-                            : "$studentEmail · pending verification",
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: UniCartColors.textSecondary,
-                          fontSize: 12,
-                        ),
+                    const SizedBox(height: 3),
+                    Text(
+                      campusName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: UniCartColors.textSecondary,
+                        fontSize: 12,
                       ),
-                    ],
+                    ),
                     const SizedBox(height: 7),
                     Wrap(
                       spacing: 6,
                       runSpacing: 6,
                       children: [
                         UniCartStatusPill(
-                          label: isVerified ? "PAU verified" : "Not verified",
-                          color: isVerified
-                              ? UniCartColors.success
-                              : UniCartColors.warning,
-                          icon: isVerified
-                              ? Icons.verified_rounded
-                              : Icons.school_outlined,
+                          label: "Campus selected",
+                          color: UniCartColors.primarySoft,
+                          icon: Icons.school_outlined,
                         ),
                         if (isAdmin)
                           const UniCartStatusPill(
@@ -1295,12 +1287,10 @@ class _LobbyScreenState extends State<LobbyScreen> {
           UniCartPrimaryButton(
             outlined: true,
             accentColor: UniCartColors.primarySoft,
-            leadingIcon: Icons.school_outlined,
+            leadingIcon: Icons.swap_horiz_rounded,
             minHeight: 48,
-            onPressed: isBusy ? null : openVerifyScreen,
-            child: Text(
-              isVerified ? "Update PAU verification" : "Verify PAU email",
-            ),
+            onPressed: isBusy ? null : openUniversitySelection,
+            child: const Text("Switch campus"),
           ),
           if (isAdmin) ...[
             const SizedBox(height: 9),
@@ -1318,7 +1308,6 @@ class _LobbyScreenState extends State<LobbyScreen> {
   }
 
   Widget _buildLobbyAccessCard({
-    required bool isVerified,
     required bool hasJoined,
     required bool hasPendingPayment,
     required dynamic entryFeeAmount,
@@ -1348,14 +1337,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          if (!isVerified)
-            const UniCartInfoBanner(
-              color: UniCartColors.warning,
-              icon: Icons.lock_outline_rounded,
-              title: "PAU verification required",
-              message: "Verify your university email before joining a lobby.",
-            )
-          else if (hasJoined)
+          if (hasJoined)
             const UniCartInfoBanner(
               color: UniCartColors.success,
               icon: Icons.check_circle_rounded,
@@ -1391,7 +1373,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
             UniCartPrimaryButton(
               leadingIcon: Icons.credit_card_rounded,
               loading: isBusy,
-              onPressed: isBusy || !isVerified ? null : startEntryFeePayment,
+              onPressed: isBusy ? null : startEntryFeePayment,
               child: Text("Pay ₦$entryFeeAmount to join"),
             ),
           if (hasJoined) ...[

@@ -1,13 +1,16 @@
 import "package:flutter/material.dart";
 
 import "screens/auth/login_screen.dart";
-import "screens/lobby/lobby_screen.dart";
+import "screens/auth/university_selection_screen.dart";
 import "services/auth_service.dart";
 import "services/session_service.dart";
 import "theme/unicart_theme.dart";
 import "widgets/unicart_ui.dart";
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final savedCampus = await SessionService.getUniversityCode();
+  if (savedCampus != null) UniversityBranding.setActive(savedCampus);
   runApp(const UniCartApp());
 }
 
@@ -16,11 +19,14 @@ class UniCartApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: "UniCart",
-      debugShowCheckedModeBanner: false,
-      theme: UniCartTheme.dark,
-      home: const AuthGate(),
+    return ValueListenableBuilder<String>(
+      valueListenable: UniversityBranding.activeCode,
+      builder: (context, campusCode, _) => MaterialApp(
+        title: "UniCart",
+        debugShowCheckedModeBanner: false,
+        theme: UniCartTheme.dark,
+        home: const AuthGate(),
+      ),
     );
   }
 }
@@ -127,7 +133,7 @@ class _AuthGateState extends State<AuthGate> {
         }
 
         if (result.status == _GateStatus.signedIn && result.token != null) {
-          return LobbyScreen(token: result.token!);
+          return UniversitySelectionScreen(token: result.token!);
         }
 
         return Scaffold(

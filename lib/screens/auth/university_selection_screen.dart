@@ -5,6 +5,7 @@ import "../../services/session_service.dart";
 import "../../theme/unicart_theme.dart";
 import "../../widgets/unicart_ui.dart";
 import "../lobby/lobby_screen.dart";
+import "login_screen.dart";
 
 class UniversitySelectionScreen extends StatefulWidget {
   final String token;
@@ -156,7 +157,7 @@ class _UniversitySelectionScreenState extends State<UniversitySelectionScreen> {
                                     Navigator.pushAndRemoveUntil(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (_) => const _SignedOutNotice(),
+                                        builder: (_) => const LoginScreen(),
                                       ),
                                       (_) => false,
                                     );
@@ -255,25 +256,6 @@ class _CampusCard extends StatelessWidget {
             child: Text(loading ? "Opening campus" : "Enter campus"),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _SignedOutNotice extends StatelessWidget {
-  const _SignedOutNotice();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: UniCartBackdrop(
-        child: Center(
-          child: Text(
-            "You have signed out. Close and reopen UniCart to sign in again.",
-            textAlign: TextAlign.center,
-            style: TextStyle(color: UniCartColors.textSecondary),
-          ),
-        ),
       ),
     );
   }

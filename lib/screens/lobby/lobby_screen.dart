@@ -1964,7 +1964,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
   }
 
   Color _lobbyStatusColor(String status) {
-    return const {
+    return {
           "triggered": UniCartColors.warning,
           "processing": UniCartColors.primarySoft,
           "in_transit": UniCartColors.purple,

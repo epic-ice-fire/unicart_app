@@ -3,7 +3,7 @@ import "../../services/auth_service.dart";
 import "../../services/session_service.dart";
 import "../../theme/unicart_theme.dart";
 import "../../widgets/unicart_ui.dart";
-import "../lobby/lobby_screen.dart";
+import "university_selection_screen.dart";
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -71,7 +71,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (!mounted) return;
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (_) => LobbyScreen(token: token)),
+        MaterialPageRoute(builder: (_) => UniversitySelectionScreen(token: token)),
         (_) => false,
       );
     } catch (e) {
@@ -169,7 +169,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                         const SizedBox(height: 10),
                         const Text(
-                          "Create an account with any email. Inside the app, you will verify your @pau.edu.ng address before joining a lobby.",
+                          "Create an account with any email, then choose your university. No school email verification is required.",
                           style: TextStyle(
                             color: UniCartColors.textSecondary,
                             fontSize: 14,
@@ -286,7 +286,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               onPressed: isLoading
                                   ? null
                                   : () => Navigator.pop(context),
-                              child: const Text(
+                              child: Text(
                                 "Sign in",
                                 style: TextStyle(
                                   color: UniCartColors.primarySoft,

@@ -1,5 +1,54 @@
 import "package:flutter/material.dart";
 
+class UniversityBranding {
+  UniversityBranding._();
+
+  static final ValueNotifier<String> activeCode = ValueNotifier<String>("pau");
+  static const List<String> supportedCodes = ["pau", "augustine", "babcock"];
+
+  static void setActive(String code) {
+    if (supportedCodes.contains(code)) activeCode.value = code;
+  }
+
+  static String nameFor(String code) => switch (code) {
+        "augustine" => "Augustine University",
+        "babcock" => "Babcock University",
+        _ => "Pan-Atlantic University",
+      };
+
+  static String shortNameFor(String code) => switch (code) {
+        "augustine" => "AU",
+        "babcock" => "BU",
+        _ => "PAU",
+      };
+
+  static String get code => activeCode.value;
+  static String get name => nameFor(code);
+
+  // UniCart accent palettes, not claims about official university branding.
+  static Color primaryFor(String code) => switch (code) {
+        "augustine" => const Color(0xFF15803D),
+        "babcock" => const Color(0xFF9F1239),
+        _ => const Color(0xFF2563EB),
+      };
+
+  static Color primaryBrightFor(String code) => switch (code) {
+        "augustine" => const Color(0xFF22C55E),
+        "babcock" => const Color(0xFFE11D48),
+        _ => const Color(0xFF3B82F6),
+      };
+
+  static Color primarySoftFor(String code) => switch (code) {
+        "augustine" => const Color(0xFF86EFAC),
+        "babcock" => const Color(0xFFFDA4AF),
+        _ => const Color(0xFF60A5FA),
+      };
+
+  static Color get primary => primaryFor(code);
+  static Color get primaryBright => primaryBrightFor(code);
+  static Color get primarySoft => primarySoftFor(code);
+}
+
 class UniCartColors {
   UniCartColors._();
 
@@ -10,9 +59,9 @@ class UniCartColors {
   static const surfaceSoft = Color(0xFF16243D);
   static const surfaceInput = Color(0xFF0A1424);
 
-  static const primary = Color(0xFF2563EB);
-  static const primaryBright = Color(0xFF3B82F6);
-  static const primarySoft = Color(0xFF60A5FA);
+  static Color get primary => UniversityBranding.primary;
+  static Color get primaryBright => UniversityBranding.primaryBright;
+  static Color get primarySoft => UniversityBranding.primarySoft;
 
   static const success = Color(0xFF10B981);
   static const warning = Color(0xFFF59E0B);
@@ -58,7 +107,7 @@ class UniCartTheme {
   UniCartTheme._();
 
   static ThemeData get dark {
-    final colorScheme = const ColorScheme.dark(
+    final colorScheme = ColorScheme.dark(
       primary: UniCartColors.primary,
       secondary: UniCartColors.primaryBright,
       surface: UniCartColors.surface,
@@ -155,7 +204,7 @@ class UniCartTheme {
           fontSize: 14,
           fontWeight: FontWeight.w500,
         ),
-        floatingLabelStyle: const TextStyle(
+        floatingLabelStyle: TextStyle(
           color: UniCartColors.primarySoft,
           fontSize: 13,
           fontWeight: FontWeight.w600,
@@ -176,7 +225,7 @@ class UniCartTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(UniCartRadius.md),
-          borderSide: const BorderSide(
+          borderSide: BorderSide(
             color: UniCartColors.primaryBright,
             width: 1.5,
           ),
@@ -238,7 +287,7 @@ class UniCartTheme {
         thickness: 1,
         space: 1,
       ),
-      progressIndicatorTheme: const ProgressIndicatorThemeData(
+      progressIndicatorTheme: ProgressIndicatorThemeData(
         color: UniCartColors.primaryBright,
         linearTrackColor: UniCartColors.surfaceSoft,
         circularTrackColor: UniCartColors.surfaceSoft,

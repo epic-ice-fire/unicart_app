@@ -4,8 +4,8 @@ import "../../services/auth_service.dart";
 import "../../services/session_service.dart";
 import "../../theme/unicart_theme.dart";
 import "../../widgets/unicart_ui.dart";
-import "../lobby/lobby_screen.dart";
 import "register_screen.dart";
+import "university_selection_screen.dart";
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -79,7 +79,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => LobbyScreen(token: token)),
+        MaterialPageRoute(builder: (_) => UniversitySelectionScreen(token: token)),
       );
     } catch (e) {
       final raw = e.toString();
@@ -162,7 +162,7 @@ class _LoginScreenState extends State<LoginScreen> {
       children: [
         UniCartEyebrow(
           icon: Icons.school_outlined,
-          label: "Built for PAU students",
+          label: "Built for campus communities",
         ),
         SizedBox(height: 18),
         Text(
@@ -345,7 +345,7 @@ class _LoginStory extends StatelessWidget {
           SizedBox(height: 42),
           UniCartEyebrow(
             icon: Icons.shield_outlined,
-            label: "PAU-verified group buying",
+            label: "Multi-university group buying",
           ),
           SizedBox(height: 20),
           Text(
@@ -374,7 +374,7 @@ class _LoginStory extends StatelessWidget {
           _StoryPoint(
             icon: Icons.verified_user_outlined,
             title: "Verified campus access",
-            body: "PAU email verification keeps the community student-only.",
+            body: "Choose your university to see its own buying batches.",
           ),
           SizedBox(height: 14),
           _StoryPoint(

@@ -3,6 +3,7 @@ import "package:shared_preferences/shared_preferences.dart";
 class SessionService {
   static const String _tokenKey = "unicart_token";
   static const String _emailKey = "unicart_email";
+  static const String _universityKey = "unicart_university_code";
   static const String _legacyPasswordKey = "unicart_password";
 
   static Future<void> _purgeLegacySensitiveData(
@@ -49,9 +50,29 @@ class SessionService {
     await prefs.remove(_emailKey);
   }
 
+  static Future<void> saveUniversityCode(String code) async {
+    final prefs = await SharedPreferences.getInstance();
+    await _purgeLegacySensitiveData(prefs);
+    await prefs.setString(_universityKey, code);
+  }
+
+  static Future<String?> getUniversityCode() async {
+    final prefs = await SharedPreferences.getInstance();
+    await _purgeLegacySensitiveData(prefs);
+    return prefs.getString(_universityKey);
+  }
+
+  static Future<void> clearUniversityCode() async {
+    final prefs = await SharedPreferences.getInstance();
+    await _purgeLegacySensitiveData(prefs);
+    await prefs.remove(_universityKey);
+  }
+
   static Future<void> clearAll() async {
     final prefs = await SharedPreferences.getInstance();
     await _purgeLegacySensitiveData(prefs);
     await prefs.remove(_tokenKey);
+    await prefs.remove(_emailKey);
+    await prefs.remove(_universityKey);
   }
 }

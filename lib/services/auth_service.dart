@@ -68,30 +68,16 @@ class AuthService {
     await ApiService.ensureBackendReady();
     return await ApiService.get("/auth/me", token: token);
   }
-
-  static Future<Map<String, dynamic>> requestPauCode({
+  
+  static Future<Map<String, dynamic>> selectUniversity({
     required String token,
-    required String pauEmail,
+    required String universityCode,
   }) async {
+    await ApiService.ensureBackendReady();
     return await ApiService.post(
-      "/auth/pau/request",
+      "/auth/university/select",
       token: token,
-      body: {
-        "pau_email": pauEmail,
-      },
-    );
-  }
-
-  static Future<Map<String, dynamic>> verifyPauCode({
-    required String token,
-    required String code,
-  }) async {
-    return await ApiService.post(
-      "/auth/pau/verify",
-      token: token,
-      body: {
-        "code": code,
-      },
+      body: {"university_code": universityCode},
     );
   }
 }

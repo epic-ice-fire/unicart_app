@@ -1138,7 +1138,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               child: LinearProgressIndicator(
                 value: progress,
                 backgroundColor: UniCartColors.surfaceSoft,
-                valueColor: const AlwaysStoppedAnimation<Color>(
+                valueColor: AlwaysStoppedAnimation<Color>(
                   UniCartColors.primaryBright,
                 ),
               ),
@@ -1228,7 +1228,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   Widget _buildPipelineLegend() {
-    const stages = [
+    final stages = [
       ("Triggered", UniCartColors.warning, Icons.flag_rounded),
       ("Processing", UniCartColors.primarySoft, Icons.settings_rounded),
       ("In transit", UniCartColors.purple, Icons.local_shipping_rounded),

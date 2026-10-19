@@ -1069,7 +1069,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
               child: LinearProgressIndicator(
                 value: progress,
                 backgroundColor: const Color(0xFF0A1630),
-                valueColor: const AlwaysStoppedAnimation<Color>(
+                valueColor: AlwaysStoppedAnimation<Color>(
                   UniCartColors.primaryBright,
                 ),
               ),

@@ -398,20 +398,29 @@ class _LoginStory extends StatelessWidget {
           ),
           SizedBox(height: 20),
           Text(
-            "Campus shopping,\nwithout the chaos.",
+            schoolId == "augustine"
+                ? "A more curated way\nto shop your campus."
+                : schoolId == "babcock"
+                    ? "Fresh finds.\nBetter campus buys."
+                    : "Campus shopping,\nwithout the chaos.",
             style: TextStyle(
               color: UniCartColors.textPrimary,
-              fontSize: 46,
-              height: 1.03,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -1.6,
+              fontFamily: schoolId == "augustine" ? "Georgia" : null,
+              fontSize: schoolId == "augustine" ? 44 : 46,
+              height: schoolId == "augustine" ? 1.08 : 1.03,
+              fontWeight: schoolId == "augustine" ? FontWeight.w600 : FontWeight.w800,
+              letterSpacing: schoolId == "augustine" ? -0.8 : -1.6,
             ),
           ),
           SizedBox(height: 18),
           SizedBox(
             width: 430,
             child: Text(
-              "Join a verified lobby, pay securely, add your items, and follow the batch until it is ready for processing.",
+              schoolId == "augustine"
+                  ? "Thoughtful group shopping with a warmer, editorial feel—from joining a lobby to tracking every item."
+                  : schoolId == "babcock"
+                      ? "Bring your campus together, unlock group-buying deals, and track every item with a fresh, energetic feel."
+                      : "Join a verified lobby, pay securely, add your items, and follow the batch until it is ready for processing.",
               style: TextStyle(
                 color: UniCartColors.textSecondary,
                 fontSize: 16,

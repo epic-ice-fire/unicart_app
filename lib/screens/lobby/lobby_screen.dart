@@ -154,6 +154,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
       myHistory = dashboardResults[2];
 
       if (!mounted) return;
+      if (me != null) UniCartColors.setSchool(me["school_id"]?.toString());
 
       setState(() {
         meData = me;
@@ -225,6 +226,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
 
   Future<void> logout() async {
     _stopPolling();
+    UniCartColors.setSchool("pau");
 
     // Start server-side revocation immediately, but do not make the user stare
     // at the lobby while a slow/cold network request finishes. This is SPA
@@ -566,7 +568,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
           top: false,
           child: Container(
             padding: const EdgeInsets.fromLTRB(22, 12, 22, 24),
-            decoration: const BoxDecoration(
+            decoration:  BoxDecoration(
               color: UniCartColors.surfaceRaised,
               borderRadius: BorderRadius.vertical(
                 top: Radius.circular(UniCartRadius.xxl),
@@ -604,7 +606,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                 const SizedBox(height: 16),
                 Text(
                   title,
-                  style: const TextStyle(
+                  style:  TextStyle(
                     color: UniCartColors.textPrimary,
                     fontSize: 19,
                     fontWeight: FontWeight.w800,
@@ -613,7 +615,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                 const SizedBox(height: 8),
                 Text(
                   message,
-                  style: const TextStyle(
+                  style:  TextStyle(
                     color: UniCartColors.textSecondary,
                     fontSize: 13,
                     height: 1.55,
@@ -668,7 +670,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
           child: SingleChildScrollView(
             child: Container(
               padding: const EdgeInsets.fromLTRB(22, 12, 22, 24),
-              decoration: const BoxDecoration(
+              decoration:  BoxDecoration(
                 color: UniCartColors.surfaceRaised,
                 borderRadius: BorderRadius.vertical(
                   top: Radius.circular(UniCartRadius.xxl),
@@ -692,13 +694,13 @@ class _LobbyScreenState extends State<LobbyScreen> {
                     ),
                   ),
                   const SizedBox(height: 22),
-                  const UniCartEyebrow(
+                   UniCartEyebrow(
                     icon: Icons.shield_outlined,
                     label: "Payment check",
                     color: UniCartColors.warning,
                   ),
                   const SizedBox(height: 16),
-                  const Text(
+                   Text(
                     "Confirm the guest price",
                     style: TextStyle(
                       color: UniCartColors.textPrimary,
@@ -707,7 +709,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                     ),
                   ),
                   const SizedBox(height: 7),
-                  const Text(
+                   Text(
                     "UniCart standardises items using the logged-out guest price. Confirm every point below before paying.",
                     style: TextStyle(
                       color: UniCartColors.textSecondary,
@@ -733,7 +735,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                                 color: UniCartColors.primary.withValues(alpha: 0.28),
                               ),
                             ),
-                            child: const Icon(
+                            child:  Icon(
                               Icons.check_rounded,
                               size: 15,
                               color: UniCartColors.primarySoft,
@@ -743,7 +745,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                           Expanded(
                             child: Text(
                               check,
-                              style: const TextStyle(
+                              style:  TextStyle(
                                 color: UniCartColors.textPrimary,
                                 fontSize: 13,
                                 height: 1.45,
@@ -755,7 +757,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                     ),
                   ),
                   const SizedBox(height: 6),
-                  const UniCartInfoBanner(
+                   UniCartInfoBanner(
                     color: UniCartColors.danger,
                     icon: Icons.gavel_rounded,
                     title: "No-refund policy",
@@ -920,7 +922,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
         color: UniCartColors.background.withValues(alpha: 0.92),
-        border: const Border(
+        border:  Border(
           bottom: BorderSide(color: UniCartColors.divider),
         ),
       ),
@@ -943,7 +945,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+               Text(
                 "UniCart",
                 style: TextStyle(
                   color: UniCartColors.textPrimary,
@@ -954,7 +956,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
               ),
               Text(
                 "${currentSchool.shortName} marketplace",
-                style: const TextStyle(
+                style:  TextStyle(
                   color: UniCartColors.textMuted,
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
@@ -1004,7 +1006,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
         border: Border.all(
           color: UniCartColors.primaryBright.withValues(alpha: 0.30),
         ),
-        boxShadow: const [
+        boxShadow:  [
           BoxShadow(
             color: UniCartColors.primaryGlow,
             blurRadius: 34,
@@ -1029,7 +1031,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                     const SizedBox(height: 14),
                     Text(
                       "Lobby #${lobby?.lobbyId ?? "—"}",
-                      style: const TextStyle(
+                      style:  TextStyle(
                         color: UniCartColors.textPrimary,
                         fontSize: 28,
                         fontWeight: FontWeight.w800,
@@ -1037,7 +1039,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    const Text(
+                     Text(
                       "Pay together. Reach the target. Move the batch forward.",
                       style: TextStyle(
                         color: UniCartColors.textSecondary,
@@ -1062,7 +1064,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
             children: [
               Text(
                 "₦${lobby?.currentItemAmount ?? 0}",
-                style: const TextStyle(
+                style:  TextStyle(
                   color: UniCartColors.textPrimary,
                   fontSize: 24,
                   fontWeight: FontWeight.w800,
@@ -1071,7 +1073,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
               ),
               Text(
                 "${(progress * 100).toStringAsFixed(1)}%",
-                style: const TextStyle(
+                style:  TextStyle(
                   color: UniCartColors.primarySoft,
                   fontSize: 16,
                   fontWeight: FontWeight.w800,
@@ -1087,7 +1089,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
               child: LinearProgressIndicator(
                 value: progress,
                 backgroundColor: const Color(0xFF0A1630),
-                valueColor: const AlwaysStoppedAnimation<Color>(
+                valueColor:  AlwaysStoppedAnimation<Color>(
                   UniCartColors.primaryBright,
                 ),
               ),
@@ -1096,7 +1098,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
           const SizedBox(height: 9),
           Text(
             "Target ₦${lobby?.targetItemAmount ?? 0}",
-            style: const TextStyle(
+            style:  TextStyle(
               color: UniCartColors.textMuted,
               fontSize: 12,
               fontWeight: FontWeight.w600,
@@ -1263,7 +1265,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                       accountEmail,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style:  TextStyle(
                         color: UniCartColors.textPrimary,
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
@@ -1277,7 +1279,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                             : "$studentEmail · pending verification",
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style:  TextStyle(
                           color: UniCartColors.textSecondary,
                           fontSize: 12,
                         ),
@@ -1298,7 +1300,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                               : Icons.school_outlined,
                         ),
                         if (isAdmin)
-                          const UniCartStatusPill(
+                           UniCartStatusPill(
                             label: "Admin",
                             color: UniCartColors.purple,
                             icon: Icons.admin_panel_settings_outlined,
@@ -1375,7 +1377,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
               message: "Verify an email address you can access before joining this marketplace.",
             )
           else if (hasJoined)
-            const UniCartInfoBanner(
+             UniCartInfoBanner(
               color: UniCartColors.success,
               icon: Icons.check_circle_rounded,
               title: "You are in this lobby",
@@ -1441,7 +1443,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
             subtitle: "Submit the guest price, then pay to lock the item into the vault",
           ),
           const SizedBox(height: 16),
-          const UniCartInfoBanner(
+           UniCartInfoBanner(
             color: UniCartColors.warning,
             icon: Icons.visibility_off_outlined,
             title: "Use guest pricing",
@@ -1449,7 +1451,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                 "Log out of Temu or use a private/incognito window. Submit the price visible to a guest — not a personalised price.",
           ),
           const SizedBox(height: 10),
-          const UniCartInfoBanner(
+           UniCartInfoBanner(
             color: UniCartColors.danger,
             icon: Icons.gavel_rounded,
             title: "Item payments are non-refundable",
@@ -1459,8 +1461,8 @@ class _LobbyScreenState extends State<LobbyScreen> {
           const SizedBox(height: 16),
           TextField(
             controller: itemLinkController,
-            style: const TextStyle(color: UniCartColors.textPrimary),
-            decoration: const InputDecoration(
+            style:  TextStyle(color: UniCartColors.textPrimary),
+            decoration:  InputDecoration(
               labelText: "Product link",
               hintText: "https://…",
               prefixIcon: Icon(Icons.link_rounded),
@@ -1475,7 +1477,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
           TextField(
             controller: itemAmountController,
             keyboardType: TextInputType.number,
-            style: const TextStyle(color: UniCartColors.textPrimary),
+            style:  TextStyle(color: UniCartColors.textPrimary),
             decoration: const InputDecoration(
               labelText: "Guest price (₦)",
               hintText: "e.g. 8500",
@@ -1491,7 +1493,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
           ),
           if (!hasJoined) ...[
             const SizedBox(height: 9),
-            const Text(
+             Text(
               "Join the lobby first to add items.",
               textAlign: TextAlign.center,
               style: TextStyle(
@@ -1598,7 +1600,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                       itemLink,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style:  TextStyle(
                         color: UniCartColors.textPrimary,
                         fontSize: 13,
                         height: 1.35,
@@ -1608,7 +1610,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                     const SizedBox(height: 6),
                     Text(
                       "₦$itemAmount",
-                      style: const TextStyle(
+                      style:  TextStyle(
                         color: UniCartColors.textPrimary,
                         fontSize: 21,
                         fontWeight: FontWeight.w800,
@@ -1667,7 +1669,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                   onTap: isBusy ? null : () => removeItem(itemId),
                 ),
               if (isPaid)
-                const UniCartStatusPill(
+                 UniCartStatusPill(
                   label: "Locked in vault",
                   color: UniCartColors.success,
                   icon: Icons.lock_rounded,
@@ -1763,7 +1765,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
               Expanded(
                 child: Text(
                   "Batch #${batch["lobby_id"]}",
-                  style: const TextStyle(
+                  style:  TextStyle(
                     color: UniCartColors.textPrimary,
                     fontSize: 15,
                     fontWeight: FontWeight.w800,
@@ -1780,7 +1782,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
           const SizedBox(height: 8),
           Text(
             _statusDescription(status),
-            style: const TextStyle(
+            style:  TextStyle(
               color: UniCartColors.textSecondary,
               fontSize: 12,
               height: 1.45,
@@ -1861,7 +1863,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
         children: [
           Text(
             label,
-            style: const TextStyle(
+            style:  TextStyle(
               color: UniCartColors.textMuted,
               fontSize: 10,
               fontWeight: FontWeight.w700,
@@ -1872,7 +1874,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
             value,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
+            style:  TextStyle(
               color: UniCartColors.textPrimary,
               fontSize: 13,
               fontWeight: FontWeight.w800,
@@ -1893,7 +1895,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
       ),
       child: Text(
         value,
-        style: const TextStyle(
+        style:  TextStyle(
           color: UniCartColors.textSecondary,
           fontSize: 11,
           fontWeight: FontWeight.w600,
@@ -1904,27 +1906,27 @@ class _LobbyScreenState extends State<LobbyScreen> {
 
   Widget _paymentStatusPill(String status, bool isPaid) {
     if (isPaid || status == "paid") {
-      return const UniCartStatusPill(
+      return  UniCartStatusPill(
         label: "Paid & locked",
         color: UniCartColors.success,
         icon: Icons.lock_rounded,
       );
     }
     if (status == "pending") {
-      return const UniCartStatusPill(
+      return  UniCartStatusPill(
         label: "Pending",
         color: UniCartColors.warning,
         icon: Icons.hourglass_bottom_rounded,
       );
     }
     if (status == "failed" || status == "abandoned") {
-      return const UniCartStatusPill(
+      return  UniCartStatusPill(
         label: "Failed",
         color: UniCartColors.danger,
         icon: Icons.error_outline_rounded,
       );
     }
-    return const UniCartStatusPill(
+    return  UniCartStatusPill(
       label: "Unpaid",
       color: UniCartColors.textSecondary,
       icon: Icons.radio_button_unchecked_rounded,
@@ -1958,7 +1960,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
           const SizedBox(height: 12),
           Text(
             title,
-            style: const TextStyle(
+            style:  TextStyle(
               color: UniCartColors.textPrimary,
               fontSize: 14,
               fontWeight: FontWeight.w800,
@@ -1968,7 +1970,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
           Text(
             message,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style:  TextStyle(
               color: UniCartColors.textSecondary,
               fontSize: 12,
               height: 1.45,
@@ -2001,7 +2003,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
   }
 
   Color _lobbyStatusColor(String status) {
-    return const {
+    return  {
           "triggered": UniCartColors.warning,
           "processing": UniCartColors.primarySoft,
           "in_transit": UniCartColors.purple,
@@ -2028,7 +2030,7 @@ class _LobbyLoadingState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    return  Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

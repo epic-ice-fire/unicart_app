@@ -2,6 +2,7 @@ import "dart:async";
 import "package:flutter/material.dart";
 import "package:url_launcher/url_launcher.dart";
 import "../../models/lobby.dart";
+import "../../models/school.dart";
 import "../../services/auth_service.dart";
 import "../../services/lobby_service.dart";
 import "../../services/session_service.dart";
@@ -21,6 +22,8 @@ class LobbyScreen extends StatefulWidget {
 }
 
 class _LobbyScreenState extends State<LobbyScreen> {
+  UniCartSchool get currentSchool =>
+      UniCartSchool.byId(meData?["school_id"]?.toString());
   Lobby? lobby;
   bool isLoading = true;
   bool isBusy = false;
@@ -256,7 +259,12 @@ class _LobbyScreenState extends State<LobbyScreen> {
   Future<void> openVerifyScreen() async {
     final result = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => VerifyPauScreen(token: widget.token)),
+      MaterialPageRoute(
+        builder: (_) => VerifyPauScreen(
+          token: widget.token,
+          schoolId: currentSchool.id,
+        ),
+      ),
     );
     if (result == true) unawaited(loadAll(silent: true));
   }
@@ -919,12 +927,23 @@ class _LobbyScreenState extends State<LobbyScreen> {
       child: Row(
         children: [
           const UniCartLogoMark(size: 38),
-          const SizedBox(width: 11),
-          const Column(
+          const SizedBox(width: 7),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(7),
+            child: Image.network(
+              currentSchool.logoUrl,
+              width: 30,
+              height: 30,
+              fit: BoxFit.contain,
+              errorBuilder: (_, __, ___) => const Icon(Icons.school_rounded, size: 26),
+            ),
+          ),
+          const SizedBox(width: 9),
+          Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+              const Text(
                 "UniCart",
                 style: TextStyle(
                   color: UniCartColors.textPrimary,
@@ -934,8 +953,8 @@ class _LobbyScreenState extends State<LobbyScreen> {
                 ),
               ),
               Text(
-                "Campus group buying",
-                style: TextStyle(
+                "${currentSchool.shortName} marketplace",
+                style: const TextStyle(
                   color: UniCartColors.textMuted,
                   fontSize: 10,
                   fontWeight: FontWeight.w600,

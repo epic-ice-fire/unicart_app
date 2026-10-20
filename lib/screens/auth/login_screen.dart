@@ -1,5 +1,6 @@
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
+import "../../models/school.dart";
 import "../../services/auth_service.dart";
 import "../../services/session_service.dart";
 import "../../theme/unicart_theme.dart";
@@ -21,6 +22,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool isLoading = false;
   bool rememberMe = true;
   bool showPassword = false;
+  String selectedSchoolId = UniCartColors.activeSchoolId;
 
   @override
   void initState() {
@@ -123,7 +125,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: wide
                       ? Row(
                           children: [
-                            const Expanded(child: _LoginStory()),
+                            Expanded(child: _LoginStory(schoolId: selectedSchoolId)),
                             const SizedBox(width: 56),
                             Expanded(child: _loginCard()),
                           ],
@@ -195,6 +197,47 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            DropdownButtonFormField<String>(
+              initialValue: selectedSchoolId,
+              decoration: const InputDecoration(
+                labelText: "University",
+                helperText: "Choose your campus to apply its UniCart identity.",
+                prefixIcon: Icon(Icons.account_balance_rounded),
+              ),
+              items: UniCartSchool.all.map((school) {
+                return DropdownMenuItem<String>(
+                  value: school.id,
+                  child: Row(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(5),
+                        child: Image.network(
+                          school.logoUrl,
+                          width: 26,
+                          height: 26,
+                          fit: BoxFit.contain,
+                          errorBuilder: (_, __, ___) => Icon(
+                            Icons.school_rounded,
+                            size: 24,
+                            color: UniCartColors.primary,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Flexible(child: Text(school.name)),
+                    ],
+                  ),
+                );
+              }).toList(),
+              onChanged: isLoading
+                  ? null
+                  : (value) {
+                      if (value == null) return;
+                      setState(() => selectedSchoolId = value);
+                      UniCartColors.setSchool(value);
+                    },
+            ),
+            const SizedBox(height: 20),
              Text(
               "Sign in",
               style: TextStyle(
@@ -331,7 +374,9 @@ class _LoginScreenState extends State<LoginScreen> {
 }
 
 class _LoginStory extends StatelessWidget {
-  const _LoginStory();
+  final String schoolId;
+
+  const _LoginStory({required this.schoolId});
 
   @override
   Widget build(BuildContext context) {
@@ -345,7 +390,11 @@ class _LoginStory extends StatelessWidget {
           SizedBox(height: 42),
           UniCartEyebrow(
             icon: Icons.shield_outlined,
-            label: "Verified campus group buying",
+            label: schoolId == "augustine"
+                ? "AUGUSTINE UNIVERSITY · BURGUNDY EDITION"
+                : schoolId == "babcock"
+                    ? "BABCOCK UNIVERSITY · FOREST EDITION"
+                    : "PAU · ORIGINAL UNICART EDITION",
           ),
           SizedBox(height: 20),
           Text(

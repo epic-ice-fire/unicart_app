@@ -44,10 +44,10 @@ class LobbyService {
     }
   }
 
-  static Future<Map<String, dynamic>> mainLobbyDetails(String token) async {
+  static Future<Map<String, dynamic>> mainLobbyDetails(String token, {String retailer = "temu"}) async {
     final response = await _withTimeout(
       http.get(
-        Uri.parse("$baseUrl/lobbies/main/details"),
+        Uri.parse("$baseUrl/lobbies/main/details").replace(queryParameters: {"retailer": retailer}),
         headers: _headers(token),
       ),
     );
@@ -57,10 +57,10 @@ class LobbyService {
     throw _errorFromResponse(response);
   }
 
-  static Future<Map<String, dynamic>> myMainLobbyItems(String token) async {
+  static Future<Map<String, dynamic>> myMainLobbyItems(String token, {String retailer = "temu"}) async {
     final response = await _withTimeout(
       http.get(
-        Uri.parse("$baseUrl/lobbies/main/my-items"),
+        Uri.parse("$baseUrl/lobbies/main/my-items").replace(queryParameters: {"retailer": retailer}),
         headers: _headers(token),
       ),
     );
@@ -70,10 +70,10 @@ class LobbyService {
     throw _errorFromResponse(response);
   }
 
-  static Future<Map<String, dynamic>> myBatchHistory(String token) async {
+  static Future<Map<String, dynamic>> myBatchHistory(String token, {String retailer = "temu"}) async {
     final response = await _withTimeout(
       http.get(
-        Uri.parse("$baseUrl/lobbies/my-history"),
+        Uri.parse("$baseUrl/lobbies/my-history").replace(queryParameters: {"retailer": retailer}),
         headers: _headers(token),
       ),
     );
@@ -84,11 +84,11 @@ class LobbyService {
   }
 
   static Future<Map<String, dynamic>> initializeEntryFeePayment(
-    String token,
+    String token, {String retailer = "temu"}
   ) async {
     final response = await _withTimeout(
       http.post(
-        Uri.parse("$baseUrl/payments/entry-fee/initialize"),
+        Uri.parse("$baseUrl/payments/entry-fee/initialize").replace(queryParameters: {"retailer": retailer}),
         headers: _headers(token),
       ),
     );
@@ -114,10 +114,10 @@ class LobbyService {
     throw _errorFromResponse(response);
   }
 
-  static Future<Map<String, dynamic>> leaveLobby(String token) async {
+  static Future<Map<String, dynamic>> leaveLobby(String token, {String retailer = "temu"}) async {
     final response = await _withTimeout(
       http.post(
-        Uri.parse("$baseUrl/lobbies/main/leave"),
+        Uri.parse("$baseUrl/lobbies/main/leave").replace(queryParameters: {"retailer": retailer}),
         headers: _headers(token),
       ),
     );
@@ -131,10 +131,11 @@ class LobbyService {
     String token, {
     required String itemLink,
     required int itemAmount,
+    String retailer = "temu",
   }) async {
     final response = await _withTimeout(
       http.post(
-        Uri.parse("$baseUrl/lobbies/main/items"),
+        Uri.parse("$baseUrl/lobbies/main/items").replace(queryParameters: {"retailer": retailer}),
         headers: _headers(token),
         body: jsonEncode({"item_link": itemLink, "item_amount": itemAmount}),
       ),
@@ -148,10 +149,11 @@ class LobbyService {
   static Future<Map<String, dynamic>> removeItem(
     String token, {
     required int itemId,
+    String retailer = "temu",
   }) async {
     final response = await _withTimeout(
       http.post(
-        Uri.parse("$baseUrl/lobbies/main/items/$itemId/remove"),
+        Uri.parse("$baseUrl/lobbies/main/items/$itemId/remove").replace(queryParameters: {"retailer": retailer}),
         headers: _headers(token),
       ),
     );

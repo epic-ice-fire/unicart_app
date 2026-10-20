@@ -90772,7 +90772,7 @@ if(q==null)q=0
 s=p.a7b()
 return A.C8(new A.kd(A.nB(!0,A.bi(A.b([s,A.by(p.d?B.a2z:A.aFs(B.aN,A.pR(new A.akq(p,n,q,r)),B.R,p.gZK()),1)],t.p),B.v,o,B.k,B.m),!0),!1,o))},
 a7b(){var s=this,r=null,q=B.eV.aS(0.92),p=A.ms(A.aW(6),A.a6T(A.aAe(s.x).e,new A.ake(),B.eI,28,28),B.be),o=A.by(A.aN(A.aAe(s.x).c+" operations",1,B.aF,r,B.Yl,r,r),1),n=s.d||s.e?r:s.gZK()
-return A.be(r,A.bt(A.b([new A.lM(B.ly,"Back to lobby",new A.akf(s),r,r),B.bT,B.a1z,B.bv,p,B.bv,o,B.bT,new A.lM(B.pX,"Refresh",n,r,r)],t.p),B.v,B.k,B.m),B.n,r,r,new A.aX(q,r,B.o1,r,r,r,B.x),r,66,r,B.f8,r,r,r)},
+return A.be(r,A.bt(A.b([new A.lM(B.ly,"Back to lobby",new A.akf(s),r,r),B.bT,B.a1A,B.bv,p,B.bv,o,B.bT,new A.lM(B.pX,"Refresh",n,r,r)],t.p),B.v,B.k,B.m),B.n,r,r,new A.aX(q,r,B.o1,r,r,r,B.x),r,66,r,B.f8,r,r,r)},
 a7A(a,b){return A.pR(new A.ak9(a,b))},
 a7c(a,b,c){if(a>=820)return A.bt(A.b([A.by(b,1),B.je,A.by(c,1)],t.p),B.S,B.k,B.m)
 return A.bi(A.b([b,B.ay,c],t.p),B.v,null,B.k,B.m)},
@@ -90936,7 +90936,7 @@ A.akD.prototype={
 $1(a){return A.nB(!0,new A.z8(0.82,0.55,0.94,!1,new A.akB(this.a,this.b,a),null),!1)},
 $S:81}
 A.akB.prototype={
-$2(a,b){var s=this,r=null,q=t.p,p=A.b([A.e7(A.be(r,r,B.n,r,r,new A.aX(B.aO,r,r,A.aW(999),r,r,B.x),r,4,r,r,r,r,42),r,r),B.d3,B.a1C,B.aX,B.a_q,B.fW,B.a05,B.aB,B.a_n,B.bc],q),o=s.b
+$2(a,b){var s=this,r=null,q=t.p,p=A.b([A.e7(A.be(r,r,B.n,r,r,new A.aX(B.aO,r,r,A.aW(999),r,r,B.x),r,4,r,r,r,r,42),r,r),B.d3,B.a1D,B.aX,B.a_q,B.fW,B.a05,B.aB,B.a_n,B.bc],q),o=s.b
 if(o.length===0)p.push(B.a1L)
 else B.b.M(p,new A.a_(o,new A.aky(s.a),A.Y(o).i("a_<1,e>")))
 p.push(B.aX)
@@ -90979,7 +90979,7 @@ $0(){return this.a.pn(this.b,"completed")},
 $S:0}
 A.aki.prototype={
 $1(a){var s=null,r=A.e7(A.be(s,s,B.n,s,s,new A.aX(B.aO,s,s,A.aW(999),s,s,B.x),s,4,s,s,s,s,42),s,s),q=A.aW(14),p=A.cj(B.ad,1),o=t.p
-q=A.b([r,B.d3,B.a1F,B.aX,B.a_R,B.bc,A.be(s,A.aN(this.a,3,B.aF,s,B.WA,s,s),B.n,s,s,new A.aX(B.bg,s,p,q,s,s,B.x),s,s,s,B.hT,s,s,s),B.bw],o)
+q=A.b([r,B.d3,B.a1G,B.aX,B.a_R,B.bc,A.be(s,A.aN(this.a,3,B.aF,s,B.WA,s,s),B.n,s,s,new A.aX(B.bg,s,p,q,s,s,B.x),s,s,s,B.hT,s,s,s),B.bw],o)
 if(this.b)B.b.M(q,A.b([B.a1M,B.bc],o))
 q.push(B.a1R)
 q.push(B.aB)
@@ -91488,7 +91488,7 @@ var $async$wm=A.C(function(a,b){if(a===1){o.push(b)
 s=p}for(;;)switch(s){case 0:h=B.c.fb(m.d.a.a)
 if(J.cr(h)===0){j=m.c
 j.toString
-A.hT(j,"Enter the email address you used to create your UniCart account.",!1,!1)
+A.hT(j,"Enter an email address you can access.",!1,!1)
 s=1
 break}m.P(new A.aw3(m))
 p=4
@@ -91583,8 +91583,8 @@ J(a){var s,r=this,q=null,p=r.r?q:new A.aw2(a),o=t.p
 p=A.bt(A.b([new A.lM(B.ly,"Back",p,q,q),B.er,A.aN("Email verification",q,q,q,A.d3(q,q,B.G,q,q,q,q,q,q,q,q,17,q,q,B.W,q,q,!0,q,q,q,q,q,q,q,q),q,q)],o),B.v,B.k,B.m)
 s=r.w
 return A.C8(new A.kd(A.bi(A.b([new A.bQ(B.pi,p,q),A.by(A.e7(A.CF(new A.dG(B.DA,A.bi(A.b([new A.X9(s,q),B.Uj,A.aMz(s?r.a8G():r.aai(),B.kG,A.aWj(),B.kt,B.GU,A.aWk())],o),B.a_,q,B.k,B.m),q),B.pk),q,q),1)],o),B.v,q,B.k,B.m),!0,q))},
-aai(){var s=this,r=null,q=A.aN("Verify your email address.",r,r,r,A.d3(r,r,B.G,r,r,r,r,r,r,r,r,32,r,r,B.af,r,1.08,!0,r,-0.9,r,r,r,r,r,r),r,r),p=A.aN("We will send a six-digit code to the email address you used to create your UniCart account. You can use any email provider, as long as you can access its inbox.",r,r,r,A.d3(r,r,B.J,r,r,r,r,r,r,r,r,14,r,r,r,r,1.55,!0,r,r,r,r,r,r,r,r),r,r),o=A.kb(B.bR,s.d,A.Md(r,r,r,r,r,r,r,r,!0,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,"you@example.com",r,r,r,r,r,r,r,r,"Email address used for your UniCart account",!0,!0,!1,r,A.dK(B.id,r,r,r),r,r,r,r,r,r,r,r,r,r,r,r),r,r,r,B.h1,r,!1,r,new A.avX(s),B.cy,B.ap,B.h_),n=s.r,m=t.p
-return A.bi(A.b([B.a1G,B.aB,q,B.bc,p,B.es,A.iv(r,A.bi(A.b([o,B.aB,A.du(r,B.a_m,B.Je,n,54,n?r:s.ga_Q(),!1)],m),B.a_,r,B.k,B.m),r,B.f9)],m),B.a_,B.a2e,B.k,B.m)},
+aai(){var s=this,r=null,q=A.aN("Verify your email address.",r,r,r,A.d3(r,r,B.G,r,r,r,r,r,r,r,r,32,r,r,B.af,r,1.08,!0,r,-0.9,r,r,r,r,r,r),r,r),p=A.aN("We will send a six-digit code to the email address you choose. It can be any email provider; you do not need a university-issued inbox.",r,r,r,A.d3(r,r,B.J,r,r,r,r,r,r,r,r,14,r,r,r,r,1.55,!0,r,r,r,r,r,r,r,r),r,r),o=A.kb(B.bR,s.d,A.Md(r,r,r,r,r,r,r,r,!0,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,r,"you@example.com",r,r,r,r,r,r,r,r,"Email address to verify",!0,!0,!1,r,A.dK(B.id,r,r,r),r,r,r,r,r,r,r,r,r,r,r,r),r,r,r,B.h1,r,!1,r,new A.avX(s),B.cy,B.ap,B.h_),n=s.r,m=t.p
+return A.bi(A.b([B.a1z,B.aB,q,B.bc,p,B.es,A.iv(r,A.bi(A.b([o,B.aB,A.du(r,B.a_m,B.Je,n,54,n?r:s.ga_Q(),!1)],m),B.a_,r,B.k,B.m),r,B.f9)],m),B.a_,B.a2e,B.k,B.m)},
 a8G(){var s,r,q,p,o,n,m,l=this,k=null,j=A.aN("Enter the six-digit code sent to "+B.c.fb(l.d.a.a)+". The code expires after 10 minutes.",k,k,k,B.YS,k,k),i=J.u9(6,t.l7)
 for(s=l.e,r=l.f,q=t.VS,p=0;p<6;++p){o=p===5?0:8
 n=new A.au(14,14)
@@ -91604,7 +91604,7 @@ n=l.y
 m=n>0
 n=m?"Resend in "+n+"s":"Resend code"
 r.push(A.bt(A.b([o,A.Df(A.aN(n,k,k,k,A.d3(k,k,m?B.aO:B.R,k,k,k,k,k,k,k,k,k,k,k,B.W,k,k,!0,k,k,k,k,k,k,k,k),k,k),q,k)],s),B.v,B.fA,B.m))
-return A.bi(A.b([B.a1D,B.aB,B.a_v,B.bc,j,B.es,A.iv(k,A.bi(r,B.a_,k,B.k,B.m),k,B.f9)],s),B.a_,B.a2d,B.k,B.m)}}
+return A.bi(A.b([B.a1E,B.aB,B.a_v,B.bc,j,B.es,A.iv(k,A.bi(r,B.a_,k,B.k,B.m),k,B.f9)],s),B.a_,B.a2d,B.k,B.m)}}
 A.aw3.prototype={
 $0(){return this.a.r=!0},
 $S:0}
@@ -92476,7 +92476,7 @@ $0(){A.dq(this.a,!1).h6(!0)
 return null},
 $S:0}
 A.aq2.prototype={
-$1(a){var s=null,r=t.p,q=A.b([A.e7(A.be(s,s,B.n,s,s,new A.aX(B.aO,s,s,A.aW(999),s,s,B.x),s,4,s,s,s,s,42),s,s),B.d3,B.a1B,B.aX,B.a_A,B.fW,B.a_u,B.aB],r)
+$1(a){var s=null,r=t.p,q=A.b([A.e7(A.be(s,s,B.n,s,s,new A.aX(B.aO,s,s,A.aW(999),s,s,B.x),s,4,s,s,s,s,42),s,s),B.d3,B.a1C,B.aX,B.a_A,B.fW,B.a_u,B.aB],r)
 B.b.M(q,new A.a_(B.LU,new A.aq_(),t.vr))
 q.push(B.jg)
 q.push(B.a1N)
@@ -96464,7 +96464,7 @@ B.GK=new A.G(0.9411764705882353,0.7529411764705882,0.7529411764705882,0.75294117
 B.m=new A.MG(1,"max")
 B.S=new A.pc(0,"start")
 B.id=new A.aH(62268,"MaterialIcons",!1)
-B.a1A=new A.h7(B.id,"Built for university students",B.R,null)
+B.a1B=new A.h7(B.id,"Built for university students",B.R,null)
 B.aB=new A.bD(null,18,null,null)
 B.af=new A.fS(800)
 B.C3=new A.k(!0,B.G,null,null,null,null,34,B.af,null,-1,null,null,1.05,null,null,null,null,null,null,null,null,null,null,null,null,null)
@@ -96472,7 +96472,7 @@ B.a09=new A.bg("Welcome back.",null,B.C3,null,null,null,null,null,null)
 B.bc=new A.bD(null,10,null,null)
 B.ZJ=new A.k(!0,B.J,null,null,null,null,15,null,null,null,null,null,1.55,null,null,null,null,null,null,null,null,null,null,null,null,null)
 B.a_o=new A.bg("Sign in to join a lobby, lock in your items, and track the batch from one place.",null,B.ZJ,null,null,null,null,null,null)
-B.Nj=s([B.a1A,B.aB,B.a09,B.bc,B.a_o],t.p)
+B.Nj=s([B.a1B,B.aB,B.a09,B.bc,B.a_o],t.p)
 B.GM=new A.jD(B.al,B.k,B.m,B.S,null,B.cb,null,0,B.Nj,null)
 B.a_=new A.pc(3,"stretch")
 B.a21=new A.hI("Current open lobby","The lobby students are currently joining",null,null)
@@ -98309,7 +98309,7 @@ B.I8=new A.ah(12,0,0,0)
 B.a1U=new A.o0(64,!0,null)
 B.Un=new A.bD(null,42,null,null)
 B.pQ=new A.aH(62329,"MaterialIcons",!1)
-B.a1E=new A.h7(B.pQ,"Verified campus group buying",B.R,null)
+B.a1F=new A.h7(B.pQ,"Verified campus group buying",B.R,null)
 B.Bt=new A.bD(null,20,null,null)
 B.Yz=new A.k(!0,B.G,null,null,null,null,46,B.af,null,-1.6,null,null,1.03,null,null,null,null,null,null,null,null,null,null,null,null,null)
 B.a_r=new A.bg("Campus shopping,\nwithout the chaos.",null,B.Yz,null,null,null,null,null,null)
@@ -98321,7 +98321,7 @@ B.a42=new A.wX(B.lw,"Verified campus access","University email verification keep
 B.ay=new A.bD(null,14,null,null)
 B.a43=new A.wX(B.lr,"Clear payment states","Know what is pending, paid, locked, or ready at a glance.",null)
 B.a44=new A.wX(B.co,"One batch, one source of truth","Your lobby progress and items stay organized in one dashboard.",null)
-B.Me=s([B.a1U,B.Un,B.a1E,B.Bt,B.a_r,B.aB,B.Ug,B.Ul,B.a42,B.ay,B.a43,B.ay,B.a44],t.p)
+B.Me=s([B.a1U,B.Un,B.a1F,B.Bt,B.a_r,B.aB,B.Ug,B.Ul,B.a42,B.ay,B.a43,B.ay,B.a44],t.p)
 B.GN=new A.jD(B.al,B.k,B.aV,B.S,null,B.cb,null,0,B.Me,null)
 B.QE=new A.bQ(B.I8,B.GN,null)
 B.cu=new A.Nk(0,"fill")
@@ -99293,14 +99293,14 @@ B.a1u=new A.Qe(null)
 B.Jh=new A.aH(984598,"MaterialIcons",!1)
 B.a1w=new A.h7(B.Jh,"Batch control centre",B.bf,null)
 B.a1x=new A.h7(B.lr,"Live vault",B.R,null)
+B.a1z=new A.h7(B.lw,"Verify your email address",B.R,null)
 B.IX=new A.aH(62784,"MaterialIcons",!1)
-B.a1z=new A.h7(B.IX,"Admin",B.bf,null)
-B.a1B=new A.h7(B.pQ,"Payment check",B.an,null)
-B.a1C=new A.h7(B.lt,"Required admin check",B.R,null)
+B.a1A=new A.h7(B.IX,"Admin",B.bf,null)
+B.a1C=new A.h7(B.pQ,"Payment check",B.an,null)
+B.a1D=new A.h7(B.lt,"Required admin check",B.R,null)
 B.IT=new A.aH(61877,"MaterialIcons",!1)
-B.a1D=new A.h7(B.IT,"Code sent",B.R,null)
-B.a1F=new A.h7(B.ls,"Admin enforcement",B.as,null)
-B.a1G=new A.h7(B.lw,"Student-only access",B.R,null)
+B.a1E=new A.h7(B.IT,"Code sent",B.R,null)
+B.a1G=new A.h7(B.ls,"Admin enforcement",B.as,null)
 B.a1I=new A.eA(B.R,B.lt,"Verify guest prices before processing","Open each paid item while logged out of Temu. Force-remove any discrepancy before starting processing.",null)
 B.a1J=new A.eA(B.R,B.fg,"Target affects the live vault","Students see this target immediately after the dashboard refreshes.",null)
 B.a1K=new A.eA(B.an,B.ie,"Use guest pricing","Log out of Temu or use a private/incognito window. Submit the price visible to a guest \u2014 not a personalised price.",null)

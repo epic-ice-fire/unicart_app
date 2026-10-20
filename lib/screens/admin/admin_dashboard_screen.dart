@@ -22,6 +22,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   Map<String, dynamic>? dashboardData;
   Map<String, dynamic>? meData;
   String selectedSchoolId = "pau";
+  String selectedRetailer = "temu";
   bool _schoolInitialized = false;
   UniCartSchool get currentSchool => UniCartSchool.byId(selectedSchoolId);
   final TextEditingController targetController = TextEditingController();
@@ -55,6 +56,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       final data = await LobbyService.adminDashboard(
         widget.token,
         schoolId: selectedSchoolId,
+        retailer: selectedRetailer,
       );
       final openLobby = data["current_open_lobby"] as Map<String, dynamic>?;
       if (openLobby != null) {
@@ -82,6 +84,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         widget.token,
         targetItemAmount: mov,
         schoolId: selectedSchoolId,
+        retailer: selectedRetailer,
       );
       await loadDashboard();
       showMessage("MOV updated successfully.", isSuccess: true);
@@ -842,6 +845,38 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                               loadDashboard();
                                             }
                                           },
+                                  ),
+                                ),
+                                Padding(
+                                  padding: EdgeInsets.fromLTRB(horizontalPadding, 10, horizontalPadding, 14),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text("Retailer batches", style: TextStyle(fontWeight: FontWeight.w700)),
+                                      const SizedBox(height: 8),
+                                      Wrap(spacing: 10, children: [
+                                        ChoiceChip(
+                                          label: const Text("Temu"),
+                                          selected: selectedRetailer == "temu",
+                                          onSelected: isLoading || isBusy ? null : (selected) {
+                                            if (selected && selectedRetailer != "temu") {
+                                              setState(() => selectedRetailer = "temu");
+                                              loadDashboard();
+                                            }
+                                          },
+                                        ),
+                                        ChoiceChip(
+                                          label: const Text("SHEIN"),
+                                          selected: selectedRetailer == "shein",
+                                          onSelected: isLoading || isBusy ? null : (selected) {
+                                            if (selected && selectedRetailer != "shein") {
+                                              setState(() => selectedRetailer = "shein");
+                                              loadDashboard();
+                                            }
+                                          },
+                                        ),
+                                      ]),
+                                    ],
                                   ),
                                 ),
                                 Center(

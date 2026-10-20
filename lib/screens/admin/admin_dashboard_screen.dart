@@ -21,8 +21,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   String? error;
   Map<String, dynamic>? dashboardData;
   Map<String, dynamic>? meData;
-  UniCartSchool get currentSchool =>
-      UniCartSchool.byId(meData?["school_id"]?.toString());
+  String selectedSchoolId = "pau";
+  bool _schoolInitialized = false;
+  UniCartSchool get currentSchool => UniCartSchool.byId(selectedSchoolId);
   final TextEditingController targetController = TextEditingController();
   final Set<int> _expandedBatches = {};
 
@@ -45,9 +46,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     });
 
     try {
-      final profileFuture = AuthService.me(widget.token).catchError((_) => <String, dynamic>{});
-      final data = await LobbyService.adminDashboard(widget.token);
-      final profile = await profileFuture;
+      final profile = await AuthService.me(widget.token).catchError((_) => <String, dynamic>{});
+      if (!_schoolInitialized) {
+        final accountSchool = profile["school_id"]?.toString();
+        if (accountSchool != null) selectedSchoolId = accountSchool;
+        _schoolInitialized = true;
+      }
+      final data = await LobbyService.adminDashboard(
+        widget.token,
+        schoolId: selectedSchoolId,
+      );
       final openLobby = data["current_open_lobby"] as Map<String, dynamic>?;
       if (openLobby != null) {
         targetController.text =
@@ -73,6 +81,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       await LobbyService.adminUpdateOpenLobbyTarget(
         widget.token,
         targetItemAmount: mov,
+        schoolId: selectedSchoolId,
       );
       await loadDashboard();
       showMessage("MOV updated successfully.", isSuccess: true);
@@ -790,6 +799,51 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                 42,
                               ),
                               children: [
+                                Padding(
+                                  padding: EdgeInsets.fromLTRB(
+                                    horizontalPadding,
+                                    0,
+                                    horizontalPadding,
+                                    14,
+                                  ),
+                                  child: DropdownButtonFormField<String>(
+                                    value: selectedSchoolId,
+                                    decoration: const InputDecoration(
+                                      labelText: "Manage campus",
+                                      prefixIcon: Icon(Icons.account_balance_rounded),
+                                    ),
+                                    items: UniCartSchool.all.map((school) {
+                                      return DropdownMenuItem<String>(
+                                        value: school.id,
+                                        child: Row(
+                                          children: [
+                                            ClipRRect(
+                                              borderRadius: BorderRadius.circular(5),
+                                              child: Image.network(
+                                                school.logoUrl,
+                                                width: 28,
+                                                height: 28,
+                                                fit: BoxFit.contain,
+                                                errorBuilder: (_, __, ___) =>
+                                                    const Icon(Icons.school_rounded, size: 24),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 9),
+                                            Flexible(child: Text(school.name)),
+                                          ],
+                                        ),
+                                      );
+                                    }).toList(),
+                                    onChanged: isLoading || isBusy
+                                        ? null
+                                        : (value) {
+                                            if (value != null && value != selectedSchoolId) {
+                                              setState(() => selectedSchoolId = value);
+                                              loadDashboard();
+                                            }
+                                          },
+                                  ),
+                                ),
                                 Center(
                                   child: ConstrainedBox(
                                     constraints:

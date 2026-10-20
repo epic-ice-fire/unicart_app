@@ -1520,6 +1520,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     final itemLink = item["item_link"]?.toString() ?? "";
     final itemAmount = item["item_amount"] ?? 0;
     final userEmail = item["user_email"]?.toString() ?? "Unknown";
+    final userPhone = item["user_phone_number"]?.toString() ?? "";
     final itemLabel = item["item_label"]?.toString() ?? "ACTIVE";
     final paymentStatus =
         item["item_payment_status"]?.toString() ?? "unpaid";
@@ -1575,6 +1576,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             children: [
               infoPill("₦$itemAmount"),
               infoPill(userEmail),
+              if (userPhone.isNotEmpty) infoPill("Contact $userPhone"),
               infoPill("Payment ₦$paymentAmount"),
               UniCartStatusPill(
                 label: prettyStatus(paymentStatus),

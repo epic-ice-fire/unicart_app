@@ -1289,7 +1289,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                       runSpacing: 6,
                       children: [
                         UniCartStatusPill(
-                          label: isVerified ? "PAU verified" : "Not verified",
+                          label: isVerified ? "${currentSchool.shortName} verified" : "Not verified",
                           color: isVerified
                               ? UniCartColors.success
                               : UniCartColors.warning,
@@ -1318,7 +1318,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
             minHeight: 48,
             onPressed: isBusy ? null : openVerifyScreen,
             child: Text(
-              isVerified ? "Update PAU verification" : "Verify PAU email",
+              isVerified ? "Update ${currentSchool.shortName} verification" : "Verify student email",
             ),
           ),
           if (isAdmin) ...[
@@ -1368,11 +1368,11 @@ class _LobbyScreenState extends State<LobbyScreen> {
           ),
           const SizedBox(height: 16),
           if (!isVerified)
-            const UniCartInfoBanner(
+            UniCartInfoBanner(
               color: UniCartColors.warning,
               icon: Icons.lock_outline_rounded,
-              title: "PAU verification required",
-              message: "Verify your university email before joining a lobby.",
+              title: "${currentSchool.shortName} verification required",
+              message: "Verify your ${currentSchool.name} student email before joining this marketplace.",
             )
           else if (hasJoined)
             const UniCartInfoBanner(

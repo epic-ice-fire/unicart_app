@@ -1,5 +1,6 @@
 import "package:flutter/material.dart";
 import "../../services/auth_service.dart";
+import "../../models/school.dart";
 import "../../services/session_service.dart";
 import "../../theme/unicart_theme.dart";
 import "../../widgets/unicart_ui.dart";
@@ -18,6 +19,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final confirmPasswordController = TextEditingController();
 
   bool isLoading = false;
+  String selectedSchoolId = "pau";
   bool showPassword = false;
   bool showConfirmPassword = false;
 
@@ -58,7 +60,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => isLoading = true);
 
     try {
-      await AuthService.register(email: email, password: password);
+      await AuthService.register(
+        email: email,
+        password: password,
+        schoolId: selectedSchoolId,
+      );
 
       final token = await AuthService.login(
         email: email,
@@ -169,7 +175,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                         const SizedBox(height: 10),
                         const Text(
-                          "Create an account with any email. Inside the app, you will verify your @pau.edu.ng address before joining a lobby.",
+                          "Choose your campus. You will verify your ${UniCartSchool.byId(selectedSchoolId).emailDomain} student email before joining that campus marketplace.",
                           style: TextStyle(
                             color: UniCartColors.textSecondary,
                             fontSize: 14,
@@ -182,6 +188,45 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
+                              DropdownButtonFormField<String>(
+                                value: selectedSchoolId,
+                                decoration: const InputDecoration(
+                                  labelText: "Your university",
+                                  prefixIcon: Icon(Icons.account_balance_rounded),
+                                ),
+                                items: UniCartSchool.all.map((school) {
+                                  return DropdownMenuItem<String>(
+                                    value: school.id,
+                                    child: Row(
+                                      children: [
+                                        ClipRRect(
+                                          borderRadius: BorderRadius.circular(6),
+                                          child: Image.network(
+                                            school.logoUrl,
+                                            width: 30,
+                                            height: 30,
+                                            fit: BoxFit.contain,
+                                            errorBuilder: (_, __, ___) => const Icon(
+                                              Icons.school_rounded,
+                                              size: 28,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Flexible(child: Text(school.name)),
+                                      ],
+                                    ),
+                                  );
+                                }).toList(),
+                                onChanged: isLoading
+                                    ? null
+                                    : (value) {
+                                        if (value != null) {
+                                          setState(() => selectedSchoolId = value);
+                                        }
+                                      },
+                              ),
+                              const SizedBox(height: 16),
                               TextField(
                                 controller: emailController,
                                 keyboardType: TextInputType.emailAddress,

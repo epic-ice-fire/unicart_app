@@ -16,7 +16,7 @@ class UniCartBackdrop extends StatelessWidget {
     final content = Stack(
       fit: StackFit.expand,
       children: [
-        const DecoratedBox(
+         DecoratedBox(
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
@@ -318,7 +318,7 @@ class UniCartLogoMark extends StatelessWidget {
         ),
         borderRadius: BorderRadius.circular(size * 0.28),
         border: Border.all(color: UniCartColors.borderGlass),
-        boxShadow: const [
+        boxShadow:  [
           BoxShadow(
             color: UniCartColors.primaryGlow,
             blurRadius: 28,
@@ -340,7 +340,7 @@ class UniCartLogoMark extends StatelessWidget {
       children: [
         mark,
         const SizedBox(width: 14),
-        const Text(
+         Text(
           "UniCart",
           style: TextStyle(
             color: UniCartColors.textPrimary,
@@ -359,7 +359,7 @@ class UniCartEyebrow extends StatelessWidget {
   final String label;
   final Color color;
 
-  const UniCartEyebrow({
+   UniCartEyebrow({
     super.key,
     required this.icon,
     required this.label,
@@ -490,7 +490,7 @@ class UniCartInfoBanner extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     message!,
-                    style: const TextStyle(
+                    style:  TextStyle(
                       color: UniCartColors.textSecondary,
                       fontSize: 12,
                       height: 1.45,
@@ -557,7 +557,7 @@ class UniCartMetricCard extends StatelessWidget {
               const Spacer(),
               Text(
                 label,
-                style: const TextStyle(
+                style:  TextStyle(
                   color: UniCartColors.textMuted,
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
@@ -570,7 +570,7 @@ class UniCartMetricCard extends StatelessWidget {
             value,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
+            style:  TextStyle(
               color: UniCartColors.textPrimary,
               fontSize: 19,
               fontWeight: FontWeight.w800,
@@ -583,7 +583,7 @@ class UniCartMetricCard extends StatelessWidget {
               caption!,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
+              style:  TextStyle(
                 color: UniCartColors.textSecondary,
                 fontSize: 11,
               ),
@@ -618,7 +618,7 @@ class UniCartSectionTitle extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: const TextStyle(
+                style:  TextStyle(
                   color: UniCartColors.textPrimary,
                   fontSize: 17,
                   fontWeight: FontWeight.w800,
@@ -629,7 +629,7 @@ class UniCartSectionTitle extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   subtitle!,
-                  style: const TextStyle(
+                  style:  TextStyle(
                     color: UniCartColors.textSecondary,
                     fontSize: 12,
                     height: 1.45,
@@ -688,7 +688,7 @@ void showUniCartSnack(
             Expanded(
               child: Text(
                 message,
-                style: const TextStyle(
+                style:  TextStyle(
                   color: UniCartColors.textPrimary,
                   fontSize: 13,
                   fontWeight: FontWeight.w600,

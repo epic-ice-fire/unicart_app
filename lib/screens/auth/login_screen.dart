@@ -157,7 +157,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _mobileHeader() {
-    return const Column(
+    return  Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         UniCartEyebrow(
@@ -195,7 +195,7 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
+             Text(
               "Sign in",
               style: TextStyle(
                 color: UniCartColors.textPrimary,
@@ -204,7 +204,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
             const SizedBox(height: 6),
-            const Text(
+             Text(
               "Use the account you created for UniCart.",
               style: TextStyle(
                 color: UniCartColors.textSecondary,
@@ -217,7 +217,7 @@ class _LoginScreenState extends State<LoginScreen> {
               keyboardType: TextInputType.emailAddress,
               textInputAction: TextInputAction.next,
               autofillHints: const [AutofillHints.username, AutofillHints.email],
-              style: const TextStyle(color: UniCartColors.textPrimary),
+              style:  TextStyle(color: UniCartColors.textPrimary),
               decoration: const InputDecoration(
                 labelText: "Email address",
                 hintText: "you@example.com",
@@ -231,7 +231,7 @@ class _LoginScreenState extends State<LoginScreen> {
               textInputAction: TextInputAction.done,
               autofillHints: const [AutofillHints.password],
               onSubmitted: (_) => isLoading ? null : login(),
-              style: const TextStyle(color: UniCartColors.textPrimary),
+              style:  TextStyle(color: UniCartColors.textPrimary),
               decoration: InputDecoration(
                 labelText: "Password",
                 prefixIcon: const Icon(Icons.lock_outline_rounded),
@@ -256,7 +256,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     value: rememberMe,
                     activeColor: UniCartColors.primary,
                     checkColor: Colors.white,
-                    side: const BorderSide(color: UniCartColors.border),
+                    side:  BorderSide(color: UniCartColors.border),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(5),
                     ),
@@ -266,7 +266,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 const SizedBox(width: 2),
-                const Expanded(
+                 Expanded(
                   child: Text(
                     "Remember sign-in",
                     style: TextStyle(
@@ -276,7 +276,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                 ),
-                const Text(
+                 Text(
                   "Stay signed in on this device",
                   style: TextStyle(
                     color: UniCartColors.textMuted,
@@ -335,7 +335,7 @@ class _LoginStory extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Padding(
+    return  Padding(
       padding: EdgeInsets.only(left: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -429,7 +429,7 @@ class _StoryPoint extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: const TextStyle(
+                style:  TextStyle(
                   color: UniCartColors.textPrimary,
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
@@ -438,7 +438,7 @@ class _StoryPoint extends StatelessWidget {
               const SizedBox(height: 3),
               Text(
                 body,
-                style: const TextStyle(
+                style:  TextStyle(
                   color: UniCartColors.textSecondary,
                   fontSize: 13,
                   height: 1.45,

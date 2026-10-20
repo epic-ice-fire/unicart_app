@@ -3,15 +3,14 @@ import "dart:async";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "../../services/auth_service.dart";
-import "../../models/school.dart";
 import "../../theme/unicart_theme.dart";
 import "../../widgets/unicart_ui.dart";
 
 class VerifyPauScreen extends StatefulWidget {
   final String token;
-  final String schoolId;
+  final String? accountEmail;
 
-  const VerifyPauScreen({super.key, required this.token, this.schoolId = "pau"});
+  const VerifyPauScreen({super.key, required this.token, this.accountEmail});
 
   @override
   State<VerifyPauScreen> createState() => _VerifyPauScreenState();
@@ -20,7 +19,6 @@ class VerifyPauScreen extends StatefulWidget {
 class _VerifyPauScreenState extends State<VerifyPauScreen> {
   final pauEmailController = TextEditingController();
 
-  UniCartSchool get school => UniCartSchool.byId(widget.schoolId);
   final List<TextEditingController> _codeControllers =
       List.generate(6, (_) => TextEditingController());
   final List<FocusNode> _codeFocusNodes = List.generate(6, (_) => FocusNode());
@@ -30,6 +28,13 @@ class _VerifyPauScreenState extends State<VerifyPauScreen> {
   String? devCode;
   int resendSeconds = 0;
   Timer? _resendTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    final email = widget.accountEmail?.trim();
+    if (email != null && email.isNotEmpty) pauEmailController.text = email;
+  }
 
   @override
   void dispose() {
@@ -49,11 +54,6 @@ class _VerifyPauScreenState extends State<VerifyPauScreen> {
 
     if (pauEmail.isEmpty) {
       showUniCartSnack(context, "Enter your ${school.shortName} student email.");
-      return;
-    }
-
-    if (!pauEmail.toLowerCase().endsWith("@${school.emailDomain}")) {
-      showUniCartSnack(context, "Use your @${school.emailDomain} student email.");
       return;
     }
 
@@ -104,7 +104,7 @@ class _VerifyPauScreenState extends State<VerifyPauScreen> {
       );
 
       if (!mounted) return;
-      showUniCartSnack(context, "${school.shortName} student email verified successfully.", success: true);
+      showUniCartSnack(context, "Email address verified successfully.", success: true);
       Navigator.pop(context, true);
     } catch (e) {
       if (mounted) showUniCartSnack(context, _friendlyError(e));
@@ -189,7 +189,7 @@ class _VerifyPauScreenState extends State<VerifyPauScreen> {
                   ),
                   const SizedBox(width: 12),
                   Text(
-                    "${school.shortName} verification",
+                    "Email verification",
                     style: TextStyle(
                       color: UniCartColors.textPrimary,
                       fontSize: 17,
@@ -239,7 +239,7 @@ class _VerifyPauScreenState extends State<VerifyPauScreen> {
         ),
         const SizedBox(height: 18),
         Text(
-          "Verify your ${school.name} email.",
+          "Verify your email address.",
           style: TextStyle(
             color: UniCartColors.textPrimary,
             fontSize: 32,
@@ -250,7 +250,7 @@ class _VerifyPauScreenState extends State<VerifyPauScreen> {
         ),
         const SizedBox(height: 10),
         Text(
-          "We will send a six-digit code to your @${school.emailDomain} inbox. This links your student identity to the ${school.shortName} UniCart marketplace.",
+          "We will send a six-digit code to the email address you used to create your UniCart account. You can use any email provider, as long as you can access its inbox.",
           style: TextStyle(
             color: UniCartColors.textSecondary,
             fontSize: 14,
@@ -270,8 +270,8 @@ class _VerifyPauScreenState extends State<VerifyPauScreen> {
                 onSubmitted: (_) => isLoading ? null : requestCode(),
                 style: const TextStyle(color: UniCartColors.textPrimary),
                 decoration: InputDecoration(
-                  labelText: "${school.shortName} student email address",
-                  hintText: "you@${school.emailDomain}",
+                  labelText: "Email address used for your UniCart account",
+                  hintText: "you@example.com",
                   prefixIcon: Icon(Icons.school_outlined),
                 ),
               ),
@@ -397,7 +397,7 @@ class _VerifyPauScreenState extends State<VerifyPauScreen> {
                 onPressed: isLoading ? null : verifyCode,
                 loading: isLoading,
                 leadingIcon: Icons.verified_rounded,
-                child: const Text("Verify student email"),
+                child: const Text("Verify email address"),
               ),
               const SizedBox(height: 12),
               Row(

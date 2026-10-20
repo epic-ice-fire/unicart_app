@@ -262,7 +262,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
       MaterialPageRoute(
         builder: (_) => VerifyPauScreen(
           token: widget.token,
-          schoolId: currentSchool.id,
+          accountEmail: meData?["email"]?.toString(),
         ),
       ),
     );

@@ -3,13 +3,15 @@ import "dart:async";
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "../../services/auth_service.dart";
+import "../../models/school.dart";
 import "../../theme/unicart_theme.dart";
 import "../../widgets/unicart_ui.dart";
 
 class VerifyPauScreen extends StatefulWidget {
   final String token;
+  final String schoolId;
 
-  const VerifyPauScreen({super.key, required this.token});
+  const VerifyPauScreen({super.key, required this.token, this.schoolId = "pau"});
 
   @override
   State<VerifyPauScreen> createState() => _VerifyPauScreenState();
@@ -17,6 +19,8 @@ class VerifyPauScreen extends StatefulWidget {
 
 class _VerifyPauScreenState extends State<VerifyPauScreen> {
   final pauEmailController = TextEditingController();
+
+  UniCartSchool get school => UniCartSchool.byId(widget.schoolId);
   final List<TextEditingController> _codeControllers =
       List.generate(6, (_) => TextEditingController());
   final List<FocusNode> _codeFocusNodes = List.generate(6, (_) => FocusNode());
@@ -44,12 +48,12 @@ class _VerifyPauScreenState extends State<VerifyPauScreen> {
     final pauEmail = pauEmailController.text.trim();
 
     if (pauEmail.isEmpty) {
-      showUniCartSnack(context, "Enter your PAU email.");
+      showUniCartSnack(context, "Enter your ${school.shortName} student email.");
       return;
     }
 
-    if (!pauEmail.toLowerCase().endsWith("@pau.edu.ng")) {
-      showUniCartSnack(context, "Use your @pau.edu.ng student email.");
+    if (!pauEmail.toLowerCase().endsWith("@${school.emailDomain}")) {
+      showUniCartSnack(context, "Use your @${school.emailDomain} student email.");
       return;
     }
 
@@ -100,7 +104,7 @@ class _VerifyPauScreenState extends State<VerifyPauScreen> {
       );
 
       if (!mounted) return;
-      showUniCartSnack(context, "PAU email verified successfully.", success: true);
+      showUniCartSnack(context, "${school.shortName} student email verified successfully.", success: true);
       Navigator.pop(context, true);
     } catch (e) {
       if (mounted) showUniCartSnack(context, _friendlyError(e));
@@ -185,7 +189,7 @@ class _VerifyPauScreenState extends State<VerifyPauScreen> {
                   ),
                   const SizedBox(width: 12),
                   const Text(
-                    "PAU verification",
+                    "${school.shortName} verification",
                     style: TextStyle(
                       color: UniCartColors.textPrimary,
                       fontSize: 17,
@@ -235,7 +239,7 @@ class _VerifyPauScreenState extends State<VerifyPauScreen> {
         ),
         const SizedBox(height: 18),
         const Text(
-          "Verify your PAU email.",
+          "Verify your ${school.name} email.",
           style: TextStyle(
             color: UniCartColors.textPrimary,
             fontSize: 32,
@@ -246,7 +250,7 @@ class _VerifyPauScreenState extends State<VerifyPauScreen> {
         ),
         const SizedBox(height: 10),
         const Text(
-          "We will send a six-digit code to your @pau.edu.ng inbox. This links your student identity to UniCart.",
+          "We will send a six-digit code to your @${school.emailDomain} inbox. This links your student identity to the ${school.shortName} UniCart marketplace.",
           style: TextStyle(
             color: UniCartColors.textSecondary,
             fontSize: 14,
@@ -266,8 +270,8 @@ class _VerifyPauScreenState extends State<VerifyPauScreen> {
                 onSubmitted: (_) => isLoading ? null : requestCode(),
                 style: const TextStyle(color: UniCartColors.textPrimary),
                 decoration: const InputDecoration(
-                  labelText: "PAU email address",
-                  hintText: "you@pau.edu.ng",
+                  labelText: "${school.shortName} student email address",
+                  hintText: "you@${school.emailDomain}",
                   prefixIcon: Icon(Icons.school_outlined),
                 ),
               ),

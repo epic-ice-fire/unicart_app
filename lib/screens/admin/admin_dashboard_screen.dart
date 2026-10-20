@@ -1300,7 +1300,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   Widget _buildPipelineLegend() {
-    const stages = [
+    final stages = [
       ("Triggered", UniCartColors.warning, Icons.flag_rounded),
       ("Processing", UniCartColors.primarySoft, Icons.settings_rounded),
       ("In transit", UniCartColors.purple, Icons.local_shipping_rounded),

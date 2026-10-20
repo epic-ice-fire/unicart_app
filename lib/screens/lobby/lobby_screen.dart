@@ -1289,7 +1289,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
                       runSpacing: 6,
                       children: [
                         UniCartStatusPill(
-                          label: isVerified ? "${currentSchool.shortName} verified" : "Not verified",
+                          label: isVerified ? "Email verified" : "Email not verified",
                           color: isVerified
                               ? UniCartColors.success
                               : UniCartColors.warning,
@@ -1318,7 +1318,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
             minHeight: 48,
             onPressed: isBusy ? null : openVerifyScreen,
             child: Text(
-              isVerified ? "Update ${currentSchool.shortName} verification" : "Verify student email",
+              isVerified ? "Update verified email" : "Verify email address",
             ),
           ),
           if (isAdmin) ...[
@@ -1371,8 +1371,8 @@ class _LobbyScreenState extends State<LobbyScreen> {
             UniCartInfoBanner(
               color: UniCartColors.warning,
               icon: Icons.lock_outline_rounded,
-              title: "${currentSchool.shortName} verification required",
-              message: "Verify your ${currentSchool.name} student email before joining this marketplace.",
+              title: "Email verification required",
+              message: "Verify an email address you can access before joining this marketplace.",
             )
           else if (hasJoined)
             const UniCartInfoBanner(

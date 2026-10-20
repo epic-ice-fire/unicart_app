@@ -174,7 +174,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                         ),
                         const SizedBox(height: 10),
-                        const Text(
+                        Text(
                           "Choose your campus. You will verify your ${UniCartSchool.byId(selectedSchoolId).emailDomain} student email before joining that campus marketplace.",
                           style: TextStyle(
                             color: UniCartColors.textSecondary,

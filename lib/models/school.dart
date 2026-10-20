@@ -19,21 +19,21 @@ class UniCartSchool {
       name: "Pan-Atlantic University",
       shortName: "PAU",
       emailDomain: "pau.edu.ng",
-      logoUrl: "https://www.google.com/s2/favicons?domain=pau.edu.ng&sz=128",
+      logoUrl: "https://images.weserv.nl/?url=www.google.com%2Fs2%2Ffavicons%3Fdomain%3Dpau.edu.ng%26sz%3D128",
     ),
     UniCartSchool(
       id: "augustine",
       name: "Augustine University",
       shortName: "Augustine",
       emailDomain: "augustineuniversity.edu.ng",
-      logoUrl: "https://augustineuniversity.edu.ng/images/NAME.png",
+      logoUrl: "https://images.weserv.nl/?url=augustineuniversity.edu.ng%2Fimages%2FNAME.png",
     ),
     UniCartSchool(
       id: "babcock",
       name: "Babcock University",
       shortName: "Babcock",
       emailDomain: "babcock.edu.ng",
-      logoUrl: "https://legacy.babcock.edu.ng/assets/images/admin/BU_Logo.png",
+      logoUrl: "https://images.weserv.nl/?url=legacy.babcock.edu.ng%2Fassets%2Fimages%2Fadmin%2FBU_Logo.png",
     ),
   ];
 

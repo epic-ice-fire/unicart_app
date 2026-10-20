@@ -19,7 +19,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final confirmPasswordController = TextEditingController();
 
   bool isLoading = false;
-  String selectedSchoolId = "pau";
+  String selectedSchoolId = "";
   bool showPassword = false;
   bool showConfirmPassword = false;
 
@@ -46,6 +46,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final email = emailController.text.trim();
     final password = passwordController.text;
     final confirmPassword = confirmPasswordController.text;
+
+    if (selectedSchoolId.isEmpty) {
+      showUniCartSnack(context, "Select your university to continue.");
+      return;
+    }
 
     if (email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
       showUniCartSnack(context, "Fill in all fields.");
@@ -175,7 +180,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                         const SizedBox(height: 10),
                         Text(
-                          "Choose your campus. You will verify your ${UniCartSchool.byId(selectedSchoolId).emailDomain} student email before joining that campus marketplace.",
+                          selectedSchoolId.isEmpty
+                              ? "Choose your university to join its campus marketplace. You will verify your student email."
+                              : "You will verify your @${UniCartSchool.byId(selectedSchoolId).emailDomain} student email before joining that campus marketplace.",
                           style: TextStyle(
                             color: UniCartColors.textSecondary,
                             fontSize: 14,
@@ -189,9 +196,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               DropdownButtonFormField<String>(
-                                initialValue: selectedSchoolId,
+                                initialValue: selectedSchoolId.isEmpty ? null : selectedSchoolId,
                                 decoration: const InputDecoration(
                                   labelText: "Your university",
+                                  hintText: "Select your university",
                                   prefixIcon: Icon(Icons.account_balance_rounded),
                                 ),
                                 items: UniCartSchool.all.map((school) {

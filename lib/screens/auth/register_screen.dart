@@ -15,6 +15,7 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   final emailController = TextEditingController();
+  final phoneController = TextEditingController();
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
 
@@ -37,6 +38,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void dispose() {
     passwordController.removeListener(_refreshStrength);
     emailController.dispose();
+    phoneController.dispose();
     passwordController.dispose();
     confirmPasswordController.dispose();
     super.dispose();
@@ -52,8 +54,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-    if (email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
-      showUniCartSnack(context, "Fill in all fields.");
+    final phoneNumber = phoneController.text.trim();
+
+    if (email.isEmpty || phoneNumber.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
+      showUniCartSnack(context, "Fill in all fields, including your contact number.");
       return;
     }
 
@@ -69,6 +73,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         email: email,
         password: password,
         schoolId: selectedSchoolId,
+        phoneNumber: phoneNumber,
       );
 
       final token = await AuthService.login(
@@ -181,8 +186,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         const SizedBox(height: 10),
                         Text(
                           selectedSchoolId.isEmpty
-                              ? "Choose your university to join its campus marketplace. You will verify your student email."
-                              : "You will verify your @${UniCartSchool.byId(selectedSchoolId).emailDomain} student email before joining that campus marketplace.",
+                              ? "Choose your university, add your contact number, and verify the email address you use for UniCart."
+                              : "Use any email address you can access. We will send a verification code there and use your phone number for delivery contact.",
                           style: TextStyle(
                             color: UniCartColors.textSecondary,
                             fontSize: 14,
@@ -233,6 +238,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                           setState(() => selectedSchoolId = value);
                                         }
                                       },
+                              ),
+                              const SizedBox(height: 16),
+                              TextField(
+                                controller: phoneController,
+                                keyboardType: TextInputType.phone,
+                                textInputAction: TextInputAction.next,
+                                autofillHints: const [AutofillHints.telephoneNumber],
+                                style: const TextStyle(color: UniCartColors.textPrimary),
+                                decoration: const InputDecoration(
+                                  labelText: "Phone number for delivery contact",
+                                  hintText: "+234 801 234 5678",
+                                  helperText: "Used by UniCart to contact you about delivered packages. No SMS OTP.",
+                                  prefixIcon: Icon(Icons.phone_outlined),
+                                ),
                               ),
                               const SizedBox(height: 16),
                               TextField(

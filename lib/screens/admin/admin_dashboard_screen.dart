@@ -1,6 +1,8 @@
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "../../services/lobby_service.dart";
+import "../../services/auth_service.dart";
+import "../../models/school.dart";
 import "../../theme/unicart_theme.dart";
 import "../../widgets/unicart_ui.dart";
 
@@ -18,6 +20,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   bool isBusy = false;
   String? error;
   Map<String, dynamic>? dashboardData;
+  Map<String, dynamic>? meData;
+  UniCartSchool get currentSchool =>
+      UniCartSchool.byId(meData?["school_id"]?.toString());
   final TextEditingController targetController = TextEditingController();
   final Set<int> _expandedBatches = {};
 
@@ -40,13 +45,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     });
 
     try {
+      final profileFuture = AuthService.me(widget.token).catchError((_) => <String, dynamic>{});
       final data = await LobbyService.adminDashboard(widget.token);
+      final profile = await profileFuture;
       final openLobby = data["current_open_lobby"] as Map<String, dynamic>?;
       if (openLobby != null) {
         targetController.text =
             (openLobby["target_item_amount"] ?? "").toString();
       }
-      if (mounted) setState(() => dashboardData = data);
+      if (mounted) setState(() { dashboardData = data; meData = profile; });
     } catch (e) {
       if (mounted) setState(() => error = e.toString());
     } finally {
@@ -857,13 +864,24 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             label: "Admin",
             color: UniCartColors.purple,
           ),
-          const SizedBox(width: 10),
-          const Expanded(
+          const SizedBox(width: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: Image.network(
+              currentSchool.logoUrl,
+              width: 28,
+              height: 28,
+              fit: BoxFit.contain,
+              errorBuilder: (_, __, ___) => const Icon(Icons.school_rounded, size: 24),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
             child: Text(
-              "Operations dashboard",
+              "${currentSchool.shortName} operations",
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
+              style: const TextStyle(
                 color: UniCartColors.textPrimary,
                 fontSize: 17,
                 fontWeight: FontWeight.w800,

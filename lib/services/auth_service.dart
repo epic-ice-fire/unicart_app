@@ -4,6 +4,7 @@ class AuthService {
   static Future<Map<String, dynamic>> register({
     required String email,
     required String password,
+    required String phoneNumber,
     String schoolId = "pau",
   }) async {
     await ApiService.ensureBackendReady();
@@ -13,6 +14,7 @@ class AuthService {
         "email": email,
         "password": password,
         "school_id": schoolId,
+        "phone_number": phoneNumber,
       },
     );
   }

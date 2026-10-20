@@ -162,7 +162,7 @@ class _LoginScreenState extends State<LoginScreen> {
       children: [
         UniCartEyebrow(
           icon: Icons.school_outlined,
-          label: "Built for PAU students",
+          label: "Built for university students",
         ),
         SizedBox(height: 18),
         Text(
@@ -345,7 +345,7 @@ class _LoginStory extends StatelessWidget {
           SizedBox(height: 42),
           UniCartEyebrow(
             icon: Icons.shield_outlined,
-            label: "PAU-verified group buying",
+            label: "Verified campus group buying",
           ),
           SizedBox(height: 20),
           Text(
@@ -374,7 +374,7 @@ class _LoginStory extends StatelessWidget {
           _StoryPoint(
             icon: Icons.verified_user_outlined,
             title: "Verified campus access",
-            body: "PAU email verification keeps the community student-only.",
+            body: "University email verification keeps each campus community student-only.",
           ),
           SizedBox(height: 14),
           _StoryPoint(

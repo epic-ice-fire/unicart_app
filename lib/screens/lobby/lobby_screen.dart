@@ -27,6 +27,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
   Lobby? lobby;
   bool isLoading = true;
   bool isBusy = false;
+  String selectedRetailer = "temu";
   String? error;
 
   Map<String, dynamic>? meData;
@@ -122,13 +123,13 @@ class _LobbyScreenState extends State<LobbyScreen> {
 
       final meFuture = AuthService.me(widget.token);
       final detailsFuture = safe(
-        LobbyService.mainLobbyDetails(widget.token),
+        LobbyService.mainLobbyDetails(widget.token, retailer: selectedRetailer),
       );
       final itemsFuture = safe(
-        LobbyService.myMainLobbyItems(widget.token),
+        LobbyService.myMainLobbyItems(widget.token, retailer: selectedRetailer),
       );
       final historyFuture = safe(
-        LobbyService.myBatchHistory(widget.token),
+        LobbyService.myBatchHistory(widget.token, retailer: selectedRetailer),
       );
 
       try {
@@ -285,7 +286,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
     setState(() => isBusy = true);
     try {
       final response =
-          await LobbyService.initializeEntryFeePayment(widget.token);
+          await LobbyService.initializeEntryFeePayment(widget.token, retailer: selectedRetailer);
       final reference = response["reference"]?.toString();
       final authUrl = response["authorization_url"]?.toString();
 
@@ -414,7 +415,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
 
     setState(() => isBusy = true);
     try {
-      final response = await LobbyService.leaveLobby(widget.token);
+      final response = await LobbyService.leaveLobby(widget.token, retailer: selectedRetailer);
       await loadAll();
       showMessage(response["message"]?.toString() ?? "Left lobby.");
     } catch (e) {
@@ -437,12 +438,18 @@ class _LobbyScreenState extends State<LobbyScreen> {
     }
 
     final parsedLink = Uri.tryParse(itemLink);
+    final linkHost = parsedLink?.host.toLowerCase() ?? "";
+    final allowedDomains = selectedRetailer == "temu"
+        ? <String>["temu.com"]
+        : <String>["shein.com", "shein.co.uk", "shein.in", "shein.eu", "shein.com.mx", "shein.com.br", "shein.com.ar", "shein.sa", "shein.ae"];
+    final hasRetailerDomain = allowedDomains.any((domain) =>
+        linkHost == domain || linkHost.endsWith(".$domain"));
     final hasValidWebScheme = parsedLink != null &&
         (parsedLink.scheme == "https" || parsedLink.scheme == "http") &&
-        parsedLink.host.isNotEmpty;
+        parsedLink.host.isNotEmpty && hasRetailerDomain;
     if (!hasValidWebScheme) {
       showMessage(
-        "Paste the full product URL, including https:// (for example: https://www.temu.com/...).",
+        "Paste a valid ${selectedRetailer.toUpperCase()} product URL, including https://.",
         isWarning: true,
       );
       return;
@@ -454,6 +461,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
         widget.token,
         itemLink: itemLink,
         itemAmount: amount.toInt(),
+        retailer: selectedRetailer,
       );
       itemLinkController.clear();
       itemAmountController.clear();
@@ -474,7 +482,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
     setState(() => isBusy = true);
     try {
       final response =
-          await LobbyService.removeItem(widget.token, itemId: itemId);
+          await LobbyService.removeItem(widget.token, itemId: itemId, retailer: selectedRetailer);
       await loadAll();
       showMessage(response["message"]?.toString() ?? "Item removed.");
     } catch (e) {
@@ -654,9 +662,9 @@ class _LobbyScreenState extends State<LobbyScreen> {
 
   Future<bool?> _showGuestPriceSheet() {
     const checks = [
-      "I browsed this product while logged out of Temu.",
+      "I browsed this product while logged out of ${selectedRetailer.toUpperCase()}.",
       "I used a private or incognito window.",
-      "The submitted amount matches the guest price I saw.",
+      "The submitted amount matches the guest price I saw on ${selectedRetailer.toUpperCase()}.",
       "I understand item payments are non-refundable.",
     ];
 
@@ -873,6 +881,8 @@ class _LobbyScreenState extends State<LobbyScreen> {
                                           ),
                                           const SizedBox(height: 14),
                                         ],
+                                        _buildRetailerSwitcher(),
+                                        const SizedBox(height: 14),
                                         _buildVaultHero(progress),
                                         const SizedBox(height: 14),
                                         _buildMetrics(),
@@ -914,6 +924,50 @@ class _LobbyScreenState extends State<LobbyScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildRetailerSwitcher() {
+    final isTemu = selectedRetailer == "temu";
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: UniCartColors.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: UniCartColors.border),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text("SHOPPING CHANNEL", style: TextStyle(color: UniCartColors.textMuted, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 1.2)),
+        const SizedBox(height: 10),
+        Wrap(spacing: 10, runSpacing: 8, children: [
+          ChoiceChip(label: const Text("Temu · General shopping"), selected: isTemu,
+            onSelected: (selected) { if (selected && !isTemu) _switchRetailer("temu"); }),
+          ChoiceChip(label: const Text("SHEIN · Fashion"), selected: !isTemu,
+            onSelected: (selected) { if (selected && isTemu) _switchRetailer("shein"); }),
+        ]),
+        const SizedBox(height: 6),
+        Text(
+          mainDetailsData?["has_shared_access"] == true
+              ? "Shared access is active. Each retailer keeps its own goal, items, payments and batch."
+              : "Pay for one qualifying lobby to unlock both channels until that paid lobby reaches its goal.",
+          style: TextStyle(color: UniCartColors.textSecondary, fontSize: 12, height: 1.45),
+        ),
+      ]),
+    );
+  }
+
+  Future<void> _switchRetailer(String retailer) async {
+    if (retailer == selectedRetailer) return;
+    setState(() {
+      selectedRetailer = retailer;
+      lobby = null;
+      mainDetailsData = null;
+      myItemsData = null;
+      myHistoryData = null;
+      pendingPaymentReference = null;
+      pendingPaymentUrl = null;
+      error = null;
+    });
+    await loadAll();
   }
 
   Widget _buildTopBar() {

@@ -268,7 +268,7 @@ class _VerifyPauScreenState extends State<VerifyPauScreen> {
                 keyboardType: TextInputType.emailAddress,
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) => isLoading ? null : requestCode(),
-                style: const TextStyle(color: UniCartColors.textPrimary),
+                style:  TextStyle(color: UniCartColors.textPrimary),
                 decoration: InputDecoration(
                   labelText: "Email address to verify",
                   hintText: "you@example.com",
@@ -301,7 +301,7 @@ class _VerifyPauScreenState extends State<VerifyPauScreen> {
           label: "Code sent",
         ),
         const SizedBox(height: 18),
-        const Text(
+         Text(
           "Check your inbox.",
           style: TextStyle(
             color: UniCartColors.textPrimary,
@@ -314,7 +314,7 @@ class _VerifyPauScreenState extends State<VerifyPauScreen> {
         const SizedBox(height: 10),
         Text(
           "Enter the six-digit code sent to $email. The code expires after 10 minutes.",
-          style: const TextStyle(
+          style:  TextStyle(
             color: UniCartColors.textSecondary,
             fontSize: 14,
             height: 1.55,
@@ -326,7 +326,7 @@ class _VerifyPauScreenState extends State<VerifyPauScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text(
+               Text(
                 "Verification code",
                 style: TextStyle(
                   color: UniCartColors.textSecondary,
@@ -349,7 +349,7 @@ class _VerifyPauScreenState extends State<VerifyPauScreen> {
                         maxLength: 1,
                         inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                         onChanged: (value) => _onCodeChanged(index, value),
-                        style: const TextStyle(
+                        style:  TextStyle(
                           color: UniCartColors.textPrimary,
                           fontSize: 22,
                           fontWeight: FontWeight.w800,
@@ -361,7 +361,7 @@ class _VerifyPauScreenState extends State<VerifyPauScreen> {
                           fillColor: UniCartColors.surface,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(14),
-                            borderSide: const BorderSide(
+                            borderSide:  BorderSide(
                               color: UniCartColors.border,
                             ),
                           ),
@@ -384,7 +384,7 @@ class _VerifyPauScreenState extends State<VerifyPauScreen> {
                   ),
                   child: SelectableText(
                     "Development code: $devCode",
-                    style: const TextStyle(
+                    style:  TextStyle(
                       color: UniCartColors.warning,
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
@@ -405,7 +405,7 @@ class _VerifyPauScreenState extends State<VerifyPauScreen> {
                 children: [
                   TextButton(
                     onPressed: isLoading ? null : _editEmail,
-                    child: const Text(
+                    child:  Text(
                       "Change email",
                       style: TextStyle(color: UniCartColors.textSecondary),
                     ),
@@ -496,7 +496,7 @@ class _StepDot extends StatelessWidget {
               color: active ? UniCartColors.primaryBright : UniCartColors.border,
             ),
             boxShadow: active
-                ? const [
+                ?  [
                     BoxShadow(
                       color: UniCartColors.primaryGlow,
                       blurRadius: 16,

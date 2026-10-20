@@ -53,7 +53,7 @@ class _VerifyPauScreenState extends State<VerifyPauScreen> {
     final pauEmail = pauEmailController.text.trim();
 
     if (pauEmail.isEmpty) {
-      showUniCartSnack(context, "Enter the email address you used to create your UniCart account.");
+      showUniCartSnack(context, "Enter an email address you can access.");
       return;
     }
 
@@ -235,7 +235,7 @@ class _VerifyPauScreenState extends State<VerifyPauScreen> {
       children: [
         const UniCartEyebrow(
           icon: Icons.verified_user_outlined,
-          label: "Student-only access",
+          label: "Verify your email address",
         ),
         const SizedBox(height: 18),
         Text(
@@ -250,7 +250,7 @@ class _VerifyPauScreenState extends State<VerifyPauScreen> {
         ),
         const SizedBox(height: 10),
         Text(
-          "We will send a six-digit code to the email address you used to create your UniCart account. You can use any email provider, as long as you can access its inbox.",
+          "We will send a six-digit code to the email address you choose. It can be any email provider; you do not need a university-issued inbox.",
           style: TextStyle(
             color: UniCartColors.textSecondary,
             fontSize: 14,
@@ -270,7 +270,7 @@ class _VerifyPauScreenState extends State<VerifyPauScreen> {
                 onSubmitted: (_) => isLoading ? null : requestCode(),
                 style: const TextStyle(color: UniCartColors.textPrimary),
                 decoration: InputDecoration(
-                  labelText: "Email address used for your UniCart account",
+                  labelText: "Email address to verify",
                   hintText: "you@example.com",
                   prefixIcon: Icon(Icons.school_outlined),
                 ),

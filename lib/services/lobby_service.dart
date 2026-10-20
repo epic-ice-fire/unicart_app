@@ -209,10 +209,10 @@ class LobbyService {
     throw _errorFromResponse(response);
   }
 
-  static Future<Map<String, dynamic>> adminDashboard(String token) async {
+  static Future<Map<String, dynamic>> adminDashboard(String token, {String schoolId = "pau"}) async {
     final response = await _withTimeout(
       http.get(
-        Uri.parse("$baseUrl/lobbies/admin/dashboard"),
+        Uri.parse("$baseUrl/lobbies/admin/dashboard?school_id=$schoolId"),
         headers: _headers(token),
       ),
     );
@@ -225,10 +225,11 @@ class LobbyService {
   static Future<Map<String, dynamic>> adminUpdateOpenLobbyTarget(
     String token, {
     required int targetItemAmount,
+    String schoolId = "pau",
   }) async {
     final response = await _withTimeout(
       http.patch(
-        Uri.parse("$baseUrl/lobbies/admin/open-lobby/target"),
+        Uri.parse("$baseUrl/lobbies/admin/open-lobby/target?school_id=$schoolId"),
         headers: _headers(token),
         body: jsonEncode({"target_item_amount": targetItemAmount}),
       ),

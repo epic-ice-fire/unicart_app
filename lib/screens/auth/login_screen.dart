@@ -390,6 +390,7 @@ class _LoginStory extends StatelessWidget {
           SizedBox(height: 42),
           UniCartEyebrow(
             icon: Icons.shield_outlined,
+            color: schoolId == "babcock" ? UniCartColors.cyan : null,
             label: schoolId == "augustine"
                 ? "AUGUSTINE UNIVERSITY · BURGUNDY EDITION"
                 : schoolId == "babcock"

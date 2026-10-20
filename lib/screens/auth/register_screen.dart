@@ -145,7 +145,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     onPressed: isLoading ? null : () => Navigator.pop(context),
                   ),
                   const SizedBox(width: 12),
-                  const Text(
+                   Text(
                     "Create account",
                     style: TextStyle(
                       color: UniCartColors.textPrimary,
@@ -173,7 +173,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                         ),
                         const SizedBox(height: 18),
-                        const Text(
+                         Text(
                           "Join UniCart.",
                           style: TextStyle(
                             color: UniCartColors.textPrimary,
@@ -236,6 +236,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     : (value) {
                                         if (value != null) {
                                           setState(() => selectedSchoolId = value);
+                                          UniCartColors.setSchool(value);
                                         }
                                       },
                               ),
@@ -245,7 +246,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 keyboardType: TextInputType.phone,
                                 textInputAction: TextInputAction.next,
                                 autofillHints: const [AutofillHints.telephoneNumber],
-                                style: const TextStyle(color: UniCartColors.textPrimary),
+                                style:  TextStyle(color: UniCartColors.textPrimary),
                                 decoration: const InputDecoration(
                                   labelText: "Phone number for delivery contact",
                                   hintText: "+234 801 234 5678",
@@ -259,7 +260,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 keyboardType: TextInputType.emailAddress,
                                 textInputAction: TextInputAction.next,
                                 autofillHints: const [AutofillHints.email],
-                                style: const TextStyle(
+                                style:  TextStyle(
                                   color: UniCartColors.textPrimary,
                                 ),
                                 decoration: const InputDecoration(
@@ -274,7 +275,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 obscureText: !showPassword,
                                 textInputAction: TextInputAction.next,
                                 autofillHints: const [AutofillHints.newPassword],
-                                style: const TextStyle(
+                                style:  TextStyle(
                                   color: UniCartColors.textPrimary,
                                 ),
                                 decoration: InputDecoration(
@@ -306,7 +307,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 obscureText: !showConfirmPassword,
                                 textInputAction: TextInputAction.done,
                                 onSubmitted: (_) => isLoading ? null : register(),
-                                style: const TextStyle(
+                                style:  TextStyle(
                                   color: UniCartColors.textPrimary,
                                 ),
                                 decoration: InputDecoration(
@@ -347,7 +348,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Text(
+                             Text(
                               "Already have an account? ",
                               style: TextStyle(
                                 color: UniCartColors.textSecondary,
@@ -358,7 +359,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               onPressed: isLoading
                                   ? null
                                   : () => Navigator.pop(context),
-                              child: const Text(
+                              child:  Text(
                                 "Sign in",
                                 style: TextStyle(
                                   color: UniCartColors.primarySoft,

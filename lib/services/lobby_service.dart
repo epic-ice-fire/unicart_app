@@ -211,10 +211,10 @@ class LobbyService {
     throw _errorFromResponse(response);
   }
 
-  static Future<Map<String, dynamic>> adminDashboard(String token, {String schoolId = "pau"}) async {
+  static Future<Map<String, dynamic>> adminDashboard(String token, {String schoolId = "pau", String retailer = "temu"}) async {
     final response = await _withTimeout(
       http.get(
-        Uri.parse("$baseUrl/lobbies/admin/dashboard?school_id=$schoolId"),
+        Uri.parse("$baseUrl/lobbies/admin/dashboard").replace(queryParameters: {"school_id": schoolId, "retailer": retailer}),
         headers: _headers(token),
       ),
     );
@@ -228,10 +228,11 @@ class LobbyService {
     String token, {
     required int targetItemAmount,
     String schoolId = "pau",
+    String retailer = "temu",
   }) async {
     final response = await _withTimeout(
       http.patch(
-        Uri.parse("$baseUrl/lobbies/admin/open-lobby/target?school_id=$schoolId"),
+        Uri.parse("$baseUrl/lobbies/admin/open-lobby/target").replace(queryParameters: {"school_id": schoolId, "retailer": retailer}),
         headers: _headers(token),
         body: jsonEncode({"target_item_amount": targetItemAmount}),
       ),

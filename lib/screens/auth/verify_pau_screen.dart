@@ -188,7 +188,7 @@ class _VerifyPauScreenState extends State<VerifyPauScreen> {
                     onPressed: isLoading ? null : () => Navigator.pop(context),
                   ),
                   const SizedBox(width: 12),
-                  const Text(
+                  Text(
                     "${school.shortName} verification",
                     style: TextStyle(
                       color: UniCartColors.textPrimary,
@@ -238,7 +238,7 @@ class _VerifyPauScreenState extends State<VerifyPauScreen> {
           label: "Student-only access",
         ),
         const SizedBox(height: 18),
-        const Text(
+        Text(
           "Verify your ${school.name} email.",
           style: TextStyle(
             color: UniCartColors.textPrimary,
@@ -249,7 +249,7 @@ class _VerifyPauScreenState extends State<VerifyPauScreen> {
           ),
         ),
         const SizedBox(height: 10),
-        const Text(
+        Text(
           "We will send a six-digit code to your @${school.emailDomain} inbox. This links your student identity to the ${school.shortName} UniCart marketplace.",
           style: TextStyle(
             color: UniCartColors.textSecondary,
@@ -269,7 +269,7 @@ class _VerifyPauScreenState extends State<VerifyPauScreen> {
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) => isLoading ? null : requestCode(),
                 style: const TextStyle(color: UniCartColors.textPrimary),
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: "${school.shortName} student email address",
                   hintText: "you@${school.emailDomain}",
                   prefixIcon: Icon(Icons.school_outlined),

@@ -42,19 +42,31 @@ class UniCartTheme {
   UniCartTheme._();
 
   static ThemeData get dark {
-    final colorScheme =  ColorScheme.dark(
-      primary: UniCartColors.primary,
-      secondary: UniCartColors.primaryBright,
-      surface: UniCartColors.surface,
-      error: UniCartColors.danger,
-      onPrimary: Colors.white,
-      onSecondary: Colors.white,
-      onSurface: UniCartColors.textPrimary,
-      onError: Colors.white,
-    );
+    final isPau = UniCartColors.activeSchoolId == "pau";
+    final colorScheme = isPau
+        ? ColorScheme.dark(
+            primary: UniCartColors.primary,
+            secondary: UniCartColors.primaryBright,
+            surface: UniCartColors.surface,
+            error: UniCartColors.danger,
+            onPrimary: Colors.white,
+            onSecondary: Colors.white,
+            onSurface: UniCartColors.textPrimary,
+            onError: Colors.white,
+          )
+        : ColorScheme.light(
+            primary: UniCartColors.primary,
+            secondary: UniCartColors.primaryBright,
+            surface: UniCartColors.surface,
+            error: UniCartColors.danger,
+            onPrimary: Colors.white,
+            onSecondary: Colors.white,
+            onSurface: UniCartColors.textPrimary,
+            onError: Colors.white,
+          );
 
     final base = ThemeData(
-      brightness: Brightness.dark,
+      brightness: isPau ? Brightness.dark : Brightness.light,
       useMaterial3: true,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: UniCartColors.background,

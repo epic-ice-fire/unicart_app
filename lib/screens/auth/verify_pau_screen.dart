@@ -53,7 +53,7 @@ class _VerifyPauScreenState extends State<VerifyPauScreen> {
     final pauEmail = pauEmailController.text.trim();
 
     if (pauEmail.isEmpty) {
-      showUniCartSnack(context, "Enter your ${school.shortName} student email.");
+      showUniCartSnack(context, "Enter the email address you used to create your UniCart account.");
       return;
     }
 

@@ -16,11 +16,14 @@ class UniCartApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: "UniCart",
-      debugShowCheckedModeBanner: false,
-      theme: UniCartTheme.dark,
-      home: const AuthGate(),
+    return ValueListenableBuilder<String>(
+      valueListenable: UniCartColors.schoolId,
+      builder: (context, _, __) => MaterialApp(
+        title: "UniCart",
+        debugShowCheckedModeBanner: false,
+        theme: UniCartTheme.dark,
+        home: const AuthGate(),
+      ),
     );
   }
 }
@@ -57,7 +60,8 @@ class _AuthGateState extends State<AuthGate> {
     }
 
     try {
-      await AuthService.me(token);
+      final account = await AuthService.me(token);
+      UniCartColors.setSchool(account["school_id"]?.toString());
       return _GateResult(_GateStatus.signedIn, token: token);
     } catch (e) {
       final raw = e.toString();
@@ -92,7 +96,7 @@ class _AuthGateState extends State<AuthGate> {
       future: _sessionFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
+          return  Scaffold(
             body: UniCartBackdrop(
               child: Center(
                 child: Column(
@@ -153,13 +157,13 @@ class _AuthGateState extends State<AuthGate> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            const Icon(
+                             Icon(
                               Icons.cloud_off_rounded,
                               size: 34,
                               color: UniCartColors.warning,
                             ),
                             const SizedBox(height: 16),
-                            const Text(
+                             Text(
                               "Couldn't reach UniCart",
                               style: TextStyle(
                                 color: UniCartColors.textPrimary,
@@ -168,7 +172,7 @@ class _AuthGateState extends State<AuthGate> {
                               ),
                             ),
                             const SizedBox(height: 8),
-                            const Text(
+                             Text(
                               "Your session is still saved. The server or your connection did not respond, so UniCart will not show an empty or unverified account by mistake.",
                               style: TextStyle(
                                 color: UniCartColors.textSecondary,

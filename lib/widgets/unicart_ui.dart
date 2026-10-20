@@ -29,20 +29,20 @@ class UniCartBackdrop extends StatelessWidget {
             ),
           ),
         ),
-        const Positioned(
+        Positioned(
           top: -140,
           right: -120,
           child: _AmbientOrb(
             size: 360,
-            color: Color(0x292563EB),
+            color: UniCartColors.primary.withValues(alpha: 0.15),
           ),
         ),
-        const Positioned(
+        Positioned(
           bottom: -180,
           left: -120,
           child: _AmbientOrb(
             size: 340,
-            color: Color(0x1F3B82F6),
+            color: UniCartColors.primaryBright.withValues(alpha: 0.12),
           ),
         ),
         child,
@@ -311,10 +311,12 @@ class UniCartLogoMark extends StatelessWidget {
       height: size,
       padding: EdgeInsets.all(size * 0.14),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF10203A), Color(0xFF0A1425)],
+          colors: UniCartColors.activeSchoolId == "pau"
+              ? const [Color(0xFF10203A), Color(0xFF0A1425)]
+              : [UniCartColors.primary, UniCartColors.primaryBright],
         ),
         borderRadius: BorderRadius.circular(size * 0.28),
         border: Border.all(color: UniCartColors.borderGlass),

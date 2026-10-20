@@ -27490,7 +27490,7 @@ var $async$IE=A.D(function(c,d){if(c===1)return A.z(d,r)
 for(;;)switch(s){case 0:s=3
 return A.n(A.rE(),$async$IE)
 case 3:s=4
-return A.n(A.ot("/auth/register",A.aa(["email",a,"password",b,"school_id","pau"],t.N,t.z),!1,null),$async$IE)
+return A.n(A.ot("/auth/register",A.aa(["email",a,"password",b],t.N,t.z),!1,null),$async$IE)
 case 4:q=d
 s=1
 break

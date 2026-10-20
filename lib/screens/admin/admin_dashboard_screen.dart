@@ -300,7 +300,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       ),
       child: Text(
         value,
-        style: const TextStyle(
+        style:  TextStyle(
           color: UniCartColors.textSecondary,
           fontSize: 11,
           fontWeight: FontWeight.w600,
@@ -333,7 +333,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             expand: false,
             builder: (context, controller) {
               return Container(
-                decoration: const BoxDecoration(
+                decoration:  BoxDecoration(
                   color: UniCartColors.surfaceRaised,
                   borderRadius: BorderRadius.vertical(
                     top: Radius.circular(UniCartRadius.xxl),
@@ -357,13 +357,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       ),
                     ),
                     const SizedBox(height: 22),
-                    const UniCartEyebrow(
+                     UniCartEyebrow(
                       icon: Icons.fact_check_outlined,
                       label: "Required admin check",
                       color: UniCartColors.primarySoft,
                     ),
                     const SizedBox(height: 16),
-                    const Text(
+                     Text(
                       "Verify prices before processing",
                       style: TextStyle(
                         color: UniCartColors.textPrimary,
@@ -372,7 +372,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       ),
                     ),
                     const SizedBox(height: 7),
-                    const Text(
+                     Text(
                       "UniCart uses guest-price standardisation. Before processing, verify every paid item on Temu while logged out or in a private window.",
                       style: TextStyle(
                         color: UniCartColors.textSecondary,
@@ -381,7 +381,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       ),
                     ),
                     const SizedBox(height: 18),
-                    const Text(
+                     Text(
                       "Paid items in this batch",
                       style: TextStyle(
                         color: UniCartColors.textPrimary,
@@ -391,7 +391,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     ),
                     const SizedBox(height: 10),
                     if (paidItems.isEmpty)
-                      const UniCartInfoBanner(
+                       UniCartInfoBanner(
                         color: UniCartColors.warning,
                         icon: Icons.inventory_2_outlined,
                         title: "No paid items found",
@@ -414,7 +414,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                 item["item_link"]?.toString() ?? "Unknown link",
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
+                                style:  TextStyle(
                                   color: UniCartColors.textPrimary,
                                   fontSize: 12,
                                   height: 1.4,
@@ -442,7 +442,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         ),
                       ),
                     const SizedBox(height: 16),
-                    const Text(
+                     Text(
                       "Admin checklist",
                       style: TextStyle(
                         color: UniCartColors.textPrimary,
@@ -459,7 +459,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       "I am ready to place the group order.",
                     ].map(_checkRow),
                     const SizedBox(height: 12),
-                    const UniCartInfoBanner(
+                     UniCartInfoBanner(
                       color: UniCartColors.danger,
                       icon: Icons.lock_outline_rounded,
                       title: "Status change is operationally significant",
@@ -521,7 +521,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 color: UniCartColors.primary.withValues(alpha: 0.28),
               ),
             ),
-            child: const Icon(
+            child:  Icon(
               Icons.check_rounded,
               size: 15,
               color: UniCartColors.primarySoft,
@@ -531,7 +531,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           Expanded(
             child: Text(
               text,
-              style: const TextStyle(
+              style:  TextStyle(
                 color: UniCartColors.textPrimary,
                 fontSize: 13,
                 height: 1.45,
@@ -553,7 +553,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const UniCartInfoBanner(
+           UniCartInfoBanner(
             color: UniCartColors.primarySoft,
             icon: Icons.fact_check_outlined,
             title: "Verify guest prices before processing",
@@ -622,7 +622,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     }
 
     if (status == "completed") {
-      return const Align(
+      return  Align(
         alignment: Alignment.centerRight,
         child: UniCartStatusPill(
           label: "Completed",
@@ -649,7 +649,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           child: SingleChildScrollView(
             child: Container(
               padding: const EdgeInsets.fromLTRB(22, 12, 22, 24),
-              decoration: const BoxDecoration(
+              decoration:  BoxDecoration(
                 color: UniCartColors.surfaceRaised,
                 borderRadius: BorderRadius.vertical(
                   top: Radius.circular(UniCartRadius.xxl),
@@ -673,13 +673,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     ),
                   ),
                   const SizedBox(height: 22),
-                  const UniCartEyebrow(
+                   UniCartEyebrow(
                     icon: Icons.delete_forever_outlined,
                     label: "Admin enforcement",
                     color: UniCartColors.danger,
                   ),
                   const SizedBox(height: 16),
-                  const Text(
+                   Text(
                     "Remove item from this batch?",
                     style: TextStyle(
                       color: UniCartColors.textPrimary,
@@ -699,7 +699,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       itemLink,
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style:  TextStyle(
                         color: UniCartColors.textPrimary,
                         fontSize: 12,
                         height: 1.45,
@@ -709,7 +709,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   ),
                   const SizedBox(height: 12),
                   if (isPaid) ...[
-                    const UniCartInfoBanner(
+                     UniCartInfoBanner(
                       color: UniCartColors.warning,
                       icon: Icons.payments_outlined,
                       title: "This item has already been paid",
@@ -718,7 +718,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     ),
                     const SizedBox(height: 10),
                   ],
-                  const UniCartInfoBanner(
+                   UniCartInfoBanner(
                     color: UniCartColors.danger,
                     icon: Icons.gavel_rounded,
                     title: "No-refund policy",
@@ -901,7 +901,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
         color: UniCartColors.background.withValues(alpha: 0.92),
-        border: const Border(
+        border:  Border(
           bottom: BorderSide(color: UniCartColors.divider),
         ),
       ),
@@ -913,7 +913,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             onPressed: () => Navigator.pop(context),
           ),
           const SizedBox(width: 10),
-          const UniCartEyebrow(
+           UniCartEyebrow(
             icon: Icons.admin_panel_settings_rounded,
             label: "Admin",
             color: UniCartColors.purple,
@@ -935,7 +935,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               "${currentSchool.shortName} operations",
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
+              style:  TextStyle(
                 color: UniCartColors.textPrimary,
                 fontSize: 17,
                 fontWeight: FontWeight.w800,
@@ -981,13 +981,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const UniCartEyebrow(
+           UniCartEyebrow(
             icon: Icons.hub_outlined,
             label: "Batch control centre",
             color: UniCartColors.purple,
           ),
           const SizedBox(height: 15),
-          const Text(
+           Text(
             "Operate UniCart without losing the batch context.",
             style: TextStyle(
               color: UniCartColors.textPrimary,
@@ -998,7 +998,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             ),
           ),
           const SizedBox(height: 7),
-          const Text(
+           Text(
             "Review the live lobby, verify guest prices, handle fraud removals, and move every triggered batch through fulfilment.",
             style: TextStyle(
               color: UniCartColors.textSecondary,
@@ -1118,7 +1118,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       return UniCartPanel(
         color: UniCartColors.surface.withValues(alpha: 0.92),
         borderColor: UniCartColors.border.withValues(alpha: 0.72),
-        child: const Column(
+        child:  Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             UniCartSectionTitle(
@@ -1184,7 +1184,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+               Text(
                 "Vault progress",
                 style: TextStyle(
                   color: UniCartColors.textSecondary,
@@ -1194,7 +1194,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               ),
               Text(
                 "${(progress * 100).toStringAsFixed(1)}%",
-                style: const TextStyle(
+                style:  TextStyle(
                   color: UniCartColors.primarySoft,
                   fontSize: 13,
                   fontWeight: FontWeight.w800,
@@ -1210,7 +1210,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               child: LinearProgressIndicator(
                 value: progress,
                 backgroundColor: UniCartColors.surfaceSoft,
-                valueColor: const AlwaysStoppedAnimation<Color>(
+                valueColor:  AlwaysStoppedAnimation<Color>(
                   UniCartColors.primaryBright,
                 ),
               ),
@@ -1237,7 +1237,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             controller: targetController,
             enabled: openLobby != null && !isBusy,
             keyboardType: TextInputType.number,
-            style: const TextStyle(color: UniCartColors.textPrimary),
+            style:  TextStyle(color: UniCartColors.textPrimary),
             decoration: const InputDecoration(
               labelText: "Target amount (₦)",
               hintText: "e.g. 50000",
@@ -1252,7 +1252,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             child: const Text("Update MOV"),
           ),
           const SizedBox(height: 10),
-          const UniCartInfoBanner(
+           UniCartInfoBanner(
             color: UniCartColors.primarySoft,
             icon: Icons.info_outline_rounded,
             title: "Target affects the live vault",
@@ -1420,7 +1420,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             children: [
                               Text(
                                 "Batch #$lobbyId",
-                                style: const TextStyle(
+                                style:  TextStyle(
                                   color: UniCartColors.textPrimary,
                                   fontSize: 15,
                                   fontWeight: FontWeight.w800,
@@ -1429,7 +1429,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                               const SizedBox(height: 3),
                               Text(
                                 "Paid total ₦${batch["final_item_amount"]} / ₦${batch["target_item_amount"]}",
-                                style: const TextStyle(
+                                style:  TextStyle(
                                   color: UniCartColors.textSecondary,
                                   fontSize: 12,
                                 ),
@@ -1557,7 +1557,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   itemLink,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style:  TextStyle(
                     color: UniCartColors.textPrimary,
                     fontSize: 13,
                     height: 1.4,
@@ -1676,7 +1676,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         children: [
           Text(
             label,
-            style: const TextStyle(
+            style:  TextStyle(
               color: UniCartColors.textMuted,
               fontSize: 10,
               fontWeight: FontWeight.w700,
@@ -1687,7 +1687,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             value,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
+            style:  TextStyle(
               color: UniCartColors.textPrimary,
               fontSize: 13,
               fontWeight: FontWeight.w800,
@@ -1725,7 +1725,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           const SizedBox(height: 12),
           Text(
             title,
-            style: const TextStyle(
+            style:  TextStyle(
               color: UniCartColors.textPrimary,
               fontSize: 14,
               fontWeight: FontWeight.w800,
@@ -1735,7 +1735,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           Text(
             message,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style:  TextStyle(
               color: UniCartColors.textSecondary,
               fontSize: 12,
               height: 1.45,
@@ -1752,7 +1752,7 @@ class _AdminLoadingState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    return  Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

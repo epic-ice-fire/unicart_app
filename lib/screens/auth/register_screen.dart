@@ -189,7 +189,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               DropdownButtonFormField<String>(
-                                value: selectedSchoolId,
+                                initialValue: selectedSchoolId,
                                 decoration: const InputDecoration(
                                   labelText: "Your university",
                                   prefixIcon: Icon(Icons.account_balance_rounded),

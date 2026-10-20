@@ -807,7 +807,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                     14,
                                   ),
                                   child: DropdownButtonFormField<String>(
-                                    value: selectedSchoolId,
+                                    initialValue: selectedSchoolId,
                                     decoration: const InputDecoration(
                                       labelText: "Manage campus",
                                       prefixIcon: Icon(Icons.account_balance_rounded),

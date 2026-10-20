@@ -1502,7 +1502,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
             icon: Icons.visibility_off_outlined,
             title: "Use guest pricing",
             message:
-                "Log out of Temu or use a private/incognito window. Submit the price visible to a guest — not a personalised price.",
+                "Log out of ${selectedRetailer.toUpperCase()} or use a private/incognito window. Submit the price visible to a guest — not a personalised price.",
           ),
           const SizedBox(height: 10),
            UniCartInfoBanner(

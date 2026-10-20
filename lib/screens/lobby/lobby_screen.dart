@@ -661,7 +661,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
   }
 
   Future<bool?> _showGuestPriceSheet() {
-    const checks = [
+    final checks = [
       "I browsed this product while logged out of ${selectedRetailer.toUpperCase()}.",
       "I used a private or incognito window.",
       "The submitted amount matches the guest price I saw on ${selectedRetailer.toUpperCase()}.",

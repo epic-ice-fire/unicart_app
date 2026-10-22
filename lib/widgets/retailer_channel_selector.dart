@@ -44,7 +44,11 @@ class RetailerChannelSelector extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          Row(
+          // IntrinsicHeight is required: a Row that stretches its children has
+          // no height limit inside a scrolling list, which makes Flutter throw
+          // a layout error and the whole lobby body renders blank.
+          IntrinsicHeight(
+            child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Expanded(
@@ -73,6 +77,7 @@ class RetailerChannelSelector extends StatelessWidget {
                 ),
               ),
             ],
+            ),
           ),
           const SizedBox(height: 10),
           Text(

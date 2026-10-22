@@ -5,12 +5,17 @@ class UniCartSchool {
   final String emailDomain;
   final String logoUrl;
 
+  /// Bundled logo (works offline, no CORS/hotlink problems). Falls back to
+  /// [logoUrl] and then a generic icon if the asset is missing.
+  final String? logoAsset;
+
   const UniCartSchool({
     required this.id,
     required this.name,
     required this.shortName,
     required this.emailDomain,
     required this.logoUrl,
+    this.logoAsset,
   });
 
   static const List<UniCartSchool> all = [
@@ -26,14 +31,16 @@ class UniCartSchool {
       name: "Augustine University",
       shortName: "Augustine",
       emailDomain: "augustineuniversity.edu.ng",
-      logoUrl: "https://www.augustineuniversity.edu.ng/images/NAME.png",
+      logoUrl: "",
+      logoAsset: "assets/images/schools/augustine.png",
     ),
     UniCartSchool(
       id: "babcock",
       name: "Babcock University",
       shortName: "Babcock",
       emailDomain: "babcock.edu.ng",
-      logoUrl: "https://legacy.babcock.edu.ng/assets/images/admin/BU_Logo.png",
+      logoUrl: "",
+      logoAsset: "assets/images/schools/babcock.png",
     ),
   ];
 

@@ -1,4 +1,5 @@
 import "package:flutter/material.dart";
+import "../models/school.dart";
 import "../theme/unicart_theme.dart";
 
 class UniCartBackdrop extends StatelessWidget {
@@ -740,4 +741,62 @@ void showUniCartSnack(
         ),
       ),
     );
+}
+
+
+/// A campus logo on a white tile so it stays readable on every campus theme.
+/// Uses the bundled asset when there is one, then the network URL, then a
+/// generic school icon. Never throws if an image is missing.
+class UniCartSchoolLogo extends StatelessWidget {
+  final UniCartSchool school;
+  final double size;
+  final double radius;
+
+  const UniCartSchoolLogo({
+    super.key,
+    required this.school,
+    this.size = 30,
+    this.radius = 7,
+  });
+
+  Widget _fallbackIcon() => Icon(
+        Icons.school_rounded,
+        size: size * 0.7,
+        color: UniCartColors.primary,
+      );
+
+  Widget _network() {
+    if (school.logoUrl.isEmpty) return _fallbackIcon();
+    return Image.network(
+      school.logoUrl,
+      fit: BoxFit.contain,
+      errorBuilder: (_, __, ___) => _fallbackIcon(),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final asset = school.logoAsset;
+    return Container(
+      width: size,
+      height: size,
+      padding: EdgeInsets.all(size * 0.07),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(radius),
+        border: Border.all(color: UniCartColors.border),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: asset == null
+          ? _network()
+          : Image.asset(
+              asset,
+              fit: BoxFit.contain,
+              filterQuality: FilterQuality.medium,
+              semanticLabel: "${school.name} logo",
+              errorBuilder: (_, __, ___) => _network(),
+            ),
+    );
+  }
 }

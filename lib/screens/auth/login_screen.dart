@@ -220,29 +220,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   value: school.id,
                   child: Row(
                     children: [
-                      Container(
-                        width: 30,
-                        height: 30,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: UniCartColors.border),
-                        ),
-                        clipBehavior: Clip.antiAlias,
-                        child: Image.network(
-                          school.logoUrl,
-                          width: 30,
-                          height: 30,
-                          fit: school.id == "augustine" ? BoxFit.cover : BoxFit.contain,
-                          alignment: Alignment.centerLeft,
-                          errorBuilder: (_, __, ___) => Icon(
-                            Icons.school_rounded,
-                            size: 24,
-                            color: UniCartColors.primary,
-                          ),
-                        ),
-                      ),
+                      UniCartSchoolLogo(school: school, size: 30, radius: 6),
                       const SizedBox(width: 10),
                       Flexible(child: Text(school.name)),
                     ],

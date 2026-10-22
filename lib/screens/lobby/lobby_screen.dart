@@ -903,17 +903,11 @@ class _LobbyScreenState extends State<LobbyScreen> with WidgetsBindingObserver {
     final accountEmail = meData?["email"]?.toString() ??
         (isLoading ? "Loading…" : "Connecting…");
 
-    final rawItems = (myItemsData?["items"] as List?) ?? [];
-    final activeItems = rawItems
-        .where(
-          (i) => i is Map<String, dynamic> && i["is_active"] == true,
-        )
-        .cast<Map<String, dynamic>>()
+    final activeItems = _asMapList(myItemsData?["items"])
+        .where((i) => i["is_active"] == true)
         .toList();
 
-    final historyBatches =
-        ((myHistoryData?["batches"] as List?) ?? [])
-            .cast<Map<String, dynamic>>();
+    final historyBatches = _asMapList(myHistoryData?["batches"]);
     final hasJoined = mainDetailsData?["has_joined"] == true;
     final hasPendingPayment =
         mainDetailsData?["has_pending_payment"] == true ||
@@ -973,34 +967,54 @@ class _LobbyScreenState extends State<LobbyScreen> with WidgetsBindingObserver {
                                           ),
                                           const SizedBox(height: 14),
                                         ],
-                                        _buildRetailerSwitcher(),
+                                        _safeSection(
+                                          "shopping channels",
+                                          _buildRetailerSwitcher,
+                                        ),
                                         const SizedBox(height: 14),
-                                        _buildVaultHero(progress),
+                                        _safeSection(
+                                          "lobby progress",
+                                          () => _buildVaultHero(progress),
+                                        ),
                                         const SizedBox(height: 14),
-                                        _buildMetrics(),
+                                        _safeSection("your totals", _buildMetrics),
                                         const SizedBox(height: 14),
                                         _responsivePair(
                                           constraints.maxWidth,
-                                          _buildAccountCard(
-                                            accountEmail: accountEmail,
-                                            studentEmail: studentEmail,
-                                            isVerified: isVerified,
-                                            isAdmin: isAdmin,
+                                          _safeSection(
+                                            "your account",
+                                            () => _buildAccountCard(
+                                              accountEmail: accountEmail,
+                                              isVerified: isVerified,
+                                              isAdmin: isAdmin,
+                                            ),
                                           ),
-                                          _buildLobbyAccessCard(
-                                            isVerified: isVerified,
-                                            hasJoined: hasJoined,
-                                            hasPendingPayment:
-                                                hasPendingPayment,
-                                            entryFeeAmount: entryFeeAmount,
+                                          _safeSection(
+                                            "lobby access",
+                                            () => _buildLobbyAccessCard(
+                                              isVerified: isVerified,
+                                              hasJoined: hasJoined,
+                                              hasPendingPayment:
+                                                  hasPendingPayment,
+                                              entryFeeAmount: entryFeeAmount,
+                                            ),
                                           ),
                                         ),
                                         const SizedBox(height: 14),
-                                        _buildAddItemCard(hasJoined),
+                                        _safeSection(
+                                          "add item",
+                                          () => _buildAddItemCard(hasJoined),
+                                        ),
                                         const SizedBox(height: 14),
-                                        _buildItemsCard(activeItems),
+                                        _safeSection(
+                                          "your items",
+                                          () => _buildItemsCard(activeItems),
+                                        ),
                                         const SizedBox(height: 14),
-                                        _buildHistoryCard(historyBatches),
+                                        _safeSection(
+                                          "batch history",
+                                          () => _buildHistoryCard(historyBatches),
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -1016,6 +1030,32 @@ class _LobbyScreenState extends State<LobbyScreen> with WidgetsBindingObserver {
         ),
       ),
     );
+  }
+
+  /// Backend lists arrive as JSON. Accept any list of maps and quietly skip
+  /// anything else so one odd row can never break the whole screen.
+  List<Map<String, dynamic>> _asMapList(dynamic value) {
+    if (value is! List) return const [];
+    return value
+        .whereType<Map>()
+        .map((m) => Map<String, dynamic>.from(m))
+        .toList();
+  }
+
+  /// Builds one dashboard section. If it throws (unexpected data, a bug), only
+  /// that section shows a small notice; the rest of the lobby still renders.
+  Widget _safeSection(String name, Widget Function() builder) {
+    try {
+      return builder();
+    } catch (e, stack) {
+      debugPrint("UniCart: could not build $name: $e\n$stack");
+      return UniCartInfoBanner(
+        color: UniCartColors.warning,
+        icon: Icons.warning_amber_rounded,
+        title: "Couldn't show $name",
+        message: "Pull down to refresh. If this keeps happening, contact support.",
+      );
+    }
   }
 
   Widget _buildRetailerSwitcher() {
@@ -1056,25 +1096,7 @@ class _LobbyScreenState extends State<LobbyScreen> with WidgetsBindingObserver {
         children: [
           const UniCartLogoMark(size: 38),
           const SizedBox(width: 7),
-          Container(
-            width: 30,
-            height: 30,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(7),
-              border: Border.all(color: UniCartColors.border),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: Image.network(
-              currentSchool.logoUrl,
-              width: 30,
-              height: 30,
-              fit: currentSchool.id == "augustine" ? BoxFit.cover : BoxFit.contain,
-              alignment: Alignment.centerLeft,
-              errorBuilder: (_, __, ___) => const Icon(Icons.school_rounded, size: 26),
-            ),
-          ),
+          UniCartSchoolLogo(school: currentSchool, size: 34, radius: 8),
           const SizedBox(width: 9),
           Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -1128,14 +1150,24 @@ class _LobbyScreenState extends State<LobbyScreen> with WidgetsBindingObserver {
   Widget _buildVaultHero(double progress) {
     final status = lobby?.status ?? "open";
     final statusColor = _lobbyStatusColor(status);
+    // The deep-navy card only suits the dark PAU theme. On the light Augustine
+    // and Babcock themes the text colours are dark, so use that campus's own
+    // surfaces instead (otherwise dark text sits on a dark card and looks empty).
+    final isDarkTheme = UniCartColors.activeSchoolId == "pau";
 
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF102657), Color(0xFF091634), Color(0xFF0B1220)],
+          colors: isDarkTheme
+              ? const [Color(0xFF102657), Color(0xFF091634), Color(0xFF0B1220)]
+              : [
+                  UniCartColors.surfaceRaised,
+                  UniCartColors.surface,
+                  UniCartColors.surfaceSoft,
+                ],
         ),
         borderRadius: BorderRadius.circular(UniCartRadius.xxl),
         border: Border.all(
@@ -1224,7 +1256,8 @@ class _LobbyScreenState extends State<LobbyScreen> with WidgetsBindingObserver {
               height: 10,
               child: LinearProgressIndicator(
                 value: progress,
-                backgroundColor: const Color(0xFF0A1630),
+                backgroundColor:
+                    isDarkTheme ? const Color(0xFF0A1630) : UniCartColors.surfaceSoft,
                 valueColor:  AlwaysStoppedAnimation<Color>(
                   UniCartColors.primaryBright,
                 ),
@@ -1351,7 +1384,6 @@ class _LobbyScreenState extends State<LobbyScreen> with WidgetsBindingObserver {
 
   Widget _buildAccountCard({
     required String accountEmail,
-    required String? studentEmail,
     required bool isVerified,
     required bool isAdmin,
   }) {
@@ -1646,7 +1678,7 @@ class _LobbyScreenState extends State<LobbyScreen> with WidgetsBindingObserver {
   }
 
   Widget _buildItemTile(Map<String, dynamic> item) {
-    final itemId = item["item_id"] as int;
+    final itemId = (item["item_id"] as num?)?.toInt() ?? 0;
     final itemLink = item["item_link"]?.toString() ?? "";
     final itemAmount = item["item_amount"] ?? 0;
     final paymentStatus = item["item_payment_status"]?.toString() ?? "unpaid";

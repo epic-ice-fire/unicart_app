@@ -8,7 +8,69 @@ import "theme/unicart_theme.dart";
 import "widgets/unicart_ui.dart";
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // In release builds Flutter replaces a widget that failed to build with a
+  // blank grey box, which looks like "the screen went blank". Show a readable
+  // notice instead (and keep the technical detail so it can be reported).
+  ErrorWidget.builder = (FlutterErrorDetails details) =>
+      _UniCartErrorPanel(details: details);
+
   runApp(const UniCartApp());
+}
+
+class _UniCartErrorPanel extends StatelessWidget {
+  final FlutterErrorDetails details;
+
+  const _UniCartErrorPanel({required this.details});
+
+  @override
+  Widget build(BuildContext context) {
+    // Self-contained on purpose: no theme or app state, so it cannot fail too.
+    var technical = details.exceptionAsString().replaceAll("\n", " ");
+    if (technical.length > 220) technical = "${technical.substring(0, 220)}…";
+
+    return Directionality(
+      textDirection: TextDirection.ltr,
+      child: Material(
+        color: const Color(0xFF111827),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.warning_amber_rounded,
+                    color: Color(0xFFF59E0B), size: 28),
+                const SizedBox(height: 8),
+                const Text(
+                  "Something went wrong showing this part of UniCart.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  "Refresh the page or sign in again. Details: $technical",
+                  textAlign: TextAlign.center,
+                  maxLines: 4,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Color(0xFF9CA3AF),
+                    fontSize: 11,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class UniCartApp extends StatelessWidget {

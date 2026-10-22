@@ -820,17 +820,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                         value: school.id,
                                         child: Row(
                                           children: [
-                                            ClipRRect(
-                                              borderRadius: BorderRadius.circular(5),
-                                              child: Image.network(
-                                                school.logoUrl,
-                                                width: 28,
-                                                height: 28,
-                                                fit: BoxFit.contain,
-                                                errorBuilder: (_, __, ___) =>
-                                                    const Icon(Icons.school_rounded, size: 24),
-                                              ),
-                                            ),
+                                            UniCartSchoolLogo(school: school, size: 28, radius: 6),
                                             const SizedBox(width: 9),
                                             Flexible(child: Text(school.name)),
                                           ],
@@ -954,16 +944,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             color: UniCartColors.purple,
           ),
           const SizedBox(width: 8),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(6),
-            child: Image.network(
-              currentSchool.logoUrl,
-              width: 28,
-              height: 28,
-              fit: BoxFit.contain,
-              errorBuilder: (_, __, ___) => const Icon(Icons.school_rounded, size: 24),
-            ),
-          ),
+          UniCartSchoolLogo(school: currentSchool, size: 30, radius: 7),
           const SizedBox(width: 8),
           Expanded(
             child: Text(

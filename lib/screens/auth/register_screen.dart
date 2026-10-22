@@ -212,20 +212,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     value: school.id,
                                     child: Row(
                                       children: [
-                                        ClipRRect(
-                                          borderRadius: BorderRadius.circular(6),
-                                          child: Image.network(
-                                            school.logoUrl,
-                                            width: 30,
-                                            height: 30,
-                                            fit: school.id == "augustine" ? BoxFit.cover : BoxFit.contain,
-                                            alignment: Alignment.centerLeft,
-                                            errorBuilder: (_, __, ___) => const Icon(
-                                              Icons.school_rounded,
-                                              size: 28,
-                                            ),
-                                          ),
-                                        ),
+                                        UniCartSchoolLogo(school: school, size: 30, radius: 6),
                                         const SizedBox(width: 10),
                                         Flexible(child: Text(school.name)),
                                       ],

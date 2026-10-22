@@ -212,7 +212,7 @@ class _LoginScreenState extends State<LoginScreen> {
               initialValue: selectedSchoolId,
               decoration: const InputDecoration(
                 labelText: "University",
-                helperText: "Choose your campus to apply its UniCart identity.",
+                helperText: "Choose your campus for this session. You can change it next time.",
                 prefixIcon: Icon(Icons.account_balance_rounded),
               ),
               items: UniCartSchool.all.map((school) {
@@ -444,7 +444,7 @@ class _LoginStory extends StatelessWidget {
           _StoryPoint(
             icon: Icons.verified_user_outlined,
             title: "Verified campus access",
-            body: "University email verification keeps each campus community student-only.",
+            body: "Choose the campus you identify with. Your choice helps us understand our campus communities and can be changed on a future login.",
           ),
           SizedBox(height: 14),
           _StoryPoint(

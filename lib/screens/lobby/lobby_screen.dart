@@ -1,5 +1,6 @@
 import "dart:async";
 import "package:flutter/material.dart";
+import "package:shared_preferences/shared_preferences.dart";
 import "package:url_launcher/url_launcher.dart";
 import "../../models/lobby.dart";
 import "../../models/school.dart";
@@ -8,6 +9,7 @@ import "../../services/lobby_service.dart";
 import "../../services/session_service.dart";
 import "../../theme/unicart_theme.dart";
 import "../../widgets/unicart_ui.dart";
+import "../../widgets/retailer_channel_selector.dart";
 import "../admin/admin_dashboard_screen.dart";
 import "../auth/login_screen.dart";
 import "../auth/verify_pau_screen.dart";
@@ -41,6 +43,7 @@ class _LobbyScreenState extends State<LobbyScreen> with WidgetsBindingObserver {
 
   Timer? _pollTimer;
   bool _isReconcilingPayments = false;
+  static const String _retailerPrefKey = "unicart_last_retailer";
 
   final TextEditingController itemLinkController = TextEditingController();
   final TextEditingController itemAmountController = TextEditingController();
@@ -49,7 +52,23 @@ class _LobbyScreenState extends State<LobbyScreen> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    loadAll();
+    unawaited(_bootstrap());
+  }
+
+  Future<void> _bootstrap() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final saved = prefs.getString(_retailerPrefKey);
+      if (saved == "temu" || saved == "shein") selectedRetailer = saved!;
+    } catch (_) {}
+    if (mounted) await loadAll();
+  }
+
+  Future<void> _rememberRetailer() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_retailerPrefKey, selectedRetailer);
+    } catch (_) {}
   }
 
   @override
@@ -998,31 +1017,10 @@ class _LobbyScreenState extends State<LobbyScreen> with WidgetsBindingObserver {
   }
 
   Widget _buildRetailerSwitcher() {
-    final isTemu = selectedRetailer == "temu";
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: UniCartColors.surface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: UniCartColors.border),
-      ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text("SHOPPING CHANNEL", style: TextStyle(color: UniCartColors.textMuted, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 1.2)),
-        const SizedBox(height: 10),
-        Wrap(spacing: 10, runSpacing: 8, children: [
-          ChoiceChip(label: const Text("Temu · General shopping"), selected: isTemu,
-            onSelected: (selected) { if (selected && !isTemu) _switchRetailer("temu"); }),
-          ChoiceChip(label: const Text("SHEIN · Fashion"), selected: !isTemu,
-            onSelected: (selected) { if (selected && isTemu) _switchRetailer("shein"); }),
-        ]),
-        const SizedBox(height: 6),
-        Text(
-          mainDetailsData?["has_shared_access"] == true
-              ? "Shared access is active. Each retailer keeps its own goal, items, payments and batch."
-              : "Pay for one qualifying lobby to unlock both channels until that paid lobby reaches its goal.",
-          style: TextStyle(color: UniCartColors.textSecondary, fontSize: 12, height: 1.45),
-        ),
-      ]),
+    return RetailerChannelSelector(
+      selected: selectedRetailer,
+      sharedAccess: mainDetailsData?["has_shared_access"] == true,
+      onSelected: _switchRetailer,
     );
   }
 
@@ -1038,6 +1036,7 @@ class _LobbyScreenState extends State<LobbyScreen> with WidgetsBindingObserver {
       pendingPaymentUrl = null;
       error = null;
     });
+    await _rememberRetailer();
     await loadAll();
   }
 

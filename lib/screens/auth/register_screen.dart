@@ -186,8 +186,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         const SizedBox(height: 10),
                         Text(
                           selectedSchoolId.isEmpty
-                              ? "Choose your university, add your contact number, and verify the email address you use for UniCart."
-                              : "Use any email address you can access. We will send a verification code there and use your phone number for delivery contact.",
+                              ? "Choose your university, add your contact number, and create your UniCart account."
+                              : "Use an email address you can access for account updates, plus a phone number for delivery contact.",
                           style: TextStyle(
                             color: UniCartColors.textSecondary,
                             fontSize: 14,

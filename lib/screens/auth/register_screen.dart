@@ -218,7 +218,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                             school.logoUrl,
                                             width: 30,
                                             height: 30,
-                                            fit: BoxFit.contain,
+                                            fit: school.id == "augustine" ? BoxFit.cover : BoxFit.contain,
+                                            alignment: Alignment.centerLeft,
                                             errorBuilder: (_, __, ___) => const Icon(
                                               Icons.school_rounded,
                                               size: 28,

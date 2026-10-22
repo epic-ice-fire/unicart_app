@@ -26,14 +26,14 @@ class UniCartSchool {
       name: "Augustine University",
       shortName: "Augustine",
       emailDomain: "augustineuniversity.edu.ng",
-      logoUrl: "https://images.weserv.nl/?url=augustineuniversity.edu.ng%2Fimages%2FNAME.png",
+      logoUrl: "https://www.augustineuniversity.edu.ng/images/NAME.png",
     ),
     UniCartSchool(
       id: "babcock",
       name: "Babcock University",
       shortName: "Babcock",
       emailDomain: "babcock.edu.ng",
-      logoUrl: "https://images.weserv.nl/?url=legacy.babcock.edu.ng%2Fassets%2Fimages%2Fadmin%2FBU_Logo.png",
+      logoUrl: "https://legacy.babcock.edu.ng/assets/images/admin/BU_Logo.png",
     ),
   ];
 

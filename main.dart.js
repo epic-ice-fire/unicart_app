@@ -92368,7 +92368,7 @@ p=t.w1
 p=A.a2(new A.a0(B.fa,new A.akT(),p),p.i("aq.E"))
 o=!r.d
 n=!o||r.e?a1:new A.akU(r)
-n=A.aA5(B.JX,q,p,n,t.N)
+n=A.aA5(B.JY,q,p,n,t.N)
 p=r.y
 q=!o||r.e?a1:new A.akV(r)
 q=A.aE5(B.Zd,q,p==="temu")
@@ -92617,7 +92617,7 @@ J(a){return A.v9(new A.kg(A.pZ(new A.arA(this)),!0,null))},
 Si(){var s,r,q,p,o,n,m,l,k,j=this,i=null,h=j.x,g=t.w1
 g=A.a2(new A.a0(B.fa,new A.aru(),g),g.i("aq.E"))
 s=j.f?i:new A.arv(j)
-s=A.aA5(B.JY,h,g,s,t.N)
+s=A.aA5(B.JV,h,g,s,t.N)
 g=A.ab("Sign in",i,i,i,A.a1(i,i,A.j().ax,i,i,i,i,i,i,i,i,20,i,i,B.X,i,i,!0,i,i,i,i,i,i,i,i),i,i)
 h=A.ab("Use the account you created for UniCart.",i,i,i,A.a1(i,i,A.j().ay,i,i,i,i,i,i,i,i,13,i,i,i,i,i,!0,i,i,i,i,i,i,i,i),i,i)
 r=A.kd(B.N7,j.d,B.pK,i,i,i,B.fQ,i,!1,i,i,A.a1(i,i,A.j().ax,i,i,i,i,i,i,i,i,i,i,i,i,i,i,!0,i,i,i,i,i,i,i,i),B.ai,B.fP)
@@ -92718,7 +92718,7 @@ k=A.ab(q,j,j,j,A.a1(j,j,p.ax,j,j,j,j,j,o,j,j,n,j,j,l,j,m,!0,j,k,j,j,j,j,j,j),j,j
 m=A.cd(j,18,j)
 if(h)h="Thoughtful group shopping with a warmer, editorial feel\u2014from joining a lobby to tracking every item."
 else h=g?"Bring your campus together, unlock group-buying deals, and track every item with a fresh, energetic feel.":"Join a verified lobby, pay securely, add your items, and follow the batch until it is ready for processing."
-return new A.bL(new A.aj(12,0,0,0),A.b3(A.b([new A.o5(64,!0,j),i,new A.hb(B.py,s,f,j),r,k,m,A.cd(A.ab(h,j,j,j,A.a1(j,j,A.j().ay,j,j,j,j,j,j,j,j,16,j,j,j,j,1.6,!0,j,j,j,j,j,j,j,j),j,j),j,430),A.cd(j,32,j),new A.x5(B.ls,"Verified campus access","University email verification keeps each campus community student-only.",j),A.cd(j,14,j),new A.x5(B.ln,"Clear payment states","Know what is pending, paid, locked, or ready at a glance.",j),A.cd(j,14,j),new A.x5(B.cf,"One batch, one source of truth","Your lobby progress and items stay organized in one dashboard.",j)],t.p),B.O,j,B.l,B.aB),j)}}
+return new A.bL(new A.aj(12,0,0,0),A.b3(A.b([new A.o5(64,!0,j),i,new A.hb(B.py,s,f,j),r,k,m,A.cd(A.ab(h,j,j,j,A.a1(j,j,A.j().ay,j,j,j,j,j,j,j,j,16,j,j,j,j,1.6,!0,j,j,j,j,j,j,j,j),j,j),j,430),A.cd(j,32,j),new A.x5(B.ls,"Verified campus access","Choose the campus you identify with. Your choice helps us understand our campus communities and can be changed on a future login.",j),A.cd(j,14,j),new A.x5(B.ln,"Clear payment states","Know what is pending, paid, locked, or ready at a glance.",j),A.cd(j,14,j),new A.x5(B.cf,"One batch, one source of truth","Your lobby progress and items stay organized in one dashboard.",j)],t.p),B.O,j,B.l,B.aB),j)}}
 A.x5.prototype={
 J(a){var s=null,r=A.j().r.aL(0.12),q=A.aR(13),p=A.ca(A.j().w.aL(0.22),1),o=t.p
 return A.bk(A.b([A.ba(s,A.cJ(this.c,A.j().x,s,20),B.n,s,s,new A.aO(r,s,p,q,s,s,B.w),s,42,s,s,s,s,42),B.j7,A.bm(A.b3(A.b([A.ab(this.d,s,s,s,A.a1(s,s,A.j().ax,s,s,s,s,s,s,s,s,14,s,s,B.X,s,s,!0,s,s,s,s,s,s,s,s),s,s),B.j8,A.ab(this.e,s,s,s,A.a1(s,s,A.j().ay,s,s,s,s,s,s,s,s,13,s,s,s,s,1.45,!0,s,s,s,s,s,s,s,s),s,s)],o),B.O,s,B.l,B.m),1)],o),B.O,B.l,B.m)}}
@@ -92822,8 +92822,8 @@ if(q.length===0)q=h
 p=t.w1
 p=A.a2(new A.a0(B.fa,new A.atD(),p),p.i("aq.E"))
 o=i.w?h:new A.atE(i)
-o=A.aA5(B.JW,q,p,o,t.N)
-p=A.kd(B.N5,i.e,B.JV,h,h,h,B.c_,h,!1,h,h,A.a1(h,h,A.j().ax,h,h,h,h,h,h,h,h,h,h,h,h,h,h,!0,h,h,h,h,h,h,h,h),B.ai,B.fP)
+o=A.aA5(B.JX,q,p,o,t.N)
+p=A.kd(B.N5,i.e,B.JW,h,h,h,B.c_,h,!1,h,h,A.a1(h,h,A.j().ax,h,h,h,h,h,h,h,h,h,h,h,h,h,h,!0,h,h,h,h,h,h,h,h),B.ai,B.fP)
 q=A.kd(B.Mr,i.d,B.pK,h,h,h,B.fQ,h,!1,h,h,A.a1(h,h,A.j().ax,h,h,h,h,h,h,h,h,h,h,h,h,h,h,!0,h,h,h,h,h,h,h,h),B.ai,B.fP)
 n=i.f
 m=i.y
@@ -98601,17 +98601,17 @@ B.JT=new A.l6(null,null,null,null,null,null,null,null,null,B.li,B.jV,!1,null,!1,
 B.Jo=new A.er(B.f2,null,null,null,null)
 B.JU=new A.hx(null,null,null,"Guest price (\u20a6)",null,null,null,null,null,null,"e.g. 8500",null,null,null,null,null,!0,!0,!1,null,null,null,null,null,null,null,null,null,B.Jo,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,!0,null,null,null,null)
 B.a2j=new A.hx(null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,!0,!0,!1,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,!0,null,null,null,null)
+B.IW=new A.aK(62751,"MaterialIcons",!1)
+B.lB=new A.er(B.IW,null,null,null,null)
+B.JV=new A.hx(null,null,null,"University",null,null,null,"Choose your campus for this session. You can change it next time.",null,null,null,null,null,null,null,null,!0,!0,!1,null,null,null,null,null,null,null,null,null,B.lB,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,!0,null,null,null,null)
 B.IZ=new A.aK(62815,"MaterialIcons",!1)
 B.Jx=new A.er(B.IZ,null,null,null,null)
 B.pK=new A.hx(null,null,null,"Email address",null,null,null,null,null,null,"you@example.com",null,null,null,null,null,!0,!0,!1,null,null,null,null,null,null,null,null,null,B.Jx,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,!0,null,null,null,null)
 B.IV=new A.aK(62096,"MaterialIcons",!1)
 B.Jp=new A.er(B.IV,null,null,null,null)
-B.JV=new A.hx(null,null,null,"Phone number for delivery contact",null,null,null,"Used by UniCart to contact you about delivered packages. No SMS OTP.",null,null,"+234 801 234 5678",null,null,null,null,null,!0,!0,!1,null,null,null,null,null,null,null,null,null,B.Jp,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,!0,null,null,null,null)
-B.IW=new A.aK(62751,"MaterialIcons",!1)
-B.lB=new A.er(B.IW,null,null,null,null)
-B.JW=new A.hx(null,null,null,"Your university",null,null,null,null,null,null,"Select your university",null,null,null,null,null,!0,!0,!1,null,null,null,null,null,null,null,null,null,B.lB,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,!0,null,null,null,null)
-B.JX=new A.hx(null,null,null,"Manage campus",null,null,null,null,null,null,null,null,null,null,null,null,!0,!0,!1,null,null,null,null,null,null,null,null,null,B.lB,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,!0,null,null,null,null)
-B.JY=new A.hx(null,null,null,"University",null,null,null,"Choose your campus to apply its UniCart identity.",null,null,null,null,null,null,null,null,!0,!0,!1,null,null,null,null,null,null,null,null,null,B.lB,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,!0,null,null,null,null)
+B.JW=new A.hx(null,null,null,"Phone number for delivery contact",null,null,null,"Used by UniCart to contact you about delivered packages. No SMS OTP.",null,null,"+234 801 234 5678",null,null,null,null,null,!0,!0,!1,null,null,null,null,null,null,null,null,null,B.Jp,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,!0,null,null,null,null)
+B.JX=new A.hx(null,null,null,"Your university",null,null,null,null,null,null,"Select your university",null,null,null,null,null,!0,!0,!1,null,null,null,null,null,null,null,null,null,B.lB,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,!0,null,null,null,null)
+B.JY=new A.hx(null,null,null,"Manage campus",null,null,null,null,null,null,null,null,null,null,null,null,!0,!0,!1,null,null,null,null,null,null,null,null,null,B.lB,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,!0,null,null,null,null)
 B.IR=new A.aK(61453,"MaterialIcons",!1)
 B.Js=new A.er(B.IR,null,null,null,null)
 B.JZ=new A.hx(null,null,null,"Target amount (\u20a6)",null,null,null,null,null,null,"e.g. 50000",null,null,null,null,null,!0,!0,!1,null,null,null,null,null,null,null,null,null,B.Js,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,!0,null,null,null,null)

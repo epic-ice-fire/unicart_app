@@ -1180,6 +1180,7 @@ class _LobbyScreenState extends State<LobbyScreen> with WidgetsBindingObserver {
               const SizedBox(width: 12),
               UniCartStatusPill(
                 label: _prettyStatus(status),
+                category: "Lobby",
                 color: statusColor,
                 icon: _statusIcon(status),
               ),
@@ -1418,7 +1419,8 @@ class _LobbyScreenState extends State<LobbyScreen> with WidgetsBindingObserver {
                       runSpacing: 6,
                       children: [
                         UniCartStatusPill(
-                          label: isVerified ? "Email verified" : "Email not verified",
+                          label: isVerified ? "Verified" : "Not verified",
+                          category: "Email",
                           color: isVerified
                               ? UniCartColors.success
                               : UniCartColors.warning,
@@ -1429,6 +1431,7 @@ class _LobbyScreenState extends State<LobbyScreen> with WidgetsBindingObserver {
                         if (isAdmin)
                            UniCartStatusPill(
                             label: "Admin",
+                            category: "Role",
                             color: UniCartColors.purple,
                             icon: Icons.admin_panel_settings_outlined,
                           ),
@@ -1798,6 +1801,7 @@ class _LobbyScreenState extends State<LobbyScreen> with WidgetsBindingObserver {
               if (isPaid)
                  UniCartStatusPill(
                   label: "Locked in vault",
+                  category: "Payment",
                   color: UniCartColors.success,
                   icon: Icons.lock_rounded,
                 ),
@@ -1901,6 +1905,7 @@ class _LobbyScreenState extends State<LobbyScreen> with WidgetsBindingObserver {
               ),
               UniCartStatusPill(
                 label: _prettyStatus(status),
+                category: "Lobby",
                 color: color,
                 icon: _statusIcon(status),
               ),
@@ -2035,6 +2040,7 @@ class _LobbyScreenState extends State<LobbyScreen> with WidgetsBindingObserver {
     if (isPaid || status == "paid") {
       return  UniCartStatusPill(
         label: "Paid & locked",
+        category: "Payment",
         color: UniCartColors.success,
         icon: Icons.lock_rounded,
       );
@@ -2042,6 +2048,7 @@ class _LobbyScreenState extends State<LobbyScreen> with WidgetsBindingObserver {
     if (status == "pending") {
       return  UniCartStatusPill(
         label: "Pending",
+        category: "Payment",
         color: UniCartColors.warning,
         icon: Icons.hourglass_bottom_rounded,
       );
@@ -2049,12 +2056,14 @@ class _LobbyScreenState extends State<LobbyScreen> with WidgetsBindingObserver {
     if (status == "failed" || status == "abandoned") {
       return  UniCartStatusPill(
         label: "Failed",
+        category: "Payment",
         color: UniCartColors.danger,
         icon: Icons.error_outline_rounded,
       );
     }
     return  UniCartStatusPill(
       label: "Unpaid",
+      category: "Payment",
       color: UniCartColors.textSecondary,
       icon: Icons.radio_button_unchecked_rounded,
     );

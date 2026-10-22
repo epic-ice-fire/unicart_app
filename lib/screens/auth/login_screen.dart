@@ -220,13 +220,22 @@ class _LoginScreenState extends State<LoginScreen> {
                   value: school.id,
                   child: Row(
                     children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(5),
+                      Container(
+                        width: 30,
+                        height: 30,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: UniCartColors.border),
+                        ),
+                        clipBehavior: Clip.antiAlias,
                         child: Image.network(
                           school.logoUrl,
-                          width: 26,
-                          height: 26,
-                          fit: BoxFit.contain,
+                          width: 30,
+                          height: 30,
+                          fit: school.id == "augustine" ? BoxFit.cover : BoxFit.contain,
+                          alignment: Alignment.centerLeft,
                           errorBuilder: (_, __, ___) => Icon(
                             Icons.school_rounded,
                             size: 24,

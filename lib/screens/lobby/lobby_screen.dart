@@ -1399,31 +1399,15 @@ class _LobbyScreenState extends State<LobbyScreen> with WidgetsBindingObserver {
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    if (studentEmail != null && studentEmail.isNotEmpty) ...[
-                      const SizedBox(height: 3),
-                      Text(
-                        isVerified
-                            ? studentEmail
-                            : "$studentEmail · pending verification",
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style:  TextStyle(
-                          color: UniCartColors.textSecondary,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
                     const SizedBox(height: 7),
                     Wrap(
                       spacing: 6,
                       runSpacing: 6,
                       children: [
                         UniCartStatusPill(
-                          label: isVerified ? "Verified" : "Not verified",
+                          label: "Email on file",
                           category: "Email",
-                          color: isVerified
-                              ? UniCartColors.success
-                              : UniCartColors.warning,
+                          color: UniCartColors.primarySoft,
                           icon: Icons.alternate_email_rounded,
                         ),
                         if (isAdmin)
@@ -1441,16 +1425,6 @@ class _LobbyScreenState extends State<LobbyScreen> with WidgetsBindingObserver {
             ],
           ),
           const SizedBox(height: 18),
-          UniCartPrimaryButton(
-            outlined: true,
-            accentColor: UniCartColors.primarySoft,
-            leadingIcon: Icons.school_outlined,
-            minHeight: 48,
-            onPressed: isBusy ? null : openVerifyScreen,
-            child: Text(
-              isVerified ? "Update verified email" : "Verify email address",
-            ),
-          ),
           if (isAdmin) ...[
             const SizedBox(height: 9),
             UniCartPrimaryButton(

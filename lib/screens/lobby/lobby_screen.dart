@@ -21,7 +21,7 @@ class LobbyScreen extends StatefulWidget {
   State<LobbyScreen> createState() => _LobbyScreenState();
 }
 
-class _LobbyScreenState extends State<LobbyScreen> {
+class _LobbyScreenState extends State<LobbyScreen> with WidgetsBindingObserver {
   UniCartSchool get currentSchool =>
       UniCartSchool.byId(meData?["school_id"]?.toString());
   Lobby? lobby;
@@ -40,6 +40,7 @@ class _LobbyScreenState extends State<LobbyScreen> {
   final Map<int, String> _pendingItemUrls = {};
 
   Timer? _pollTimer;
+  bool _isReconcilingPayments = false;
 
   final TextEditingController itemLinkController = TextEditingController();
   final TextEditingController itemAmountController = TextEditingController();
@@ -47,11 +48,20 @@ class _LobbyScreenState extends State<LobbyScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     loadAll();
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_reconcilePendingPayments());
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _pollTimer?.cancel();
     itemLinkController.dispose();
     itemAmountController.dispose();
@@ -61,13 +71,74 @@ class _LobbyScreenState extends State<LobbyScreen> {
   void _startPolling() {
     _pollTimer?.cancel();
     _pollTimer = Timer.periodic(const Duration(seconds: 15), (_) {
-      if (mounted) loadAll(silent: true);
+      if (mounted) unawaited(_reconcilePendingPayments());
     });
   }
 
   void _stopPolling() {
     _pollTimer?.cancel();
     _pollTimer = null;
+  }
+
+  /// Re-check pending references when the payment browser returns or while
+  /// checkout is still open. The backend verifies every reference with
+  /// Flutterwave before it changes any payment state.
+  Future<void> _reconcilePendingPayments() async {
+    if (!mounted || _isReconcilingPayments) return;
+    final entryReference = pendingPaymentReference;
+    final items = (myItemsData?["items"] as List? ?? const [])
+        .whereType<Map>()
+        .where((item) => item["item_payment_status"]?.toString() == "pending")
+        .map((item) => item["item_payment_reference"]?.toString())
+        .whereType<String>()
+        .where((reference) => reference.isNotEmpty)
+        .toSet()
+        .toList();
+
+    if ((entryReference == null || entryReference.isEmpty) && items.isEmpty) {
+      await loadAll(silent: true);
+      return;
+    }
+
+    _isReconcilingPayments = true;
+    var confirmedAny = false;
+    try {
+      if (entryReference != null && entryReference.isNotEmpty) {
+        try {
+          final result = await LobbyService.verifyEntryFeePayment(
+            widget.token,
+            reference: entryReference,
+          );
+          confirmedAny = confirmedAny ||
+              result["status"]?.toString() == "success";
+        } catch (_) {
+          // A temporary provider/network delay should not interrupt checkout.
+        }
+      }
+
+      for (final reference in items) {
+        try {
+          final result = await LobbyService.verifyItemPayment(
+            widget.token,
+            reference: reference,
+          );
+          confirmedAny = confirmedAny ||
+              result["payment_status"]?.toString() == "paid";
+        } catch (_) {
+          // Keep the item pending until the backend can verify it.
+        }
+      }
+
+      await loadAll(silent: true);
+      if (confirmedAny && mounted) {
+        showMessage(
+          "Payment confirmed! Your UniCart status has been updated.",
+          isSuccess: true,
+        );
+      }
+    } finally {
+      _isReconcilingPayments = false;
+    }
   }
 
   Future<bool> _openPaymentUrl(String url) async {

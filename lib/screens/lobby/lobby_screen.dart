@@ -1424,9 +1424,7 @@ class _LobbyScreenState extends State<LobbyScreen> with WidgetsBindingObserver {
                           color: isVerified
                               ? UniCartColors.success
                               : UniCartColors.warning,
-                          icon: isVerified
-                              ? Icons.verified_rounded
-                              : Icons.school_outlined,
+                          icon: Icons.alternate_email_rounded,
                         ),
                         if (isAdmin)
                            UniCartStatusPill(
@@ -1499,14 +1497,7 @@ class _LobbyScreenState extends State<LobbyScreen> with WidgetsBindingObserver {
             ],
           ),
           const SizedBox(height: 16),
-          if (!isVerified)
-            UniCartInfoBanner(
-              color: UniCartColors.warning,
-              icon: Icons.lock_outline_rounded,
-              title: "Email verification required",
-              message: "Verify an email address you can access before joining this marketplace.",
-            )
-          else if (hasJoined)
+          if (hasJoined)
              UniCartInfoBanner(
               color: UniCartColors.success,
               icon: Icons.check_circle_rounded,
@@ -1542,7 +1533,7 @@ class _LobbyScreenState extends State<LobbyScreen> with WidgetsBindingObserver {
             UniCartPrimaryButton(
               leadingIcon: Icons.credit_card_rounded,
               loading: isBusy,
-              onPressed: isBusy || !isVerified ? null : startEntryFeePayment,
+              onPressed: isBusy ? null : startEntryFeePayment,
               child: Text("Pay ₦$entryFeeAmount to join"),
             ),
           if (hasJoined) ...[

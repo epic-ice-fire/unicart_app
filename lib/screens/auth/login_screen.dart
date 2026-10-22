@@ -68,6 +68,17 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       await SessionService.saveToken(token);
+
+      // Record the self-reported campus for aggregate Power BI analysis.
+      // A survey endpoint failure must never prevent a valid login.
+      try {
+        await AuthService.recordCampusSelection(
+          token: token,
+          selectedSchoolId: selectedSchoolId,
+        );
+      } catch (_) {
+        // Keep sign-in resilient if analytics is temporarily unavailable.
+      }
       if (rememberMe) {
         await SessionService.saveEmail(email);
       } else {

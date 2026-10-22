@@ -38,6 +38,17 @@ class AuthService {
     return response["access_token"] as String;
   }
 
+  static Future<void> recordCampusSelection({
+    required String token,
+    required String selectedSchoolId,
+  }) async {
+    await ApiService.post(
+      "/auth/campus-selection",
+      token: token,
+      body: {"selected_school_id": selectedSchoolId},
+    );
+  }
+
   static Future<void> logout(String token) async {
     await ApiService.post(
       "/auth/logout",

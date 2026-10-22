@@ -16,13 +16,20 @@ class UniCartApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<String>(
-      valueListenable: UniCartColors.schoolId,
-      builder: (context, _, __) => MaterialApp(
-        title: "UniCart",
-        debugShowCheckedModeBanner: false,
-        theme: UniCartTheme.dark,
-        home: const AuthGate(),
+    return MaterialApp(
+      title: "UniCart",
+      debugShowCheckedModeBanner: false,
+      // Keep MaterialApp and Navigator mounted when the selected campus changes.
+      // Rebuilding MaterialApp here used to reset the route stack during login,
+      // which could leave the user staring at a blank screen.
+      theme: UniCartTheme.dark,
+      home: const AuthGate(),
+      builder: (context, child) => ValueListenableBuilder<String>(
+        valueListenable: UniCartColors.schoolId,
+        builder: (context, _, __) => Theme(
+          data: UniCartTheme.dark,
+          child: child ?? const SizedBox.shrink(),
+        ),
       ),
     );
   }

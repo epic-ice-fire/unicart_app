@@ -81,7 +81,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => LobbyScreen(token: token)),
+        MaterialPageRoute(builder: (_) => LobbyScreen(token: token, campusContextId: selectedSchoolId)),
       );
     } catch (e) {
       final raw = e.toString();

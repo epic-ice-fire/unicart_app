@@ -409,11 +409,12 @@ class UniCartStatusPill extends StatelessWidget {
     required this.label,
     required this.color,
     this.icon,
-    this.category = "Status",
+    this.category = "",
   });
 
   @override
   Widget build(BuildContext context) {
+    final effectiveCategory = category.isNotEmpty ? category : _inferCategory(label);
     final borderColor = color.withValues(alpha: 0.30);
     return Container(
       constraints: const BoxConstraints(minHeight: 34),
@@ -431,7 +432,7 @@ class UniCartStatusPill extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
             color: color.withValues(alpha: 0.09),
             child: Text(
-              category,
+              effectiveCategory,
               style: TextStyle(
                 color: UniCartColors.textSecondary,
                 fontSize: 11,
@@ -464,6 +465,17 @@ class UniCartStatusPill extends StatelessWidget {
       ),
     );
   }
+}
+
+String _inferCategory(String label) {
+  final value = label.toLowerCase();
+  if (value.contains('paid') || value.contains('pending') || value.contains('unpaid') || value.contains('locked') || value.contains('payment') || value.contains('failed')) return 'Payment';
+  if (value.contains('verified') || value.contains('email')) return 'Email';
+  if (value.contains('admin') || value.contains('member') || value.contains('role')) return 'Role';
+  if (value.contains('lobby') || value.contains('batch') || value.contains('delivered') || value.contains('transit') || value.contains('processing') || value.contains('open')) return 'Lobby';
+  if (value.contains('fund') || value.contains('short')) return 'Funding';
+  if (value.contains('item') || value.contains('vault')) return 'Items';
+  return 'Status';
 }
 
 class UniCartInfoBanner extends StatelessWidget {

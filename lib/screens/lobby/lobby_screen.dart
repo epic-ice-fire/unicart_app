@@ -900,7 +900,6 @@ class _LobbyScreenState extends State<LobbyScreen> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     final isVerified = meData?["is_student_verified"] == true;
     final isAdmin = meData?["is_admin"] == true;
-    final studentEmail = meData?["student_pau_email"]?.toString();
     final accountEmail = meData?["email"]?.toString() ??
         (isLoading ? "Loading…" : "Connecting…");
 
@@ -1992,20 +1991,31 @@ class _LobbyScreenState extends State<LobbyScreen> with WidgetsBindingObserver {
   }
 
   Widget _softInfo(String value) {
+    final splitAt = value.indexOf(' ');
+    final category = splitAt > 0 ? value.substring(0, splitAt) : 'Info';
+    final detail = splitAt > 0 ? value.substring(splitAt + 1) : value;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      constraints: const BoxConstraints(minHeight: 32),
       decoration: BoxDecoration(
         color: UniCartColors.surfaceSoft.withValues(alpha: 0.72),
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(11),
         border: Border.all(color: UniCartColors.border),
       ),
-      child: Text(
-        value,
-        style:  TextStyle(
-          color: UniCartColors.textSecondary,
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-        ),
+      clipBehavior: Clip.antiAlias,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+            color: UniCartColors.primary.withValues(alpha: 0.07),
+            child: Text(category, style: TextStyle(color: UniCartColors.textSecondary, fontSize: 10, fontWeight: FontWeight.w600)),
+          ),
+          Container(width: 1, height: 32, color: UniCartColors.border),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+            child: Text(detail, style: TextStyle(color: UniCartColors.textPrimary, fontSize: 11, fontWeight: FontWeight.w800)),
+          ),
+        ],
       ),
     );
   }

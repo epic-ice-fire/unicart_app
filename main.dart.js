@@ -92384,7 +92384,7 @@ return B.i.ey(B.i.dX(q?s+1:s,1,4))},
 J(a){var s,r,q,p,o,n,m,l,k,j,i=this,h=null,g="Create account",f="Hide password",e="Show password",d=i.w?h:new A.atm(a),c=t.p
 d=A.bq(A.b([new A.nZ(B.pl,"Back to sign in",d,h,h),B.fy,A.af(g,h,h,h,A.a8(h,h,A.j().ax,h,h,h,h,h,h,h,h,17,h,h,B.a7,h,h,!0,h,h,h,h,h,h,h,h),h,h)],c),B.x,B.l,B.n)
 s=A.af("Join UniCart.",h,h,h,A.a8(h,h,A.j().ax,h,h,h,h,h,h,h,h,34,h,h,B.Q,h,1.05,!0,h,-1,h,h,h,h,h,h),h,h)
-r=i.x.length===0?"Choose your university, add your contact number, and verify the email address you use for UniCart.":"Use any email address you can access. We will send a verification code there and use your phone number for delivery contact."
+r=i.x.length===0?"Choose your university, add your contact number, and create your UniCart account.":"Use an email address you can access for account updates, plus a phone number for delivery contact."
 r=A.af(r,h,h,h,A.a8(h,h,A.j().ay,h,h,h,h,h,h,h,h,14,h,h,h,h,1.55,!0,h,h,h,h,h,h,h,h),h,h)
 q=i.x
 if(q.length===0)q=h

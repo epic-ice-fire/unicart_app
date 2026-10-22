@@ -16,8 +16,9 @@ import "../auth/verify_pau_screen.dart";
 
 class LobbyScreen extends StatefulWidget {
   final String token;
+  final String? campusContextId;
 
-  const LobbyScreen({super.key, required this.token});
+  const LobbyScreen({super.key, required this.token, this.campusContextId});
 
   @override
   State<LobbyScreen> createState() => _LobbyScreenState();
@@ -25,7 +26,7 @@ class LobbyScreen extends StatefulWidget {
 
 class _LobbyScreenState extends State<LobbyScreen> with WidgetsBindingObserver {
   UniCartSchool get currentSchool =>
-      UniCartSchool.byId(meData?["school_id"]?.toString());
+      UniCartSchool.byId(widget.campusContextId ?? meData?["school_id"]?.toString());
   Lobby? lobby;
   bool isLoading = true;
   bool isBusy = false;
@@ -245,7 +246,9 @@ class _LobbyScreenState extends State<LobbyScreen> with WidgetsBindingObserver {
       myHistory = dashboardResults[2];
 
       if (!mounted) return;
-      if (me != null) UniCartColors.setSchool(me["school_id"]?.toString());
+      // Campus selection is a session-level browsing context, not a permanent
+      // account lock. The account school_id remains available in meData for analytics.
+      UniCartColors.setSchool(widget.campusContextId ?? me?["school_id"]?.toString());
 
       setState(() {
         meData = me;

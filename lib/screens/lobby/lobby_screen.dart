@@ -1057,13 +1057,22 @@ class _LobbyScreenState extends State<LobbyScreen> with WidgetsBindingObserver {
         children: [
           const UniCartLogoMark(size: 38),
           const SizedBox(width: 7),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(7),
+          Container(
+            width: 30,
+            height: 30,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(7),
+              border: Border.all(color: UniCartColors.border),
+            ),
+            clipBehavior: Clip.antiAlias,
             child: Image.network(
               currentSchool.logoUrl,
               width: 30,
               height: 30,
-              fit: BoxFit.contain,
+              fit: currentSchool.id == "augustine" ? BoxFit.cover : BoxFit.contain,
+              alignment: Alignment.centerLeft,
               errorBuilder: (_, __, ___) => const Icon(Icons.school_rounded, size: 26),
             ),
           ),

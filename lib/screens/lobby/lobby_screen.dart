@@ -352,6 +352,58 @@ class _LobbyScreenState extends State<LobbyScreen> with WidgetsBindingObserver {
     );
   }
 
+  /// Google Play and privacy law require a way to ask for account deletion.
+  /// This opens a pre-filled email to UniCart support. Payment records that the
+  /// law requires us to keep are anonymised; everything else is deleted.
+  Future<void> _requestAccountDeletion() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Delete your account?"),
+        content: const Text(
+          "This sends a deletion request to UniCart support for the account "
+          "you are signed in with. Your personal details are deleted within "
+          "30 days. Payment records we must keep for accounting are kept "
+          "without your personal details. Unpaid items are removed.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(
+              "Send request",
+              style: TextStyle(color: UniCartColors.danger),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    final email = meData?["email"]?.toString() ?? "";
+    final uri = Uri(
+      scheme: "mailto",
+      path: "unicartbytekena@gmail.com",
+      queryParameters: {
+        "subject": "UniCart account deletion request",
+        "body": "Please delete my UniCart account.\n\nAccount email: $email\n",
+      },
+    );
+    var opened = false;
+    try {
+      opened = await launchUrl(uri);
+    } catch (_) {}
+    if (!opened && mounted) {
+      showMessage(
+        "Email us at unicartbytekena@gmail.com from your account email to delete your account.",
+        isWarning: true,
+      );
+    }
+  }
+
   Future<void> openVerifyScreen() async {
     final result = await Navigator.push(
       context,
@@ -1475,6 +1527,25 @@ class _LobbyScreenState extends State<LobbyScreen> with WidgetsBindingObserver {
               child: const Text("Open admin dashboard"),
             ),
           ],
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: _requestAccountDeletion,
+              icon: Icon(
+                Icons.delete_forever_outlined,
+                size: 17,
+                color: UniCartColors.danger,
+              ),
+              label: Text(
+                "Delete my account",
+                style: TextStyle(
+                  color: UniCartColors.danger,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -1679,8 +1750,11 @@ class _LobbyScreenState extends State<LobbyScreen> with WidgetsBindingObserver {
 
   Widget _buildItemTile(Map<String, dynamic> item) {
     final itemId = (item["item_id"] as num?)?.toInt() ?? 0;
-    final itemLink = item["item_link"]?.toString() ?? "";
-    final itemAmount = item["item_amount"] ?? 0;
+    // The product link is kept on the server for ordering; shoppers don't need
+    // to see a long raw URL, so the card shows a clean title instead.
+    final itemTitle =
+        selectedRetailer == "shein" ? "SHEIN item" : "Temu item";
+    final itemAmount = _formatNaira(item["item_amount"]);
     final paymentStatus = item["item_payment_status"]?.toString() ?? "unpaid";
     final isLocked = item["is_locked"] == true;
     final isPaid = item["is_paid"] == true;
@@ -1732,31 +1806,39 @@ class _LobbyScreenState extends State<LobbyScreen> with WidgetsBindingObserver {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      itemLink,
-                      maxLines: 2,
+                      itemTitle,
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style:  TextStyle(
-                        color: UniCartColors.textPrimary,
+                      style: TextStyle(
+                        color: UniCartColors.textSecondary,
                         fontSize: 13,
                         height: 1.35,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      "₦$itemAmount",
-                      style:  TextStyle(
-                        color: UniCartColors.textPrimary,
-                        fontSize: 21,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.4,
+                    const SizedBox(height: 4),
+                    // Never wrap the price onto two lines; shrink if needed.
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        itemAmount,
+                        maxLines: 1,
+                        softWrap: false,
+                        style: TextStyle(
+                          color: UniCartColors.textPrimary,
+                          fontSize: 21,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.4,
+                        ),
                       ),
                     ),
+                    const SizedBox(height: 10),
+                    // One status badge only (it used to be shown twice).
+                    _paymentStatusPill(paymentStatus, isPaid),
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
-              _paymentStatusPill(paymentStatus, isPaid),
             ],
           ),
           const SizedBox(height: 13),
@@ -1803,18 +1885,22 @@ class _LobbyScreenState extends State<LobbyScreen> with WidgetsBindingObserver {
                   color: UniCartColors.danger,
                   onTap: isBusy ? null : () => removeItem(itemId),
                 ),
-              if (isPaid)
-                 UniCartStatusPill(
-                  label: "Locked in vault",
-                  category: "Payment",
-                  color: UniCartColors.success,
-                  icon: Icons.lock_rounded,
-                ),
             ],
           ),
         ],
       ),
     );
+  }
+
+  /// 200 -> "₦200", 12500 -> "₦12,500". Accepts int, double or numeric text.
+  String _formatNaira(dynamic value) {
+    final number = value is num ? value : num.tryParse("$value") ?? 0;
+    final whole = number.round().abs().toString();
+    final grouped = whole.replaceAllMapped(
+      RegExp(r"\B(?=(\d{3})+(?!\d))"),
+      (_) => ",",
+    );
+    return "${number < 0 ? "-" : ""}₦$grouped";
   }
 
   Widget _itemAction({

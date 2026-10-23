@@ -404,6 +404,51 @@ class _LobbyScreenState extends State<LobbyScreen> with WidgetsBindingObserver {
     if (result == true) unawaited(loadAll(silent: true));
   }
 
+  Future<void> _bootstrapSuperAdmin() async {
+    final secretController = TextEditingController();
+    final secret = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text("Set up superior admin"),
+        content: TextField(
+          controller: secretController,
+          obscureText: true,
+          autofocus: true,
+          decoration: const InputDecoration(
+            labelText: "Deployment bootstrap secret",
+            helperText: "Use the ADMIN_BOOTSTRAP_SECRET configured on the backend.",
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text("Cancel"),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, secretController.text),
+            child: const Text("Enable admin"),
+          ),
+        ],
+      ),
+    );
+    secretController.dispose();
+    if (secret == null || secret.trim().isEmpty || !mounted) return;
+
+    setState(() => isBusy = true);
+    try {
+      await AuthService.bootstrapSuperAdmin(
+        token: widget.token,
+        bootstrapSecret: secret.trim(),
+      );
+      await loadAll(silent: true);
+      if (mounted) showMessage("Superior admin enabled.", isSuccess: true);
+    } catch (e) {
+      if (mounted) showMessage(e.toString());
+    } finally {
+      if (mounted) setState(() => isBusy = false);
+    }
+  }
+
   Future<void> openAdminDashboard() async {
     await Navigator.push(
       context,
@@ -1026,6 +1071,7 @@ class _LobbyScreenState extends State<LobbyScreen> with WidgetsBindingObserver {
                                               accountEmail: accountEmail,
                                               isVerified: isVerified,
                                               isAdmin: isAdmin,
+                                              canBootstrapAdmin: !isAdmin && accountEmail.toLowerCase() == "unicartbytekena@gmail.com",
                                             ),
                                           ),
                                           _safeSection(
@@ -1425,6 +1471,7 @@ class _LobbyScreenState extends State<LobbyScreen> with WidgetsBindingObserver {
     required String accountEmail,
     required bool isVerified,
     required bool isAdmin,
+    required bool canBootstrapAdmin,
   }) {
     return UniCartPanel(
       color: UniCartColors.surface.withValues(alpha: 0.92),
@@ -1504,6 +1551,16 @@ class _LobbyScreenState extends State<LobbyScreen> with WidgetsBindingObserver {
             ],
           ),
           const SizedBox(height: 18),
+          if (canBootstrapAdmin) ...[
+            const SizedBox(height: 9),
+            UniCartPrimaryButton(
+              accentColor: UniCartColors.purple,
+              leadingIcon: Icons.admin_panel_settings_outlined,
+              minHeight: 48,
+              onPressed: isBusy ? null : _bootstrapSuperAdmin,
+              child: const Text("Set up superior admin"),
+            ),
+          ],
           if (isAdmin) ...[
             const SizedBox(height: 9),
             UniCartPrimaryButton(

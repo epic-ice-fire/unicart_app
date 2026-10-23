@@ -55,7 +55,7 @@ For later updates: raise the number after the `+` in `pubspec.yaml`
    - **Target audience**: 18+ (or 13+ if you prefer; do not select "children").
    - **Data safety**: see the table below.
    - **Financial features / payments**: you sell physical goods through Flutterwave, so you do not need Google Play Billing.
-   - **Account deletion**: the app has a "Delete my account" button, and your privacy policy states how deletion works. In the Data safety form, paste the web link to the deletion instructions (the same policy page, section "Deleting your data").
+   - **Account deletion**: the app has an in-app "Delete my account" button (lobby screen -> Your account) that deletes the account after password confirmation, and your privacy policy explains it. In the Play Console account-deletion section, paste the link to the policy page (section "Deleting your data"). Mention in the review notes where the button is.
 3. **Store listing**: use the files in `docs/play-store/`
    - App icon: `icon-512.png`
    - Feature graphic: `feature-graphic-1024x500.png`

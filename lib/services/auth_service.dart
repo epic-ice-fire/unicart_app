@@ -79,6 +79,46 @@ class AuthService {
     return response["access_token"] as String;
   }
 
+  /// Always succeeds from the shopper's point of view: the server never says
+  /// whether the email has an account.
+  static Future<Map<String, dynamic>> requestPasswordReset({
+    required String email,
+  }) async {
+    await ApiService.ensureBackendReady();
+    return await ApiService.post(
+      "/auth/password-reset/request",
+      body: {"email": email},
+    );
+  }
+
+  static Future<Map<String, dynamic>> confirmPasswordReset({
+    required String email,
+    required String code,
+    required String newPassword,
+  }) async {
+    await ApiService.ensureBackendReady();
+    return await ApiService.post(
+      "/auth/password-reset/confirm",
+      body: {
+        "email": email,
+        "code": code,
+        "new_password": newPassword,
+      },
+    );
+  }
+
+  /// Permanently removes the signed-in account's personal details.
+  static Future<Map<String, dynamic>> deleteAccount({
+    required String token,
+    required String password,
+  }) async {
+    return await ApiService.post(
+      "/auth/account/delete",
+      token: token,
+      body: {"password": password},
+    );
+  }
+
   static Future<Map<String, dynamic>> me(String token) async {
     await ApiService.ensureBackendReady();
     return await ApiService.get("/auth/me", token: token);

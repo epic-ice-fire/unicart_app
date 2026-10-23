@@ -4,6 +4,7 @@ import "package:shared_preferences/shared_preferences.dart";
 import "package:url_launcher/url_launcher.dart";
 import "../../models/lobby.dart";
 import "../../models/school.dart";
+import "../../services/api_error.dart";
 import "../../services/auth_service.dart";
 import "../../services/lobby_service.dart";
 import "../../services/session_service.dart";
@@ -352,55 +353,41 @@ class _LobbyScreenState extends State<LobbyScreen> with WidgetsBindingObserver {
     );
   }
 
-  /// Google Play and privacy law require a way to ask for account deletion.
-  /// This opens a pre-filled email to UniCart support. Payment records that the
-  /// law requires us to keep are anonymised; everything else is deleted.
+  /// Deletes the signed-in account (Google Play and privacy law require this).
+  /// The server removes personal details immediately and keeps only anonymised
+  /// payment records. It refuses while the user has paid items in a batch that
+  /// has not been delivered yet.
   Future<void> _requestAccountDeletion() async {
-    final confirmed = await showDialog<bool>(
+    final password = await showDialog<String>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text("Delete your account?"),
-        content: const Text(
-          "This sends a deletion request to UniCart support for the account "
-          "you are signed in with. Your personal details are deleted within "
-          "30 days. Payment records we must keep for accounting are kept "
-          "without your personal details. Unpaid items are removed.",
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text("Cancel"),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(
-              "Send request",
-              style: TextStyle(color: UniCartColors.danger),
-            ),
-          ),
-        ],
-      ),
+      builder: (_) => const _DeleteAccountDialog(),
     );
-    if (confirmed != true || !mounted) return;
+    if (password == null || password.isEmpty || !mounted) return;
 
-    final email = meData?["email"]?.toString() ?? "";
-    final uri = Uri(
-      scheme: "mailto",
-      path: "unicartbytekena@gmail.com",
-      queryParameters: {
-        "subject": "UniCart account deletion request",
-        "body": "Please delete my UniCart account.\n\nAccount email: $email\n",
-      },
-    );
-    var opened = false;
+    setState(() => isBusy = true);
     try {
-      opened = await launchUrl(uri);
-    } catch (_) {}
-    if (!opened && mounted) {
+      await AuthService.deleteAccount(token: widget.token, password: password);
+      _stopPolling();
+      await SessionService.clearToken();
+      await SessionService.clearEmail();
+      UniCartColors.setSchool("pau");
+      if (!mounted) return;
+      showMessage("Your account has been deleted.", isSuccess: true);
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (route) => false,
+      );
+    } catch (e) {
       showMessage(
-        "Email us at unicartbytekena@gmail.com from your account email to delete your account.",
+        friendlyApiError(
+          e,
+          fallback: "Could not delete your account. Please try again.",
+        ),
         isWarning: true,
       );
+    } finally {
+      if (mounted) setState(() => isBusy = false);
     }
   }
 
@@ -2288,6 +2275,86 @@ class _LobbyLoadingState extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Asks for the account password before deleting. Pops with the password, or
+/// null if cancelled. Owns its controller so it is disposed with the dialog.
+class _DeleteAccountDialog extends StatefulWidget {
+  const _DeleteAccountDialog();
+
+  @override
+  State<_DeleteAccountDialog> createState() => _DeleteAccountDialogState();
+}
+
+class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
+  final TextEditingController _controller = TextEditingController();
+  bool _showPassword = false;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text("Delete your account?"),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "This permanently deletes your personal details and signs you "
+              "out. Payment records we must keep for accounting are kept "
+              "without your details. Unpaid items are removed. This cannot "
+              "be undone.",
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _controller,
+              obscureText: !_showPassword,
+              onChanged: (_) => setState(() {}),
+              style: TextStyle(color: UniCartColors.textPrimary),
+              decoration: InputDecoration(
+                labelText: "Confirm with your password",
+                suffixIcon: IconButton(
+                  tooltip: _showPassword ? "Hide password" : "Show password",
+                  onPressed: () =>
+                      setState(() => _showPassword = !_showPassword),
+                  icon: Icon(
+                    _showPassword
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text("Cancel"),
+        ),
+        TextButton(
+          onPressed: _controller.text.isEmpty
+              ? null
+              : () => Navigator.pop(context, _controller.text),
+          child: Text(
+            "Delete account",
+            style: TextStyle(
+              color: _controller.text.isEmpty
+                  ? UniCartColors.textMuted
+                  : UniCartColors.danger,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

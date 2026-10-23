@@ -6,6 +6,7 @@ import "../../services/session_service.dart";
 import "../../theme/unicart_theme.dart";
 import "../../widgets/unicart_ui.dart";
 import "../lobby/lobby_screen.dart";
+import "forgot_password_screen.dart";
 import "register_screen.dart";
 
 class LoginScreen extends StatefulWidget {
@@ -114,6 +115,24 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) showUniCartSnack(context, message);
     } finally {
       if (mounted) setState(() => isLoading = false);
+    }
+  }
+
+  Future<void> _openForgotPassword() async {
+    final email = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ForgotPasswordScreen(
+          initialEmail: emailController.text.trim(),
+        ),
+      ),
+    );
+    if (!mounted) return;
+    if (email != null && email.isNotEmpty) {
+      setState(() {
+        emailController.text = email;
+        passwordController.clear();
+      });
     }
   }
 
@@ -326,7 +345,14 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 18),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: isLoading ? null : _openForgotPassword,
+                child: const Text("Forgot password?"),
+              ),
+            ),
+            const SizedBox(height: 10),
             UniCartPrimaryButton(
               onPressed: isLoading ? null : login,
               loading: isLoading,

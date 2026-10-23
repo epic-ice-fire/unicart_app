@@ -31,7 +31,9 @@ Data travels over HTTPS. Passwords are hashed. Sessions can be revoked. No syste
 You can view and correct your details by contacting us, change your password in the app, sign out of all devices, and ask us to delete your data.
 
 ## Deleting your data
-In the app choose **Delete my account** (lobby screen, "Your account" card), or email **unicartbytekena@gmail.com** from your account email with the subject "UniCart account deletion request". We delete your personal details within **30 days**. Payment records we must legally keep are retained without personal details. Unpaid items are removed.
+In the app choose **Delete my account** (lobby screen, "Your account" card) and confirm with your password. Your personal details (email, phone number, school email and password) are deleted **immediately** and you are signed out everywhere. Payment records we must keep for accounting are retained without your personal details, and unpaid items are removed. If you still have paid items in a batch that has not been delivered, we cannot delete the account until delivery; contact us and we will help.
+
+You can also email **unicartbytekena@gmail.com** from your account email with the subject "UniCart account deletion request".
 
 ## Children
 UniCart is for university students aged 18 and over. We do not knowingly collect data from children.

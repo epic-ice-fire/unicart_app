@@ -61,6 +61,18 @@ class AuthService {
     );
   }
 
+  static Future<Map<String, dynamic>> acceptSchoolAdminInvite({
+    required String email,
+    required String token,
+    required String password,
+  }) async {
+    await ApiService.ensureBackendReady();
+    return ApiService.post(
+      "/auth/admin/accept-invite",
+      body: {"email": email, "token": token, "password": password},
+    );
+  }
+
   static Future<void> recordCampusSelection({
     required String token,
     required String selectedSchoolId,

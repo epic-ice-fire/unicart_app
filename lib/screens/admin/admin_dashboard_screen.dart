@@ -1473,7 +1473,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                "Batch #$lobbyId",
+                                "Batch #${batch["batch_number"] ?? lobbyId}",
                                 style:  TextStyle(
                                   color: UniCartColors.textPrimary,
                                   fontSize: 15,

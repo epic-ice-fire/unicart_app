@@ -38,6 +38,29 @@ class AuthService {
     return response["access_token"] as String;
   }
 
+  static Future<Map<String, dynamic>> bootstrapSuperAdmin({
+    required String token,
+    required String bootstrapSecret,
+  }) async {
+    return ApiService.post(
+      "/auth/admin/bootstrap",
+      token: token,
+      body: {"bootstrap_secret": bootstrapSecret},
+    );
+  }
+
+  static Future<Map<String, dynamic>> createSchoolAdminInvite({
+    required String token,
+    required String email,
+    required String schoolId,
+  }) async {
+    return ApiService.post(
+      "/auth/admin/invites",
+      token: token,
+      body: {"email": email, "school_id": schoolId},
+    );
+  }
+
   static Future<void> recordCampusSelection({
     required String token,
     required String selectedSchoolId,

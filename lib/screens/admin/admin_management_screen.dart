@@ -17,6 +17,8 @@ class AdminManagementScreen extends StatefulWidget {
 
 class _AdminManagementScreenState extends State<AdminManagementScreen> {
   final _emailController = TextEditingController();
+  final _existingEmailController = TextEditingController();
+  String _existingSchoolId = "babcock";
   String _schoolId = "pau";
   String? _inviteToken;
   String? _inviteEmail;
@@ -27,6 +29,7 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
   @override
   void dispose() {
     _emailController.dispose();
+    _existingEmailController.dispose();
     super.dispose();
   }
 
@@ -55,6 +58,60 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
         _inviteSchoolId = result["school_id"]?.toString();
       });
       _emailController.clear();
+    } catch (e) {
+      if (mounted) setState(() => _error = e.toString());
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _promoteExistingAccount() async {
+    final email = _existingEmailController.text.trim();
+    if (email.isEmpty || !email.contains("@")) {
+      setState(() => _error = "Enter the email of an existing UniCart account.");
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Promote existing account?"),
+        content: Text(
+          "Promote $email to school admin for "
+          "${UniCartSchool.byId(_existingSchoolId).name}? "
+          "They will keep their existing account and password.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Cancel"),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Promote account"),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      final result = await AuthService.promoteExistingSchoolAdmin(
+        token: widget.token,
+        email: email,
+        schoolId: _existingSchoolId,
+      );
+      if (!mounted) return;
+      _existingEmailController.clear();
+      showUniCartSnack(
+        context,
+        "${result["email"] ?? email} is now a ${UniCartSchool.byId(_existingSchoolId).name} school admin.",
+        success: true,
+      );
     } catch (e) {
       if (mounted) setState(() => _error = e.toString());
     } finally {
@@ -145,6 +202,46 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
                         label: const Text("Copy invitation token"),
                       ),
                     ],
+                    const SizedBox(height: 28),
+                    const Divider(),
+                    const SizedBox(height: 18),
+                    const UniCartSectionTitle(
+                      title: "Promote an existing account",
+                      subtitle: "Keep their current UniCart account and password; no duplicate account is created.",
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: _existingEmailController,
+                      keyboardType: TextInputType.emailAddress,
+                      autofillHints: const [AutofillHints.email],
+                      decoration: const InputDecoration(
+                        labelText: "Existing UniCart account email",
+                        prefixIcon: Icon(Icons.person_outline_rounded),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    DropdownButtonFormField<String>(
+                      initialValue: _existingSchoolId,
+                      decoration: const InputDecoration(
+                        labelText: "Admin access for",
+                        prefixIcon: Icon(Icons.school_outlined),
+                      ),
+                      items: UniCartSchool.all.map((school) {
+                        return DropdownMenuItem<String>(
+                          value: school.id,
+                          child: Text(school.name),
+                        );
+                      }).toList(),
+                      onChanged: _busy ? null : (value) {
+                        if (value != null) setState(() => _existingSchoolId = value);
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    OutlinedButton.icon(
+                      onPressed: _busy ? null : _promoteExistingAccount,
+                      icon: const Icon(Icons.admin_panel_settings_outlined),
+                      label: const Text("Promote existing account"),
+                    ),
                   ],
                 ),
               ),

@@ -61,6 +61,18 @@ class AuthService {
     );
   }
 
+  static Future<Map<String, dynamic>> promoteExistingSchoolAdmin({
+    required String token,
+    required String email,
+    required String schoolId,
+  }) async {
+    return ApiService.post(
+      "/auth/admin/promote-existing",
+      token: token,
+      body: {"email": email, "school_id": schoolId},
+    );
+  }
+
   static Future<Map<String, dynamic>> acceptSchoolAdminInvite({
     required String email,
     required String token,

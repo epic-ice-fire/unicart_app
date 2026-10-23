@@ -5,6 +5,7 @@ import "../../services/auth_service.dart";
 import "../../models/school.dart";
 import "../../theme/unicart_theme.dart";
 import "../../widgets/unicart_ui.dart";
+import "admin_management_screen.dart";
 
 class AdminDashboardScreen extends StatefulWidget {
   final String token;
@@ -862,6 +863,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                     ],
                                   ),
                                 ),
+                                if (meData?["admin_role"] == "super_admin")
+                                  Padding(
+                                    padding: EdgeInsets.fromLTRB(horizontalPadding, 0, horizontalPadding, 14),
+                                    child: OutlinedButton.icon(
+                                      onPressed: () => Navigator.push(
+                                        context,
+                                        MaterialPageRoute(builder: (_) => AdminManagementScreen(token: widget.token)),
+                                      ),
+                                      icon: const Icon(Icons.manage_accounts_outlined),
+                                      label: const Text("Manage school admins"),
+                                    ),
+                                  ),
                                 Padding(
                                   padding: EdgeInsets.fromLTRB(horizontalPadding, 10, horizontalPadding, 14),
                                   child: Column(

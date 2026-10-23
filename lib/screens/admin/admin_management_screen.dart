@@ -20,6 +20,7 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
   String _schoolId = "pau";
   String? _inviteToken;
   String? _inviteEmail;
+  String? _inviteSchoolId;
   bool _busy = false;
   String? _error;
 
@@ -51,6 +52,7 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
       setState(() {
         _inviteToken = result["invite_token"]?.toString();
         _inviteEmail = result["email"]?.toString();
+        _inviteSchoolId = result["school_id"]?.toString();
       });
       _emailController.clear();
     } catch (e) {
@@ -130,7 +132,7 @@ class _AdminManagementScreenState extends State<AdminManagementScreen> {
                       const SizedBox(height: 12),
                       const Text("Invitation created", style: TextStyle(fontWeight: FontWeight.w800)),
                       const SizedBox(height: 6),
-                      Text("School: ${UniCartSchool.byId(_schoolId).name}"),
+                      Text("School: ${UniCartSchool.byId(_inviteSchoolId ?? _schoolId).name}"),
                       Text("Email: ${_inviteEmail ?? ""}"),
                       const SizedBox(height: 10),
                       const Text("This token expires in 48 hours and can be used once. Share it privately; it will not be shown again."),

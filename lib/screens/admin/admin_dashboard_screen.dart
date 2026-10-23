@@ -817,45 +817,50 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                     horizontalPadding,
                                     14,
                                   ),
-                                  if (meData?["admin_role"] != "school_admin")
-                                    DropdownButtonFormField<String>(
-                                      initialValue: selectedSchoolId,
-                                      decoration: const InputDecoration(
-                                        labelText: "Manage campus",
-                                        prefixIcon: Icon(Icons.account_balance_rounded),
-                                      ),
-                                      items: UniCartSchool.all.map((school) {
-                                        return DropdownMenuItem<String>(
-                                          value: school.id,
-                                          child: Row(
-                                            children: [
-                                              UniCartSchoolLogo(school: school, size: 28, radius: 6),
-                                              const SizedBox(width: 9),
-                                              Flexible(child: Text(school.name)),
-                                            ],
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                                    children: [
+                                      if (meData?["admin_role"] != "school_admin")
+                                        DropdownButtonFormField<String>(
+                                          initialValue: selectedSchoolId,
+                                          decoration: const InputDecoration(
+                                            labelText: "Manage campus",
+                                            prefixIcon: Icon(Icons.account_balance_rounded),
                                           ),
-                                        );
-                                      }).toList(),
-                                      onChanged: isLoading || isBusy
-                                          ? null
-                                          : (value) {
-                                              if (value != null && value != selectedSchoolId) {
-                                                setState(() => selectedSchoolId = value);
-                                                loadDashboard();
-                                              }
-                                            },
-                                    )
-                                  else
-                                    Row(
-                                      children: [
-                                        Icon(Icons.lock_outline_rounded, size: 18, color: UniCartColors.textSecondary),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          "Assigned campus: ${currentSchool.name}",
-                                          style: TextStyle(color: UniCartColors.textSecondary, fontWeight: FontWeight.w700),
+                                          items: UniCartSchool.all.map((school) {
+                                            return DropdownMenuItem<String>(
+                                              value: school.id,
+                                              child: Row(
+                                                children: [
+                                                  UniCartSchoolLogo(school: school, size: 28, radius: 6),
+                                                  const SizedBox(width: 9),
+                                                  Flexible(child: Text(school.name)),
+                                                ],
+                                              ),
+                                            );
+                                          }).toList(),
+                                          onChanged: isLoading || isBusy
+                                              ? null
+                                              : (value) {
+                                                  if (value != null && value != selectedSchoolId) {
+                                                    setState(() => selectedSchoolId = value);
+                                                    loadDashboard();
+                                                  }
+                                                },
+                                        )
+                                      else
+                                        Row(
+                                          children: [
+                                            Icon(Icons.lock_outline_rounded, size: 18, color: UniCartColors.textSecondary),
+                                            const SizedBox(width: 8),
+                                            Text(
+                                              "Assigned campus: ${currentSchool.name}",
+                                              style: TextStyle(color: UniCartColors.textSecondary, fontWeight: FontWeight.w700),
+                                            ),
+                                          ],
                                         ),
-                                      ],
-                                    ),
+                                    ],
+                                  ),
                                 ),
                                 Padding(
                                   padding: EdgeInsets.fromLTRB(horizontalPadding, 10, horizontalPadding, 14),

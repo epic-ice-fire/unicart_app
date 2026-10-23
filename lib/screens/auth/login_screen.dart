@@ -8,6 +8,7 @@ import "../../widgets/unicart_ui.dart";
 import "../lobby/lobby_screen.dart";
 import "forgot_password_screen.dart";
 import "register_screen.dart";
+import "../admin/accept_admin_invite_screen.dart";
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -389,6 +390,17 @@ class _LoginScreenState extends State<LoginScreen> {
                       );
                     },
               child: const Text("Create an account"),
+            ),
+            const SizedBox(height: 8),
+            TextButton.icon(
+              onPressed: isLoading
+                  ? null
+                  : () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const AcceptAdminInviteScreen()),
+                      ),
+              icon: const Icon(Icons.admin_panel_settings_outlined, size: 18),
+              label: const Text("Accept a school admin invitation"),
             ),
           ],
         ),

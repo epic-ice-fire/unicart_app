@@ -49,8 +49,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     try {
       final profile = await AuthService.me(widget.token).catchError((_) => <String, dynamic>{});
       if (!_schoolInitialized) {
+        final role = profile["admin_role"]?.toString();
+        final assignedSchool = profile["admin_school_id"]?.toString();
         final accountSchool = profile["school_id"]?.toString();
-        if (accountSchool != null) selectedSchoolId = accountSchool;
+        // School admins are pinned to their assigned campus in the UI. The API
+        // independently enforces the same boundary on every protected request.
+        if (role == "school_admin" && assignedSchool != null) {
+          selectedSchoolId = assignedSchool;
+        } else if (accountSchool != null) {
+          selectedSchoolId = accountSchool;
+        }
         _schoolInitialized = true;
       }
       final data = await LobbyService.adminDashboard(
@@ -809,33 +817,45 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                     horizontalPadding,
                                     14,
                                   ),
-                                  child: DropdownButtonFormField<String>(
-                                    initialValue: selectedSchoolId,
-                                    decoration: const InputDecoration(
-                                      labelText: "Manage campus",
-                                      prefixIcon: Icon(Icons.account_balance_rounded),
-                                    ),
-                                    items: UniCartSchool.all.map((school) {
-                                      return DropdownMenuItem<String>(
-                                        value: school.id,
-                                        child: Row(
-                                          children: [
-                                            UniCartSchoolLogo(school: school, size: 28, radius: 6),
-                                            const SizedBox(width: 9),
-                                            Flexible(child: Text(school.name)),
-                                          ],
+                                  if (meData?["admin_role"] != "school_admin")
+                                    DropdownButtonFormField<String>(
+                                      initialValue: selectedSchoolId,
+                                      decoration: const InputDecoration(
+                                        labelText: "Manage campus",
+                                        prefixIcon: Icon(Icons.account_balance_rounded),
+                                      ),
+                                      items: UniCartSchool.all.map((school) {
+                                        return DropdownMenuItem<String>(
+                                          value: school.id,
+                                          child: Row(
+                                            children: [
+                                              UniCartSchoolLogo(school: school, size: 28, radius: 6),
+                                              const SizedBox(width: 9),
+                                              Flexible(child: Text(school.name)),
+                                            ],
+                                          ),
+                                        );
+                                      }).toList(),
+                                      onChanged: isLoading || isBusy
+                                          ? null
+                                          : (value) {
+                                              if (value != null && value != selectedSchoolId) {
+                                                setState(() => selectedSchoolId = value);
+                                                loadDashboard();
+                                              }
+                                            },
+                                    )
+                                  else
+                                    Row(
+                                      children: [
+                                        Icon(Icons.lock_outline_rounded, size: 18, color: UniCartColors.textSecondary),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          "Assigned campus: ${currentSchool.name}",
+                                          style: TextStyle(color: UniCartColors.textSecondary, fontWeight: FontWeight.w700),
                                         ),
-                                      );
-                                    }).toList(),
-                                    onChanged: isLoading || isBusy
-                                        ? null
-                                        : (value) {
-                                            if (value != null && value != selectedSchoolId) {
-                                              setState(() => selectedSchoolId = value);
-                                              loadDashboard();
-                                            }
-                                          },
-                                  ),
+                                      ],
+                                    ),
                                 ),
                                 Padding(
                                   padding: EdgeInsets.fromLTRB(horizontalPadding, 10, horizontalPadding, 14),

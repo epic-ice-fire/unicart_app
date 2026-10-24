@@ -83,7 +83,7 @@ class RetailerChannelSelector extends StatelessWidget {
           Text(
             sharedAccess
                 ? "Shared access is active. Each channel keeps its own goal, items, payments and batch."
-                : "Pay for one qualifying lobby to unlock both channels until that paid lobby reaches its goal.",
+                : "₦2,000 unlocks the current Temu and SHEIN lobbies. Each ends when it reaches its goal.",
             style: TextStyle(
               color: UniCartColors.textSecondary,
               fontSize: 12,

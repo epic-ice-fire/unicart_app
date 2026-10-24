@@ -156,18 +156,12 @@
       };
 
       if ("serviceWorker" in navigator) {
-        // Remove Flutter's caching worker (stale-version risk) but keep our
-        // pass-through sw.js, which makes the app installable.
         navigator.serviceWorker.getRegistrations()
           .then(function (registrations) {
             registrations.forEach(function (registration) {
-              var sw = registration.active || registration.waiting || registration.installing;
-              if (sw && sw.scriptURL.indexOf("flutter_service_worker") !== -1) {
-                registration.unregister();
-              }
+              registration.unregister();
             });
           })
-          .then(function () { return navigator.serviceWorker.register("sw.js"); })
           .catch(function () {});
       }
 

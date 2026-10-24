@@ -98646,7 +98646,7 @@ A.Jj.prototype={}
 A.QY.prototype={
 G(a){var s=this,r=null,q=A.k(),p=A.bb(22),o=A.cw(A.k().CW,1),n=s.e,m=t.p,l=A.by(A.b([A.bF(A.ah("PICK YOUR SHOPPING CHANNEL",r,r,r,r,A.a8(r,r,A.k().ch,r,r,r,r,r,r,r,r,10,r,r,B.P,r,r,!0,r,1.1,r,r,r,r,r,r),r,r),1),new A.Tr(n,r)],m),B.u,B.k,B.n,0),k=s.c
 k=A.by(A.b([A.bF(A.aNF(B.H6,B.N1,B.K4,new A.aj5(s),k==="temu","Gadgets, room setup & everyday finds","Budget picks","Temu"),1),B.bD,A.bF(A.aNF(B.ow,B.Ng,B.JM,new A.aj6(s),k==="shein","Fits, fashion & campus style","Trending","SHEIN"),1)],m),B.Y,B.k,B.n,0)
-n=n?"Shared access is active. Each channel keeps its own goal, items, payments and batch.":"Pay for one qualifying lobby to unlock both channels until that paid lobby reaches its goal."
+n=n?"Shared access is active. Each channel keeps its own goal, items, payments and batch.":"\u20a62,000 unlocks the current Temu and SHEIN lobbies. Each ends when it reaches its goal."
 return A.bh(r,A.bf(A.b([l,B.aY,new A.Ov(k,r),B.ax,A.ah(n,r,r,r,r,A.a8(r,r,A.k().ay,r,r,r,r,r,r,r,r,12,r,r,r,r,1.45,!0,r,r,r,r,r,r,r,r),r,r)],m),B.N,B.k,B.n),B.m,r,r,new A.b0(q.c,r,o,p,r,r,B.x),r,r,r,B.kS,r,r,r)}}
 A.aj5.prototype={
 $0(){return this.a.d.$1("temu")},

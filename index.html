@@ -105,6 +105,35 @@
       animation: unicart-spin .72s linear infinite;
     }
 
+    #unicart-install {
+      position: fixed;
+      left: 12px;
+      right: 12px;
+      bottom: max(12px, env(safe-area-inset-bottom));
+      z-index: 2147483000;
+      display: none;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 16px;
+      border: 1px solid #1E3A5F;
+      background: #0A1425;
+      color: #F8FAFC;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
+      font-size: 14px;
+      line-height: 1.35;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    #unicart-install b { display: block; font-size: 15px; }
+    #unicart-install span { color: #94A3B8; }
+    #unicart-install button {
+      border: 0; border-radius: 12px; cursor: pointer;
+      padding: 10px 14px; font-weight: 700; font-size: 14px;
+    }
+    #unicart-install-go { background: #2563EB; color: #fff; }
+    #unicart-install-x { background: transparent; color: #94A3B8; padding: 10px 8px; }
+
     @keyframes unicart-spin {
       to { transform: rotate(360deg); }
     }
@@ -127,12 +156,18 @@
       };
 
       if ("serviceWorker" in navigator) {
+        // Remove Flutter's caching worker (stale-version risk) but keep our
+        // pass-through sw.js, which makes the app installable.
         navigator.serviceWorker.getRegistrations()
           .then(function (registrations) {
             registrations.forEach(function (registration) {
-              registration.unregister();
+              var sw = registration.active || registration.waiting || registration.installing;
+              if (sw && sw.scriptURL.indexOf("flutter_service_worker") !== -1) {
+                registration.unregister();
+              }
             });
           })
+          .then(function () { return navigator.serviceWorker.register("sw.js"); })
           .catch(function () {});
       }
 
@@ -181,6 +216,63 @@
         subtitle.textContent = "Still loading. Check your connection, then refresh this page.";
       }
     }, 15000);
+  </script>
+  <div id="unicart-install" role="dialog" aria-label="Install UniCart">
+    <div style="flex:1">
+      <b>Get the UniCart app</b>
+      <span id="unicart-install-text">Add UniCart to your home screen.</span>
+    </div>
+    <button id="unicart-install-go" type="button">Install</button>
+    <button id="unicart-install-x" type="button" aria-label="Dismiss">Not now</button>
+  </div>
+  <script>
+    (function () {
+      var KEY = "unicart_install_dismissed";
+      var box = document.getElementById("unicart-install");
+      var go = document.getElementById("unicart-install-go");
+      var text = document.getElementById("unicart-install-text");
+      var deferred = null;
+
+      function standalone() {
+        return (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) ||
+          window.navigator.standalone === true;
+      }
+      function dismissed() {
+        try { return localStorage.getItem(KEY) === "1"; } catch (_) { return false; }
+      }
+      function show() {
+        if (standalone() || dismissed()) return;
+        box.style.display = "flex";
+      }
+      function hide(remember) {
+        box.style.display = "none";
+        if (remember) { try { localStorage.setItem(KEY, "1"); } catch (_) {} }
+      }
+
+      document.getElementById("unicart-install-x").addEventListener("click", function () { hide(true); });
+
+      window.addEventListener("beforeinstallprompt", function (e) {
+        e.preventDefault();
+        deferred = e;
+        setTimeout(show, 4000);
+      });
+      go.addEventListener("click", function () {
+        if (!deferred) { hide(true); return; }
+        deferred.prompt();
+        deferred.userChoice.finally(function () { deferred = null; hide(true); });
+      });
+      window.addEventListener("appinstalled", function () { hide(true); });
+
+      // iPhone/iPad Safari has no install prompt: show manual steps instead.
+      var ua = navigator.userAgent || "";
+      var isIOS = /iphone|ipad|ipod/i.test(ua);
+      var isSafari = /safari/i.test(ua) && !/crios|fxios|edgios/i.test(ua);
+      if (isIOS && isSafari) {
+        text.textContent = "Tap the Share button, then \u201cAdd to Home Screen\u201d.";
+        go.style.display = "none";
+        setTimeout(show, 6000);
+      }
+    })();
   </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>

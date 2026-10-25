@@ -42,6 +42,14 @@ class UniCartSchool {
       logoUrl: "",
       logoAsset: "assets/images/schools/babcock.png",
     ),
+    UniCartSchool(
+      id: "veritas",
+      name: "Veritas University",
+      shortName: "Veritas",
+      emailDomain: "veritas.edu.ng",
+      logoUrl: "",
+      logoAsset: "assets/images/schools/veritas.png",
+    ),
   ];
 
   static UniCartSchool byId(String? id) {

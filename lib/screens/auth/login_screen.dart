@@ -431,7 +431,9 @@ class _LoginStory extends StatelessWidget {
                 ? "AUGUSTINE UNIVERSITY · BURGUNDY EDITION"
                 : schoolId == "babcock"
                     ? "BABCOCK UNIVERSITY · FOREST EDITION"
-                    : "PAU · ORIGINAL UNICART EDITION",
+                    : schoolId == "veritas"
+                        ? "VERITAS UNIVERSITY · ROYAL EDITION"
+                        : "PAU · ORIGINAL UNICART EDITION",
           ),
           SizedBox(height: 20),
           Text(
@@ -439,7 +441,9 @@ class _LoginStory extends StatelessWidget {
                 ? "A more curated way\nto shop your campus."
                 : schoolId == "babcock"
                     ? "Fresh finds.\nBetter campus buys."
-                    : "Campus shopping,\nwithout the chaos.",
+                    : schoolId == "veritas"
+                        ? "Seeking the truth.\nShopping smarter."
+                        : "Campus shopping,\nwithout the chaos.",
             style: TextStyle(
               color: UniCartColors.textPrimary,
               fontFamily: schoolId == "augustine" ? "Georgia" : null,
@@ -457,7 +461,9 @@ class _LoginStory extends StatelessWidget {
                   ? "Thoughtful group shopping with a warmer, editorial feel—from joining a lobby to tracking every item."
                   : schoolId == "babcock"
                       ? "Bring your campus together, unlock group-buying deals, and track every item with a fresh, energetic feel."
-                      : "Join a verified lobby, pay securely, add your items, and follow the batch until it is ready for processing.",
+                      : schoolId == "veritas"
+                          ? "Team up with fellow Veritas students, pool your Temu and SHEIN orders, and track every item in one place."
+                          : "Join a verified lobby, pay securely, add your items, and follow the batch until it is ready for processing.",
               style: TextStyle(
                 color: UniCartColors.textSecondary,
                 fontSize: 16,

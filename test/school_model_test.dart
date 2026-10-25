@@ -12,6 +12,7 @@ void main() {
   test("byId returns the matching campus", () {
     expect(UniCartSchool.byId("babcock").shortName, "Babcock");
     expect(UniCartSchool.byId("augustine").shortName, "Augustine");
+    expect(UniCartSchool.byId("veritas").shortName, "Veritas");
   });
 
   test("every bundled school logo file exists", () {

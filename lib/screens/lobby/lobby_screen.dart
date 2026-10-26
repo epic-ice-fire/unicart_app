@@ -1358,17 +1358,6 @@ class _LobbyScreenState extends State<LobbyScreen> with WidgetsBindingObserver {
               fontWeight: FontWeight.w600,
             ),
           ),
-          if (((mainDetailsData?["promo_amount"] as num?) ?? 0) > 0) ...[
-            const SizedBox(height: 6),
-            Text(
-              "Includes ${_formatNaira(mainDetailsData?["promo_amount"])} UniCart promo boost",
-              style: TextStyle(
-                color: UniCartColors.success,
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ],
         ],
       ),
     );

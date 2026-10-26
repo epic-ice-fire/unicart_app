@@ -113,8 +113,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       await loadDashboard();
       showMessage(
         boosted == 0
-            ? "Promo already added to every open SHEIN lobby."
-            : "Promo added to $boosted SHEIN lobbies.",
+            ? "SHEIN seed is already applied to every open lobby."
+            : "SHEIN seed applied to $boosted lobbies.",
         isSuccess: true,
       );
     } catch (e) {
@@ -901,7 +901,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                     child: OutlinedButton.icon(
                                       onPressed: isBusy ? null : addPromoBoost,
                                       icon: const Icon(Icons.local_offer_outlined),
-                                      label: const Text("Add SHEIN promo (10-20%, all campuses)"),
+                                      label: const Text("Apply SHEIN seed to all campuses"),
                                     ),
                                   ),
                                 Padding(

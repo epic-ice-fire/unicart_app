@@ -83,11 +83,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       await SessionService.saveToken(token);
       await SessionService.saveEmail(email);
+      await SessionService.saveCampus(selectedSchoolId);
 
       if (!mounted) return;
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (_) => LobbyScreen(token: token)),
+        MaterialPageRoute(builder: (_) => LobbyScreen(token: token, campusContextId: selectedSchoolId)),
         (_) => false,
       );
     } catch (e) {

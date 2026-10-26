@@ -215,13 +215,13 @@ class _LobbyScreenState extends State<LobbyScreen> with WidgetsBindingObserver {
 
       final meFuture = AuthService.me(widget.token);
       final detailsFuture = safe(
-        LobbyService.mainLobbyDetails(widget.token, retailer: selectedRetailer),
+        LobbyService.mainLobbyDetails(widget.token, retailer: selectedRetailer, schoolId: widget.campusContextId),
       );
       final itemsFuture = safe(
-        LobbyService.myMainLobbyItems(widget.token, retailer: selectedRetailer),
+        LobbyService.myMainLobbyItems(widget.token, retailer: selectedRetailer, schoolId: widget.campusContextId),
       );
       final historyFuture = safe(
-        LobbyService.myBatchHistory(widget.token, retailer: selectedRetailer),
+        LobbyService.myBatchHistory(widget.token, retailer: selectedRetailer, schoolId: widget.campusContextId),
       );
 
       try {
@@ -463,7 +463,7 @@ class _LobbyScreenState extends State<LobbyScreen> with WidgetsBindingObserver {
     setState(() => isBusy = true);
     try {
       final response =
-          await LobbyService.initializeEntryFeePayment(widget.token, retailer: selectedRetailer);
+          await LobbyService.initializeEntryFeePayment(widget.token, retailer: selectedRetailer, schoolId: widget.campusContextId);
       final reference = response["reference"]?.toString();
       final authUrl = response["authorization_url"]?.toString();
 
@@ -535,7 +535,7 @@ class _LobbyScreenState extends State<LobbyScreen> with WidgetsBindingObserver {
     setState(() => isBusy = true);
     try {
       final response =
-          await LobbyService.initializeEntryFeePayment(widget.token);
+          await LobbyService.initializeEntryFeePayment(widget.token, retailer: selectedRetailer, schoolId: widget.campusContextId);
       final reference = response["reference"]?.toString();
       final authUrl = response["authorization_url"]?.toString();
 
@@ -592,7 +592,7 @@ class _LobbyScreenState extends State<LobbyScreen> with WidgetsBindingObserver {
 
     setState(() => isBusy = true);
     try {
-      final response = await LobbyService.leaveLobby(widget.token, retailer: selectedRetailer);
+      final response = await LobbyService.leaveLobby(widget.token, retailer: selectedRetailer, schoolId: widget.campusContextId);
       await loadAll();
       showMessage(response["message"]?.toString() ?? "Left lobby.");
     } catch (e) {
@@ -639,6 +639,7 @@ class _LobbyScreenState extends State<LobbyScreen> with WidgetsBindingObserver {
         itemLink: itemLink,
         itemAmount: amount.toInt(),
         retailer: selectedRetailer,
+        schoolId: widget.campusContextId,
       );
       itemLinkController.clear();
       itemAmountController.clear();
@@ -659,7 +660,7 @@ class _LobbyScreenState extends State<LobbyScreen> with WidgetsBindingObserver {
     setState(() => isBusy = true);
     try {
       final response =
-          await LobbyService.removeItem(widget.token, itemId: itemId, retailer: selectedRetailer);
+          await LobbyService.removeItem(widget.token, itemId: itemId, retailer: selectedRetailer, schoolId: widget.campusContextId);
       await loadAll();
       showMessage(response["message"]?.toString() ?? "Item removed.");
     } catch (e) {

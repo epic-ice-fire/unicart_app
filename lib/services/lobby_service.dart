@@ -44,10 +44,17 @@ class LobbyService {
     }
   }
 
-  static Future<Map<String, dynamic>> mainLobbyDetails(String token, {String retailer = "temu"}) async {
+  static Map<String, String> _campusQuery(String retailer, String? schoolId) {
+    return {
+      "retailer": retailer,
+      if (schoolId != null && schoolId.isNotEmpty) "school_id": schoolId,
+    };
+  }
+
+  static Future<Map<String, dynamic>> mainLobbyDetails(String token, {String retailer = "temu", String? schoolId}) async {
     final response = await _withTimeout(
       http.get(
-        Uri.parse("$baseUrl/lobbies/main/details").replace(queryParameters: {"retailer": retailer}),
+        Uri.parse("$baseUrl/lobbies/main/details").replace(queryParameters: _campusQuery(retailer, schoolId)),
         headers: _headers(token),
       ),
     );
@@ -57,10 +64,10 @@ class LobbyService {
     throw _errorFromResponse(response);
   }
 
-  static Future<Map<String, dynamic>> myMainLobbyItems(String token, {String retailer = "temu"}) async {
+  static Future<Map<String, dynamic>> myMainLobbyItems(String token, {String retailer = "temu", String? schoolId}) async {
     final response = await _withTimeout(
       http.get(
-        Uri.parse("$baseUrl/lobbies/main/my-items").replace(queryParameters: {"retailer": retailer}),
+        Uri.parse("$baseUrl/lobbies/main/my-items").replace(queryParameters: _campusQuery(retailer, schoolId)),
         headers: _headers(token),
       ),
     );
@@ -70,10 +77,10 @@ class LobbyService {
     throw _errorFromResponse(response);
   }
 
-  static Future<Map<String, dynamic>> myBatchHistory(String token, {String retailer = "temu"}) async {
+  static Future<Map<String, dynamic>> myBatchHistory(String token, {String retailer = "temu", String? schoolId}) async {
     final response = await _withTimeout(
       http.get(
-        Uri.parse("$baseUrl/lobbies/my-history").replace(queryParameters: {"retailer": retailer}),
+        Uri.parse("$baseUrl/lobbies/my-history").replace(queryParameters: _campusQuery(retailer, schoolId)),
         headers: _headers(token),
       ),
     );
@@ -84,11 +91,11 @@ class LobbyService {
   }
 
   static Future<Map<String, dynamic>> initializeEntryFeePayment(
-    String token, {String retailer = "temu"}
+    String token, {String retailer = "temu", String? schoolId}
   ) async {
     final response = await _withTimeout(
       http.post(
-        Uri.parse("$baseUrl/payments/entry-fee/initialize").replace(queryParameters: {"retailer": retailer}),
+        Uri.parse("$baseUrl/payments/entry-fee/initialize").replace(queryParameters: _campusQuery(retailer, schoolId)),
         headers: _headers(token),
       ),
     );
@@ -114,10 +121,10 @@ class LobbyService {
     throw _errorFromResponse(response);
   }
 
-  static Future<Map<String, dynamic>> leaveLobby(String token, {String retailer = "temu"}) async {
+  static Future<Map<String, dynamic>> leaveLobby(String token, {String retailer = "temu", String? schoolId}) async {
     final response = await _withTimeout(
       http.post(
-        Uri.parse("$baseUrl/lobbies/main/leave").replace(queryParameters: {"retailer": retailer}),
+        Uri.parse("$baseUrl/lobbies/main/leave").replace(queryParameters: _campusQuery(retailer, schoolId)),
         headers: _headers(token),
       ),
     );
@@ -132,10 +139,11 @@ class LobbyService {
     required String itemLink,
     required int itemAmount,
     String retailer = "temu",
+    String? schoolId,
   }) async {
     final response = await _withTimeout(
       http.post(
-        Uri.parse("$baseUrl/lobbies/main/items").replace(queryParameters: {"retailer": retailer}),
+        Uri.parse("$baseUrl/lobbies/main/items").replace(queryParameters: _campusQuery(retailer, schoolId)),
         headers: _headers(token),
         body: jsonEncode({"item_link": itemLink, "item_amount": itemAmount}),
       ),
@@ -150,10 +158,11 @@ class LobbyService {
     String token, {
     required int itemId,
     String retailer = "temu",
+    String? schoolId,
   }) async {
     final response = await _withTimeout(
       http.post(
-        Uri.parse("$baseUrl/lobbies/main/items/$itemId/remove").replace(queryParameters: {"retailer": retailer}),
+        Uri.parse("$baseUrl/lobbies/main/items/$itemId/remove").replace(queryParameters: _campusQuery(retailer, schoolId)),
         headers: _headers(token),
       ),
     );

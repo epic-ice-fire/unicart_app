@@ -102,8 +102,9 @@ enum _GateStatus { signedOut, signedIn, connectionError }
 class _GateResult {
   final _GateStatus status;
   final String? token;
+  final String? campus;
 
-  const _GateResult(this.status, {this.token});
+  const _GateResult(this.status, {this.token, this.campus});
 }
 
 class AuthGate extends StatefulWidget {
@@ -130,8 +131,9 @@ class _AuthGateState extends State<AuthGate> {
 
     try {
       final account = await AuthService.me(token);
-      UniCartColors.setSchool(account["school_id"]?.toString());
-      return _GateResult(_GateStatus.signedIn, token: token);
+      final campus = await SessionService.getCampus();
+      UniCartColors.setSchool(campus ?? account["school_id"]?.toString());
+      return _GateResult(_GateStatus.signedIn, token: token, campus: campus);
     } catch (e) {
       final raw = e.toString();
       final invalidSession = raw.contains("401") ||
@@ -200,7 +202,7 @@ class _AuthGateState extends State<AuthGate> {
         }
 
         if (result.status == _GateStatus.signedIn && result.token != null) {
-          return LobbyScreen(token: result.token!);
+          return LobbyScreen(token: result.token!, campusContextId: result.campus);
         }
 
         return Scaffold(

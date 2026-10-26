@@ -93,6 +93,22 @@ class SessionService {
     await prefs.remove(_emailKey);
   }
 
+  static const String _campusKey = "unicart_campus";
+
+  static Future<void> saveCampus(String? schoolId) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (schoolId == null || schoolId.isEmpty) {
+      await prefs.remove(_campusKey);
+    } else {
+      await prefs.setString(_campusKey, schoolId);
+    }
+  }
+
+  static Future<String?> getCampus() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_campusKey);
+  }
+
   static Future<void> clearAll() async {
     await clearToken();
   }

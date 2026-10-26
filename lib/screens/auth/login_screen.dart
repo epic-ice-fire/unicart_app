@@ -91,6 +91,7 @@ class _LoginScreenState extends State<LoginScreen> {
       // UniCart itself never stores the raw password.
       TextInput.finishAutofillContext(shouldSave: rememberMe);
 
+      await SessionService.saveCampus(selectedSchoolId);
       if (!mounted) return;
       Navigator.pushReplacement(
         context,

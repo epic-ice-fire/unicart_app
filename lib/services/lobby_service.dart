@@ -243,6 +243,25 @@ class LobbyService {
     throw _errorFromResponse(response);
   }
 
+  static Future<Map<String, dynamic>> adminPromoBoost(
+    String token, {
+    String retailer = "shein",
+    String? schoolId,
+  }) async {
+    final params = <String, String>{"retailer": retailer};
+    if (schoolId != null) params["school_id"] = schoolId;
+    final response = await _withTimeout(
+      http.post(
+        Uri.parse("$baseUrl/lobbies/admin/promo-boost").replace(queryParameters: params),
+        headers: _headers(token),
+      ),
+    );
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return _decodeResponse(response) as Map<String, dynamic>;
+    }
+    throw _errorFromResponse(response);
+  }
+
   static Future<Map<String, dynamic>> adminUpdateBatchStatus(
     String token, {
     required int lobbyId,

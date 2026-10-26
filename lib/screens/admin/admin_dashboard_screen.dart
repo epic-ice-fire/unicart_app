@@ -104,6 +104,26 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     }
   }
 
+  Future<void> addPromoBoost() async {
+    setState(() => isBusy = true);
+    try {
+      final result = await LobbyService.adminPromoBoost(widget.token);
+      final rows = (result["results"] as List? ?? const []);
+      final boosted = rows.where((r) => r is Map && r["status"] == "boosted").length;
+      await loadDashboard();
+      showMessage(
+        boosted == 0
+            ? "Promo already added to every open SHEIN lobby."
+            : "Promo added to $boosted SHEIN lobbies.",
+        isSuccess: true,
+      );
+    } catch (e) {
+      showMessage(e.toString());
+    } finally {
+      if (mounted) setState(() => isBusy = false);
+    }
+  }
+
   Future<void> updateBatchStatus({
     required int lobbyId,
     required String newStatus,
@@ -873,6 +893,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                       ),
                                       icon: const Icon(Icons.manage_accounts_outlined),
                                       label: const Text("Manage school admins"),
+                                    ),
+                                  ),
+                                if (meData?["admin_role"] == "super_admin")
+                                  Padding(
+                                    padding: EdgeInsets.fromLTRB(horizontalPadding, 0, horizontalPadding, 14),
+                                    child: OutlinedButton.icon(
+                                      onPressed: isBusy ? null : addPromoBoost,
+                                      icon: const Icon(Icons.local_offer_outlined),
+                                      label: const Text("Add SHEIN promo (10-20%, all campuses)"),
                                     ),
                                   ),
                                 Padding(

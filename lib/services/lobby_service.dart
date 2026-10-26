@@ -243,11 +243,19 @@ class LobbyService {
     throw _errorFromResponse(response);
   }
 
-  static Future<Map<String, dynamic>> adminPromoBoost(String token) async {
+  static Future<Map<String, dynamic>> adminLobbyTopUp(
+    String token, {
+    required String schoolId,
+    required String retailer,
+    int amount = 0,
+    bool reset = false,
+  }) async {
     final response = await _withTimeout(
       http.post(
-        Uri.parse("$baseUrl/lobbies/admin/promo-boost"),
+        Uri.parse("$baseUrl/lobbies/admin/lobby-topup")
+            .replace(queryParameters: {"school_id": schoolId, "retailer": retailer}),
         headers: _headers(token),
+        body: jsonEncode({"amount": amount, "mode": reset ? "reset" : "add"}),
       ),
     );
     if (response.statusCode >= 200 && response.statusCode < 300) {

@@ -27,6 +27,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   bool _schoolInitialized = false;
   UniCartSchool get currentSchool => UniCartSchool.byId(selectedSchoolId);
   final TextEditingController targetController = TextEditingController();
+  final TextEditingController topUpController = TextEditingController();
+  String topUpSchoolId = "pau";
+  String topUpRetailer = "shein";
   final Set<int> _expandedBatches = {};
 
   @override
@@ -38,6 +41,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   @override
   void dispose() {
     targetController.dispose();
+    topUpController.dispose();
     super.dispose();
   }
 
@@ -104,17 +108,28 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     }
   }
 
-  Future<void> addPromoBoost() async {
+  Future<void> applyTopUp({required bool reset}) async {
+    final amount = int.tryParse(topUpController.text.replaceAll(",", "").trim()) ?? 0;
+    if (!reset && amount <= 0) {
+      showMessage("Enter an amount greater than zero.");
+      return;
+    }
     setState(() => isBusy = true);
     try {
-      final result = await LobbyService.adminPromoBoost(widget.token);
-      final rows = (result["results"] as List? ?? const []);
-      final boosted = rows.where((r) => r is Map && r["status"] == "boosted").length;
+      final result = await LobbyService.adminLobbyTopUp(
+        widget.token,
+        schoolId: topUpSchoolId,
+        retailer: topUpRetailer,
+        amount: amount,
+        reset: reset,
+      );
+      topUpController.clear();
       await loadDashboard();
+      final total = result["topup_total"] ?? 0;
       showMessage(
-        boosted == 0
-            ? "SHEIN seed is already applied to every open lobby."
-            : "SHEIN seed applied to $boosted lobbies.",
+        reset
+            ? "Top-up removed."
+            : "Added \u20a6$amount. Top-up total for this lobby: \u20a6$total.",
         isSuccess: true,
       );
     } catch (e) {
@@ -898,10 +913,53 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                 if (meData?["admin_role"] == "super_admin")
                                   Padding(
                                     padding: EdgeInsets.fromLTRB(horizontalPadding, 0, horizontalPadding, 14),
-                                    child: OutlinedButton.icon(
-                                      onPressed: isBusy ? null : addPromoBoost,
-                                      icon: const Icon(Icons.local_offer_outlined),
-                                      label: const Text("Apply SHEIN seed to all campuses"),
+                                    child: ExpansionTile(
+                                      tilePadding: EdgeInsets.zero,
+                                      leading: const Icon(Icons.add_chart_rounded),
+                                      title: const Text("Top up a lobby", style: TextStyle(fontWeight: FontWeight.w700)),
+                                      childrenPadding: const EdgeInsets.only(bottom: 8),
+                                      children: [
+                                        DropdownButtonFormField<String>(
+                                          initialValue: topUpSchoolId,
+                                          decoration: const InputDecoration(labelText: "Campus"),
+                                          items: UniCartSchool.all
+                                              .map((school) => DropdownMenuItem(value: school.id, child: Text(school.name)))
+                                              .toList(),
+                                          onChanged: isBusy ? null : (value) => setState(() => topUpSchoolId = value ?? topUpSchoolId),
+                                        ),
+                                        const SizedBox(height: 12),
+                                        DropdownButtonFormField<String>(
+                                          initialValue: topUpRetailer,
+                                          decoration: const InputDecoration(labelText: "Store"),
+                                          items: const [
+                                            DropdownMenuItem(value: "shein", child: Text("SHEIN")),
+                                            DropdownMenuItem(value: "temu", child: Text("Temu")),
+                                          ],
+                                          onChanged: isBusy ? null : (value) => setState(() => topUpRetailer = value ?? topUpRetailer),
+                                        ),
+                                        const SizedBox(height: 12),
+                                        TextField(
+                                          controller: topUpController,
+                                          keyboardType: TextInputType.number,
+                                          decoration: const InputDecoration(labelText: "Amount to add (\u20a6)"),
+                                        ),
+                                        const SizedBox(height: 12),
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: FilledButton(
+                                                onPressed: isBusy ? null : () => applyTopUp(reset: false),
+                                                child: const Text("Add"),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 12),
+                                            OutlinedButton(
+                                              onPressed: isBusy ? null : () => applyTopUp(reset: true),
+                                              child: const Text("Reset"),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 Padding(
